@@ -225,7 +225,9 @@ class SR430_Scalar_Server(GPIBManagedServer):
 
 
 
-         
+if __name__ == "__main__":
+    from labard import util
+    util.runServer(SR430_Scalar_server())
             
 
 
