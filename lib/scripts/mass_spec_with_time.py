@@ -35,12 +35,12 @@ sca.write('rscn200') # set records per scan
 # Select the mass range
 
 m_max = 140
-m_min = 64
-n_points = 77
+m_min = 131
+n_points = 19
 
 # Set how long to wait to count in sec
 
-count_time = 46
+count_time = 30*60
 
 #Initialize results array(mass,counts,day,hour,minute,second,voltage,current)
 mass_results = np.array([[0,0,0,0,0,0,0,0]])
@@ -52,7 +52,7 @@ for i in range(n_points):
 
     
     if mass[i] % 4 == 0:
-        rga.write_line('ml137')
+        rga.write_line('ml145')
         time.sleep(1)
         
         # Acquire the data
