@@ -164,7 +164,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
             sleep(wait_time['s'])
             returnValue('Success.')
 
-    @setting(19, 'Get Counts',returns='s')
+    @setting(19, 'Get Counts',returns='w')
     def get_counts(self, c):
         '''
         Get counts of last run over a statistcal analysis on all bins.
@@ -181,7 +181,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
         sleep(1)
         yield dev.write('SPAR?2')           #Queries for the total # of counts (SPAR?2) See Manual
         number_of_counts = yield dev.read() #Reads the buffer for total # of counts
-        returnValue(number_of_counts)  #Returns total # of counts as an integer
+        returnValue(int(number_of_counts))  #Returns total # of counts as an integer
 
     @setting(20, 'Bins Per Record', value='w', returns='s')
     def bins_per_record(self, c, value=None):
