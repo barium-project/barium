@@ -15,10 +15,10 @@
 """
 ### BEGIN NODE INFO
 [info]
-name = TrapServer
+name = RGA Server
 version = 1.0.0
-description = Trap Server
-instancename = Trap Server
+description = RGA Server
+instancename = %LABRADNODE% RGA Server
 
 [startup]
 cmdline = %PYTHON% %FILE%
@@ -75,22 +75,22 @@ class RGA_Server( SerialDeviceServer ):
             else: raise
 
     @setting(1, returns='s')
-    def identify(self, c)
-    '''
-    Returns the RGA's IDN. RGACOM command: 'id?'
-    '''
+    def identify(self, c):
+        '''
+        Returns the RGA's IDN. RGACOM command: 'id?'
+        '''
         yield self.ser.write_line('id?')
         idn = yield self.ser.read_line()
         returnValue(idn)
 
     @setting(2, value='w',returns='s')
-    def filament(self, c, value=None)
-    '''
-    Sets the filament on/off mode, or read its value.
-    ".filament(0)" shuts off the filament.  RGACOM command: "fl0"
-    ".filament(1)" turns on the filament.  RGACOM command: "fl1"
-    ".filament()" returns the filament mode.  RGACOM command: "fl?"
-    '''
+    def filament(self, c, value=None):
+        '''
+        Sets the filament on/off mode, or read its value.
+        ".filament(0)" shuts off the filament.  RGACOM command: "fl0"
+        ".filament(1)" turns on the filament.  RGACOM command: "fl1"
+        ".filament()" returns the filament mode.  RGACOM command: "fl?"
+        '''
         if value > 1:
             message = 'Input out of range. Acceptable inputs: 0 and 1.'
         elif value==1:
@@ -105,11 +105,11 @@ class RGA_Server( SerialDeviceServer ):
         returnValue(message)
 
     @setting(3, value='w', returns='s')
-    def mass_lock(self, c, value)
-    '''
-    Sets the mass lock for the RGA.  Acceptable range: [1,200].  RGACOM command:  "mlx"
-    ".mass_lock(x)" sets the mass filter to x (positive integer representing amu).
-    '''
+    def mass_lock(self, c, value):
+        '''
+        Sets the mass lock for the RGA.  Acceptable range: [1,200].  RGACOM command:  "mlx"
+        ".mass_lock(x)" sets the mass filter to x (positive integer representing amu).
+        '''
         if value<1 or value>200:
             message = 'Mass out of range.  Acceptable range: [1,200]'
         else:
@@ -118,23 +118,24 @@ class RGA_Server( SerialDeviceServer ):
         returnValue(message)
 
     @setting(4, value='w', returns='s')
-    def high_voltage(self, c, value=None)
-    '''
-    Sets the electron multiplier voltage.  Acceptable range: [0,2500]
-    ".high_voltage()" queries the electron multiplier voltage.  RGACOM command: "hv?"
-    ".high_voltage(x)" sets the electron multiplier voltage to x (positive integer representing volts).  RGA COM command: "hvx"
-    '''
+    def high_voltage(self, c, value=None):
+        '''
+        Sets the electron multiplier voltage.  Acceptable range: [0,2500]
+        ".high_voltage()" queries the electron multiplier voltage.  RGACOM command: "hv?"
+        ".high_voltage(x)" sets the electron multiplier voltage to x (positive integer representing volts).  RGA COM command: "hvx"
+        '''
         if value==None:
             yield self.ser.write_line('hv?')
             message = yield self.ser.read_line()
         elif value > 2500:
-            message = 'Voltage out of range.  Acceptable range: [0,2500]
+            message = 'Voltage out of range.  Acceptable range: [0,2500]'
         else:
             yield self.ser.write_line('hv'+str(value))
             message = 'High voltage (electron multiplier) command sent.'
         returnValue(message)
-    
+
+__server__ = RGA_Server()
 
 if __name__ == "__main__":
     from labrad import util
-    util.runServer(RGA_Server())
+    util.runServer(__server__)
