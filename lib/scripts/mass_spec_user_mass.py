@@ -6,13 +6,14 @@
 ##############################################################################
 rga_port = "COM1"
 labrad_manager_address = 'localhost' # if running on a different comp use that ip address
-discriminator_level = .07 # In volts
-records_per_scan = 320*6
-mass_min = 86.7 #amu
-mass_max = 87.4 #amu
-number_of_points = 8
+discriminator_level = .06 # In volts
+records_per_scan = 160
+# mass_min = 85 #amu
+# mass_max = 89 #amu
+# number_of_points = 17
 # Time required for sr430 to count at each point. Must confirm this before you run.
-count_time = 60*6
+masses = [86.5, 88.3]
+count_time = 30
 file_location = 'Z:/Group_Share/Barium/Data/2016/5/17'
 # Must enter the bias voltage on the filament
 bias_v = 6.6 # V
@@ -58,8 +59,6 @@ sr430.records_per_scan(records_per_scan)
 #Initialize results array(mass,counts,day,hour,minute,second,voltage,current)
 results = np.array([[0,0,0,0,0,0,0,0]])
 
-masses = np.linspace(mass_min,mass_max,number_of_points)
-
 #Set the power supply settings and wait for conditions to steady
 hp.set_voltage(U(ps_voltage,'V'))
 hp.set_current(U(ps_current,'A'))
@@ -80,7 +79,7 @@ for i in range(len(masses)):
     new_data = np.array([[masses[i],counts,t[2],t[3],t[4],t[5],voltage,current]])
     print new_data
     results = np.concatenate((results,new_data),axis = 0)
-    file_name = file_location+'/mass_spec_'+str(mass_min)+'amu_'+str(mass_max)+'amu_'+str(bias_v)+'Vbias_'+str(count_time)+'s.txt'
+    file_name = file_location+'/mass_spec_'+str(masses[0])+'amu_'+str(masses[len(masses)-1])+'amu_'+str(bias_v)+'Vbias_'+str(count_time)+'s.txt'
     np.savetxt(file_name,results,fmt="%0.5e")
 
 

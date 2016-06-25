@@ -1,22 +1,10 @@
-from labrad.gpib import GPIBManagedServer, GPIBDeviceWrapper
-from labrad.types import Error
-from twisted.internet import reactor
-from labrad.server import Signal, setting
-from labrad import types as T
-from twisted.internet.task import LoopingCall
-from twisted.internet.defer import returnValue
-from labrad.support import getNodeName
-from labrad.units import WithUnit as U
-from labrad import units
-import time
-
-#SERVERNAME = 'HP6033AServer'
 """
 ### BEGIN NODE INFO
 [info]
-name = HP6033AServer
+name = HP6033A Server
 version = 0.2.1
 description = Talks to HP 6033A Power Supply
+instancename = %LABRADNODE% HP6033A Server
 
 [startup]
 cmdline = %PYTHON% %FILE%
@@ -24,13 +12,17 @@ timeout = 20
 
 [shutdown]
 message = 987654321
-timeout = 20
+timeout = 5
 ### END NODE INFO
 """
 
-class HP6033A_Wrapper(GPIBDeviceWrapper):   #This is the server wrapper.  By default, GPIBDeviceWrapper contains .read() and .write() functions.
-    def initialize(self):
-        pass #Edit this function as needed.
+from labrad.gpib import GPIBManagedServer, GPIBDeviceWrapper
+from labrad.server import setting
+from twisted.internet.defer import returnValue
+from labrad.units import WithUnit as U
+from time import sleep
+
+#SERVERNAME = 'HP6033AServer'
 
 class HP6033A_Server(GPIBManagedServer):
     '''
@@ -44,7 +36,6 @@ class HP6033A_Server(GPIBManagedServer):
     '''
     name = 'HP6033A Server'
     deviceName = 'HEWLETT-PACKARD 6033A'
-    deviceWrapper = HP6033A_Wrapper     #This line designates a wrapper for the server.
 
     @setting(10, 'Get VOLTage' , returns = 'v[V]')
     def get_voltage(self, c):
@@ -55,7 +46,7 @@ class HP6033A_Server(GPIBManagedServer):
         '''
         dev = self.selectedDevice(c)    #This line allows .read() and .write() to be called from the GPIBDeviceWrapper
         yield dev.write('MEAS:VOLT?')
-        time.sleep(0.1)
+        sleep(0.1)
         voltage = yield dev.read()      #dev.read() returns a string
         voltage = U(float(voltage),'V') #convert string to float with units
         self.clear_status(c)
@@ -70,13 +61,13 @@ class HP6033A_Server(GPIBManagedServer):
         '''
         dev = self.selectedDevice(c)
         yield dev.write('MEAS:CURR?')
-        time.sleep(0.1)
+        sleep(0.1)
         current = yield dev.read()
         current = U(float(current),'A') #convert string to float with units
         self.clear_status(c)
         returnValue(current)
 
-    @setting(994, 'Pulse Voltage', value = 'v[V]', duration = 'v[s]', returns='s')
+    @setting(101, 'Pulse Voltage', value = 'v[V]', duration = 'v[s]', returns='s')
     def pulse_voltage(self, c, value, duration):
         '''
         Instructs the power supply to output a square pulse at a desired voltage [Volts] for a desired duration [seconds].
@@ -90,13 +81,13 @@ class HP6033A_Server(GPIBManagedServer):
         else:
             yield dev.write('VOLT '+str(value['V'])+' V')    #sets the voltage to value
             print "Pulsing "+str(value['V'])+" V over "+str(duration['s'])+" s..."
-            time.sleep(duration['s'])                   #waits for the duration
+            sleep(duration['s'])                   #waits for the duration
             yield dev.write('VOLT 0 V')                 #sets the voltage back to 0
             print "Finished pulsing."
             error = yield self.error(c) #Calls the .error() method to read the error message register
             returnValue(error)          #Returns the message to the user. '+0, "No error"' means no error.
 
-    @setting(998, 'Pulse Current', value = 'v[A]', duration = 'v[s]', returns='s')
+    @setting(102, 'Pulse Current', value = 'v[A]', duration = 'v[s]', returns='s')
     def pulse_current(self, c, value, duration):
         '''
         Instructs the power supply to output a square pulse at a desired current [Amps] for a desired duration [seconds].
@@ -110,7 +101,7 @@ class HP6033A_Server(GPIBManagedServer):
         else:
             yield dev.write('CURR '+str(value['A'])+' A')
             print "Pulsing "+str(value['A'])+" A over "+str(duration['s'])+" s..."
-            time.sleep(duration['s'])
+            sleep(duration['s'])
             yield dev.write('CURR 0 A')
             print "Finished pulsing."
             error = yield self.error(c)
@@ -162,7 +153,7 @@ class HP6033A_Server(GPIBManagedServer):
         dev = self.selectedDevice(c)
         if value==None:                     #This is the behavior if no input is given
             yield dev.write('OUTP:STAT?')
-            time.sleep(0.1)
+            sleep(0.1)
             state = yield dev.read()
             self.clear_status(c)
             returnValue(state)
@@ -197,7 +188,7 @@ class HP6033A_Server(GPIBManagedServer):
         '''
         dev = self.selectedDevice(c)
         yield dev.write('*IDN?')
-        time.sleep(0.5)
+        sleep(0.5)
         idn = yield dev.read()
         self.clear_status(c)
         returnValue(idn)
@@ -270,7 +261,7 @@ class HP6033A_Server(GPIBManagedServer):
         '''
         dev = self.selectedDevice(c)
         yield dev.write('SYST:ERR?')
-        time.sleep(0.1)
+        sleep(0.1)
         error = yield dev.read()
         if error == '+0,"No error"':
             returnValue('No error.')
@@ -286,7 +277,7 @@ class HP6033A_Server(GPIBManagedServer):
         '''
         dev = self.selectedDevice(c)
         yield dev.write('*STB?')
-        time.sleep(0.1)
+        sleep(0.1)
         statusbyte = yield dev.read()
         self.clear_status(c)
         dict = {'+128': 'OPER: Operation status summary', '+64': 'MSS: Master status summary',
@@ -301,7 +292,7 @@ class HP6033A_Server(GPIBManagedServer):
         '''
         dev = self.selectedDevice(c)
         yield dev.write('*TST?')
-        time.sleep(0.1)
+        sleep(0.1)
         result = yield dev.read()
         self.clear_status(c)
         if float(result)==0:
@@ -318,7 +309,7 @@ class HP6033A_Server(GPIBManagedServer):
         '''
         dev = self.selectedDevice(c)
         yield dev.write('STAT:OPER:COND?')
-        time.sleep(0.1)
+        sleep(0.1)
         result = yield dev.read()
         self.clear_status(c)
         dict={'+1024': 'CC: Constant Current', '+256': 'CV: Constant Voltage',
@@ -334,7 +325,7 @@ class HP6033A_Server(GPIBManagedServer):
         '''
         dev = self.selectedDevice(c)
         yield dev.write('STAT:QUES:COND?')
-        time.sleep(0.1)
+        sleep(0.1)
         result = yield dev.read()
         self.clear_status(c)
         dict={'+1024': 'UNR: Unregulated power supply output', '+512': 'RI: Remote Inhibit Active',
@@ -352,6 +343,6 @@ class HP6033A_Server(GPIBManagedServer):
         output_state = yield self.output_state(c)
         returnValue('Voltage: '+str(voltage['V'])+' V, Current: '+str(current['A'])+' A, Output: '+output_state)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     from labrad import util
     util.runServer(HP6033A_Server())

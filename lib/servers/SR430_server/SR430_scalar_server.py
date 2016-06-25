@@ -9,6 +9,23 @@ from labrad.support import getNodeName
 from labrad.units import WithUnit as U
 from time import sleep
 
+"""
+### BEGIN NODE INFO
+[info]
+name = SR430 Scalar Server
+version = 1.3
+description = SR430 Scalar Server
+instancename = %LABRADNODE% SR430 Scalar Server
+
+[startup]
+cmdline = %PYTHON% %FILE%
+timeout = 20
+
+[shutdown]
+message = 987654321
+timeout = 20
+### END NODE INFO
+"""
 
 class SR430_Scalar_Wrapper(GPIBDeviceWrapper):
     def initialize(self):
@@ -26,7 +43,6 @@ class SR430_Scalar_Server(GPIBManagedServer):
     def idn(self, c):
         '''
         Requests the device to identify itself.
-
          Equivalent to *IDN?
         '''
         dev = self.selectedDevice(c)
@@ -38,8 +54,8 @@ class SR430_Scalar_Server(GPIBManagedServer):
     def trigger_level(self, c, value=None):
         '''
         Sets or queries the trigger level.
-         1 argument sets.  No arguments queries.
-         Acceptable range: [-2.000,2.000]
+         ".trigger_level(x)" sets the trigger level to x (number with voltage unit).  Acceptable range: [U(-2.000,'V'),U(2.000,'V')]
+         ".trigger_level()" queries.
          Equivalent to TRLV.
         '''
         dev = self.selectedDevice(c)
@@ -48,7 +64,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
             message = yield dev.read()
             returnValue(message)
         elif value['V'] < -2.0 or value['V'] > 2.0:
-            message = 'Input out of range.  Acceptable range: [-2.000,2.000]'
+            message = 'Input out of range.  Acceptable range: [U(-2.000,\'V\'),U(2.000,\'V\')]'
             returnValue(message)
         else:
             yield dev.write('TRLV '+str(value['V'])) #Converts value in volts to string
@@ -58,8 +74,8 @@ class SR430_Scalar_Server(GPIBManagedServer):
     def discriminator_level(self, c, value=None):
         '''
         Sets or queries the discriminator level.
-         1 argument sets.  No arguments queries.
-         Acceptable range: [-0.300,0.300]
+         ".discriminator_level(x)" sets the discriminator level to x (number with voltage unit).  Acceptable range: [U(-0.300,'V'),U(0.300,'V')]
+         ".discriminator_level()" queries.
          Equivalent to DCLV.
         '''
         dev = self.selectedDevice(c)
@@ -79,9 +95,8 @@ class SR430_Scalar_Server(GPIBManagedServer):
     def records_per_scan(self, c, value=None):
         '''
         Sets or queries the records per scan
-         1 argument sets.  No arguments queries.
-         Acceptable range: [0,32767)U(32769,65535]
-         Due to the internal programming of the scalar, 32768 is not a working input.
+         ".records_per_scan(x)" sets the records per scan to x.  Acceptable range: [0,32767)U(32769,65535] (Due to the internal programming of the scalar, 32768 is not a working input.)
+         ".records_per_scan()" queries.
          Equivalent to RSCN.
         '''
         dev = self.selectedDevice(c)
@@ -109,7 +124,6 @@ class SR430_Scalar_Server(GPIBManagedServer):
         '''
         Sets query output to GPIB.  This is necessary so that any queries to the
          scalar will output to the GPIB port.
-
          Equivlanet to OUTP 1.
         '''
         dev = self.selectedDevice(c)
@@ -120,7 +134,6 @@ class SR430_Scalar_Server(GPIBManagedServer):
         '''
         Starts scan (without clearing).  Same as pressing the [START] key.
          For starting a scan with clearing, use start_new_scan().
-
          Equivalent to SSCN.
         '''
         dev = self.selectedDevice(c)
@@ -130,7 +143,6 @@ class SR430_Scalar_Server(GPIBManagedServer):
     def stop_scan(self, c):
         '''
         Pauses a scan in progress.  Same as pressing [STOP] key.
-
          Equivalent to PAUS.
         '''
         dev = self.selectedDevice(c)
@@ -140,7 +152,6 @@ class SR430_Scalar_Server(GPIBManagedServer):
     def clear_scan(self, c):
         '''
         Resets the unit to CLEAR state, losing all data.  Same as pressing [STOP],[STOP]
-
          Equivalent to CLRS
         '''
         dev = self.selectedDevice(c)
@@ -149,8 +160,8 @@ class SR430_Scalar_Server(GPIBManagedServer):
     @setting(18, 'Start New Scan', returns='s', wait_time='v[s]')
     def start_new_scan(self, c, wait_time):
         '''
-        Clears current data and starts new scan.
-         User must input a wait time as a LabRAD number with unit 's', i.e. WithUnit(1.0,'s').
+        Clears current data and starts new scan, and pauses the program over the input wait_time to allow scan to run uninterrupted.
+         ".start_new_scan(wait_time)" is the proper syntax, where wait_time is a number with time unit in seconds, i.e. U(1.0,'s').
          Uses both clear_scan() and start_scan() methods.
         '''
         if wait_time['s'] < 0 or wait_time==None:
@@ -168,8 +179,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
     def get_counts(self, c):
         '''
         Get counts of last run over a statistcal analysis on all bins.
-         The number of counts is returned as an integer.
-
+         ".get_counts()" performs the count summation and returns the sum as an integer.
          SR430 commands used: LLIM, RLIM, STAT, and SPAR?2
         '''
         dev = self.selectedDevice(c)
@@ -181,18 +191,16 @@ class SR430_Scalar_Server(GPIBManagedServer):
         sleep(1)
         yield dev.write('SPAR?2')           #Queries for the total # of counts (SPAR?2) See Manual
         number_of_counts = yield dev.read() #Reads the buffer for total # of counts
-        returnValue(int(number_of_counts))  #Returns total # of counts as an integer
+        returnValue(int(float(number_of_counts)))  #Returns total # of counts as an integer
 
     @setting(20, 'Bins Per Record', value='w', returns='s')
     def bins_per_record(self, c, value=None):
         '''
         Sets or queries bins per record.
-         1 argument (with value!=0) sets.
-         1 argument (with value=0) queries.
-         No arguments returns a list of supported arguments.
-         Accepts integer multiples of 1024 as arguments up to 16*1024.
-         Example: bins_per_record(1024) sets the bins per record to 1024 steps.
-
+         ".bins_per_record(x)" sets the bins per record to x (nonzero positive number).
+         ".bins_per_record(0)" queries.
+         ".bins_per_record()" returns a list of supported arguments.  Accepts integer multiples of 1024 as arguments up to 16*1024.
+         Example: "bins_per_record(1024)" sets the bins per record to 1024 steps.
          Equivalent to BREC
         '''
         dev = self.selectedDevice(c)
@@ -221,20 +229,16 @@ class SR430_Scalar_Server(GPIBManagedServer):
     def bin_width(self, c, value=None):
         '''
         Sets or queries bin width (unsigned integervalue representing bin width in ns)
-         1 argument (with value!=0) sets.
-         1 argument (with value=0) queries.
-         No arguments returns a list of supported arguments.
-         Supported arguments: [5,40,80,160,320,640,1280,2560,5120,
-                               10240,20480,40960,81920,163840,327680,
-                               655360,1310700,2621400,5242900,1048600]
-         Example: bin_width(5) sets the bin width to 5 ns.
-
+         ".bin_width(x)" sets the bin width to x (nonzero positive number).
+         ".bin_width(0)" queries.
+         ".bin_width()" returns a list of supported arguments.  Supported arguments: [5,40,80,160,320,640,1280,2560,5120,10240,20480,40960,81920,163840,327680,655360,1310700,2621400,5242900,1048600]
+         Example: "bin_width(5)" sets the bin width to 5 ns.
          Equivalent to BWTH
         '''
         dev = self.selectedDevice(c)
-        argument_dictionary = {5: 1,40: 2,80: 3,160: 4,320: 5,640: 6,1280: 7,2560: 8, 5120: 9,      #Defines dictionary
-                               10240: 10, 20480: 11, 40960: 12, 81920: 13, 163840: 14, 327680: 15,
-                               655360: 16, 1310700: 17, 2621400: 18, 5242900: 19, 1048600: 20}
+        argument_dictionary = {5: 0,40: 1,80: 2,160: 3,320: 4,640: 5,1280: 6,2560: 7, 5120: 8,      #Defines dictionary
+                               10240: 9, 20480: 10, 40960: 11, 81920: 12, 163840: 13, 327680: 14,
+                               655360: 15, 1310720: 16, 2621400: 17, 5242900: 18, 10486000: 19}
         inverted_dictionary = dict([[v,k] for k,v in argument_dictionary.items()])
         supported_arguments = argument_dictionary.keys()            #Defines array with dictionary keys
 
@@ -257,7 +261,6 @@ class SR430_Scalar_Server(GPIBManagedServer):
     def clear_status(self, c):
         '''
         Clears all status registers.
-
          Equivalent to *CLS
         '''
         dev = self.selectedDevice(c)
@@ -267,7 +270,6 @@ class SR430_Scalar_Server(GPIBManagedServer):
     def error(self, c):
         '''
         Reads and reports standard event errors.
-
          Equivalent to ESE?
         '''
         dev = self.selectedDevice(c)
@@ -291,11 +293,11 @@ class SR430_Scalar_Server(GPIBManagedServer):
                         '; Command Error '+command_error+'; URQ '+URQ+'; PON '+PON)
         returnValue(message)
 
-
+__server__ = SR430_Scalar_Server()
 
 if __name__ == "__main__":
     from labrad import util
-    util.runServer(SR430_Scalar_Server())
+    util.runServer(__server__)
 
 
 
