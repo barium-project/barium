@@ -1,0 +1,614 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QFrame" name="frame">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>381</width>
+     <height>281</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>0</y>
+      <width>231</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>SR430 Multichannel Scalar</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="sca_stop_scan_button">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>160</y>
+      <width>81</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Stop Scan</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="sca_get_counts_button">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>210</y>
+      <width>81</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Get Counts</string>
+    </property>
+   </widget>
+   <widget class="QLCDNumber" name="sca_counts_lcd">
+    <property name="geometry">
+     <rect>
+      <x>110</x>
+      <y>210</y>
+      <width>261</width>
+      <height>61</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QFrame" name="frame_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>150</y>
+      <width>271</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Panel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QPushButton" name="sca_clear_scan_button">
+     <property name="geometry">
+      <rect>
+       <x>190</x>
+       <y>10</y>
+       <width>71</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Clear Scan</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="sca_start_scan_button">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>10</y>
+       <width>71</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Start Scan</string>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="sca_start_new_scan_button">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>91</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Start New Scan</string>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QFrame" name="frame_1">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>361</width>
+      <height>101</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Panel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QLabel" name="label_2">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>0</y>
+       <width>131</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Bins Per Record</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_5">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>50</y>
+       <width>91</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Records Per Scan</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_3">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>50</y>
+       <width>71</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Bin Width (ns)</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="sca_discriminator_level_spinbox">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>20</y>
+       <width>71</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="maximum">
+      <number>300</number>
+     </property>
+     <property name="value">
+      <number>220</number>
+     </property>
+    </widget>
+    <widget class="QLCDNumber" name="sca_bins_per_record_lcd">
+     <property name="geometry">
+      <rect>
+       <x>83</x>
+       <y>20</y>
+       <width>71</width>
+       <height>23</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLCDNumber" name="sca_bin_width_lcd">
+     <property name="geometry">
+      <rect>
+       <x>83</x>
+       <y>70</y>
+       <width>71</width>
+       <height>23</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="sca_records_per_scan_spinbox">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>70</y>
+       <width>71</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="maximum">
+      <number>2000</number>
+     </property>
+     <property name="singleStep">
+      <number>50</number>
+     </property>
+     <property name="value">
+      <number>500</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_4">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>0</y>
+       <width>121</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Discriminator Level (mV)</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="sca_bin_width_select">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>70</y>
+       <width>71</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="currentIndex">
+      <number>13</number>
+     </property>
+     <property name="maxVisibleItems">
+      <number>20</number>
+     </property>
+     <item>
+      <property name="text">
+       <string>5</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>40</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>80</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>160</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>320</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>640</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>1280</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>2560</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>5120</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>10240</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>20480</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>40960</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>81920</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>163840</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>327680</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>655360</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>1310700</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>2621400</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>5242900</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>10486000</string>
+      </property>
+     </item>
+    </widget>
+    <widget class="QComboBox" name="sca_bins_per_record_select">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>71</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="editable">
+      <bool>false</bool>
+     </property>
+     <property name="maxVisibleItems">
+      <number>16</number>
+     </property>
+     <item>
+      <property name="text">
+       <string>1024</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>2048</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>3072</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>4096</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>5120</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>6144</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>7168</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>8192</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>9216</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>10240</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>11264</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>12288</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>13312</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>14336</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>15360</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>16384</string>
+      </property>
+     </item>
+    </widget>
+   </widget>
+   <widget class="QLabel" name="label_6">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>160</y>
+      <width>131</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Scanning...</string>
+    </property>
+   </widget>
+   <zorder>label_6</zorder>
+   <zorder>frame_1</zorder>
+   <zorder>frame_2</zorder>
+   <zorder>label</zorder>
+   <zorder>sca_stop_scan_button</zorder>
+   <zorder>sca_get_counts_button</zorder>
+   <zorder>sca_counts_lcd</zorder>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>sca_start_new_scan_button</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>frame_2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>89</x>
+     <y>173</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>91</x>
+     <y>164</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sca_start_scan_button</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>frame_2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>168</x>
+     <y>181</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>168</x>
+     <y>167</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sca_stop_scan_button</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>frame_2</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>71</x>
+     <y>225</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>69</x>
+     <y>207</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sca_start_new_scan_button</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>frame_1</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>44</x>
+     <y>182</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>47</x>
+     <y>148</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sca_start_scan_button</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>frame_1</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>147</x>
+     <y>174</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>144</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sca_stop_scan_button</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>frame_1</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>46</x>
+     <y>239</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>34</x>
+     <y>143</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
