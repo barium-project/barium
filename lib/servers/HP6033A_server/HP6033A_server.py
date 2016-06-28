@@ -1,10 +1,24 @@
+# Copyright (C) 2011 Anthony Ransford
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
 """
 ### BEGIN NODE INFO
 [info]
 name = HP6033A Server
-version = 0.2.1
-description = Talks to HP 6033A Power Supply
-instancename = %LABRADNODE% HP6033A Server
+version = 1.3
+description = 
 
 [startup]
 cmdline = %PYTHON% %FILE%
@@ -16,13 +30,11 @@ timeout = 5
 ### END NODE INFO
 """
 
-from labrad.gpib import GPIBManagedServer, GPIBDeviceWrapper
 from labrad.server import setting
-from twisted.internet.defer import returnValue
+from labrad.gpib import GPIBManagedServer, GPIBDeviceWrapper
+from twisted.internet.defer import inlineCallbacks, returnValue
 from labrad.units import WithUnit as U
 from time import sleep
-
-#SERVERNAME = 'HP6033AServer'
 
 class HP6033A_Server(GPIBManagedServer):
     '''
@@ -36,7 +48,6 @@ class HP6033A_Server(GPIBManagedServer):
     '''
     name = 'HP6033A Server'
     deviceName = 'HEWLETT-PACKARD 6033A'
-
     @setting(10, 'Get VOLTage' , returns = 'v[V]')
     def get_voltage(self, c):
         '''
@@ -343,6 +354,8 @@ class HP6033A_Server(GPIBManagedServer):
         output_state = yield self.output_state(c)
         returnValue('Voltage: '+str(voltage['V'])+' V, Current: '+str(current['A'])+' A, Output: '+output_state)
 
+__server__ = HP6033A_Server()
+
 if __name__ == '__main__':
     from labrad import util
-    util.runServer(HP6033A_Server())
+    util.runServer(__server__)

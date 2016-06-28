@@ -1,3 +1,35 @@
+# Copyright (C) 2016 Calvin He
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+"""
+### BEGIN NODE INFO
+[info]
+name = SR430 Scalar Server
+version = 1.3
+description = 
+
+[startup]
+cmdline = %PYTHON% %FILE%
+timeout = 20
+
+[shutdown]
+message = 987654321
+timeout = 5
+### END NODE INFO
+"""
+
 from labrad.gpib import GPIBManagedServer, GPIBDeviceWrapper
 from labrad.types import Error
 from twisted.internet import reactor
@@ -8,24 +40,6 @@ from twisted.internet.defer import returnValue
 from labrad.support import getNodeName
 from labrad.units import WithUnit as U
 from time import sleep
-
-"""
-### BEGIN NODE INFO
-[info]
-name = SR430 Scalar Server
-version = 1.3
-description = SR430 Scalar Server
-instancename = %LABRADNODE% SR430 Scalar Server
-
-[startup]
-cmdline = %PYTHON% %FILE%
-timeout = 20
-
-[shutdown]
-message = 987654321
-timeout = 20
-### END NODE INFO
-"""
 
 class SR430_Scalar_Wrapper(GPIBDeviceWrapper):
     def initialize(self):
@@ -298,8 +312,3 @@ __server__ = SR430_Scalar_Server()
 if __name__ == "__main__":
     from labrad import util
     util.runServer(__server__)
-
-
-
-
-

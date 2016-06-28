@@ -16,9 +16,8 @@
 ### BEGIN NODE INFO
 [info]
 name = RGA Server
-version = 1.0.0
-description = RGA Server
-instancename = %LABRADNODE% RGA Server
+version = 1.3
+description =
 
 [startup]
 cmdline = %PYTHON% %FILE%
