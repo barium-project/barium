@@ -122,8 +122,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
         count_time_per_point = time_list[0]
         total_count_time = time_list[1]
         
-        exec 'mass_list = '+self.massspecui.ms_mass_sweep_select.currentText()
-        exec 'current_list = '+self.massspecui.ms_current_sweep_select.currentText()
+        mass_list = self.massspecui.ms_mass_sweep_select.currentText()
+        current_list = self.massspecui.ms_current_sweep_select.currentText()
         sweep_iterations = self.massspecui.ms_iterations_spinbox.value()
         wait_time = self.massspecui.ms_wait_time_spinbox.value()
 
