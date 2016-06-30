@@ -95,15 +95,17 @@ class RGA_Server( SerialDeviceServer ):
         elif value==1:
             yield self.ser.write_line('fl1')
             message = 'Filament on command sent.'
+            yield self.ser.read_line()
         elif value==0:
             yield self.ser.write_line('fl0')
             message = 'Filament off command sent.'
+            yield self.ser.read_line()
         elif value==None:
             yield self.ser.write_line('fl?')
             message = yield self.ser.read_line()
         returnValue(message)
 
-    @setting(3, value='w', returns='s')
+    @setting(3, value='v', returns='s')
     def mass_lock(self, c, value):
         '''
         Sets the mass lock for the RGA.  Acceptable range: [1,200].  RGACOM command:  "mlx"
@@ -114,6 +116,7 @@ class RGA_Server( SerialDeviceServer ):
         else:
             yield self.ser.write_line('ml'+str(value))
             message = 'Mass lock for '+str(value)+' amu command sent.'
+            yield self.ser.read_line()
         returnValue(message)
 
     @setting(4, value='w', returns='s')
@@ -131,6 +134,7 @@ class RGA_Server( SerialDeviceServer ):
         else:
             yield self.ser.write_line('hv'+str(value))
             message = 'High voltage (electron multiplier) command sent.'
+            yield self.ser.read_line()
         returnValue(message)
 
 __server__ = RGA_Server()

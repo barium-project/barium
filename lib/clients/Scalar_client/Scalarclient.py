@@ -70,7 +70,7 @@ class SR430_Scalar_Client(Scalar_UI):
         yield self.sca.clear_scan()
     @inlineCallbacks
     def get_counts(self):
-        counts = yield sca.get_counts()
+        counts = yield self.sca.get_counts()
         self.sca_counts_lcd.display(counts)
         returnValue(counts)
     

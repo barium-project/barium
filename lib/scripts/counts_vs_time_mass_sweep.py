@@ -31,13 +31,13 @@ hp.select_device()
 
 DISCRIMINATOR_LEVEL = U(0.2,'V')  ### Edit this to change the discriminator level
 sca.discriminator_level(DISCRIMINATOR_LEVEL)# set discriminator level
-RECORDS_PER_SCAN = 1000              ### Edit this to change the records per scan
+RECORDS_PER_SCAN = 500            ### Edit this to change the records per scan
 sca.records_per_scan(RECORDS_PER_SCAN) # set records per scan
 sca.bins_per_record(1024)              # set bins per record
 sca.bin_width(163840)                  # set bin width
 
 # Set RGA mass to look at
-MASS_LIST = [133,138]         ### Edit this to change this list of masses to sweep through
+MASS_LIST = [39, 133, 138]         ### Edit this to change this list of masses to sweep through
 rga.write_line('hv2200')
 rga.write_line('fl1')
 time.sleep(1)
@@ -55,20 +55,17 @@ counting_time = RECORDS_PER_SCAN*trigger_period + 1 #in seconds
 # time in seconds between each data point
 exp_t = 1
 
-SWEEP_ITERATIONS = 1               ### Edit this to change the number of sweeps
-CURRENT_LIST = [10+0.25*i for i in range(15)]  ##initial current + current increment*index (10 to 13.5)
+SWEEP_ITERATIONS = 36               ### Edit this to change the number of sweeps
+
 
 #Initialize data array(mass,counts,day,hour,minute,second,voltage,current)
 results = np.array([[0,0,0,0,0,0,0,0]])
 
 # Acquire the data
 for iteration in range(SWEEP_ITERATIONS):
-    for iterative_current in CURRENT_LIST:
-        hp.set_current(U(iterative_current,'A'))
         for mass in MASS_LIST:
             if mass > 100:
                 sca.discriminator_level(U(0.22,'V'))
-                print '220mV Discrim'
             else:
                 sca.discriminator_level(DISCRIMINATOR_LEVEL)
                 print '200mV Discrim'
@@ -83,7 +80,7 @@ for iteration in range(SWEEP_ITERATIONS):
             new_data = np.array([[mass,counts,t[2],t[3],t[4],t[5],voltage,current]])
             print iteration, new_data
             results = np.concatenate((results,new_data),axis = 0)
-            np.savetxt('Z:/Group_Share/Barium/Data/2016/6/24/Barium_Spec_vs_current_longrun.txt',results,fmt="%0.5e")
+            np.savetxt('Z:/Group_Share/Barium/Data/2016/6/30/burn_off(2)_13,5amps_HV2200_500rps.txt',results,fmt="%0.5e")
             time.sleep(exp_t) # Wait to do next run
     
 # close ports

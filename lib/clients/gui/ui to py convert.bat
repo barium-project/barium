@@ -1,2 +1,2 @@
-pyuic4 %~dp0SaveDirectory_gui.ui > %~dp0gui.py
+pyuic4 %~dp0CommandLine_gui.ui > %~dp0gui.py
 pause

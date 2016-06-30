@@ -60,12 +60,12 @@ class HP6033A_Client(HP6033A_UI):
         self.ps_current_lcd.display(current['A'])
     @inlineCallbacks
     def get_voltage(self):
-        voltage = yield self.hp.get_voltage()['V']
-        returnValue(voltage)
+        voltage = yield self.hp.get_voltage()
+        returnValue(voltage['V'])
     @inlineCallbacks
     def get_current(self):
-        current = yield self.hp.get_current()['A']
-        returnValue(current)
+        current = yield self.hp.get_current()
+        returnValue(current['A'])
     @inlineCallbacks
     def pulse_current(self):
         current = self.U(self.ps_pulse_current_spinbox.value(),'A')

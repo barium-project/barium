@@ -41,11 +41,11 @@ class RGA_Client(RGA_UI):
         else:
             bit = 0
         yield self.rga.filament(bit)
-        self.update_indicators()
+        #self.update_indicators()
     @inlineCallbacks
     def set_voltage(self,value):
         yield self.rga.high_voltage(value)
-        self.update_indicators()
+        #self.update_indicators()
     @inlineCallbacks
     def set_mass_lock(self,value):
         yield self.rga.mass_lock(value)
@@ -56,9 +56,11 @@ class RGA_Client(RGA_UI):
     @inlineCallbacks
     def update_indicators(self):
         mode = yield self.rga.filament()
-        self.rga_filament_lcd.display(float(mode))
+        mode = float(mode)
+        self.rga_filament_lcd.display(mode)
         voltage = yield self.rga.high_voltage()
-        self.rga_voltage_lcd.display(float(voltage))
+        voltage = float(voltage)
+        self.rga_voltage_lcd.display(voltage)
     @inlineCallbacks
     def closeEvent(self,x):
         self.set_voltage(0)
