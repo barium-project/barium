@@ -339,6 +339,19 @@
      </font>
     </property>
    </widget>
+   <widget class="QPushButton" name="ps_set_safety_limits_button">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>10</y>
+      <width>191</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Set Safety Limits</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources/>

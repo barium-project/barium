@@ -1,4 +1,5 @@
 from barium.lib.clients.gui.HP6033A_gui import HP6033A_UI
+from barium.lib.clients.gui.HP6033A_safety_gui import HP6033A_Safety_UI
 from twisted.internet.defer import inlineCallbacks, returnValue
 from PyQt4 import QtGui, QtCore
 
@@ -19,7 +20,7 @@ class HP6033A_Client(HP6033A_UI):
     @inlineCallbacks
     def connect(self, host_ip, host_name):
         from labrad.wrappers import connectAsync
-        self.cxn = yield connectAsync(host=host_ip, name="HP6033A Client")
+        self.cxn = yield connectAsync(host=host_ip, name="HP6033A Client", password="lab")
         try:
             self.hp = self.cxn.hp6033a_server
             print 'Connected to HP6033A Server'
@@ -37,6 +38,38 @@ class HP6033A_Client(HP6033A_UI):
         self.ps_pulse_voltage_button.clicked.connect(lambda :self.pulse_voltage())
         self.ps_pulse_current_button.clicked.connect(lambda :self.pulse_current())
         self.destroyed.connect(lambda :self.closeEvent())
+
+        self.safety_limits = HP6033A_Safety_UI()    #Safety Limits Window
+        self.safety_limits.setupUi()
+        self.max_voltage = 20                       #Initialize Variables
+        self.min_voltage = 0
+        self.max_current = 30
+        self.min_current = 0
+        self.safety_limits.ps_max_voltage_spinbox.valueChanged.connect(lambda :self.update_safety())
+        self.safety_limits.ps_min_voltage_spinbox.valueChanged.connect(lambda :self.update_safety())
+        self.safety_limits.ps_max_current_spinbox.valueChanged.connect(lambda :self.update_safety())
+        self.safety_limits.ps_min_current_spinbox.valueChanged.connect(lambda :self.update_safety())
+        self.ps_set_safety_limits_button.clicked.connect(lambda :self.show_safety_limits())
+        yield None
+    @inlineCallbacks
+    def update_safety(self):
+        self.max_voltage = self.safety_limits.ps_max_voltage_spinbox.value()
+        self.min_voltage = self.safety_limits.ps_min_voltage_spinbox.value()
+        self.max_current = self.safety_limits.ps_max_current_spinbox.value()
+        self.min_current = self.safety_limits.ps_min_current_spinbox.value()
+        self.ps_voltage_spinbox.setMaximum(self.max_voltage)
+        self.ps_voltage_spinbox.setMinimum(self.min_voltage)
+        self.ps_voltage_spinbox.setMaximum(self.max_current)
+        self.ps_voltage_spinbox.setMinimum(self.min_current)
+        yield None
+    @inlineCallbacks
+    def show_safety_limits(self):
+        import ctypes
+        screensize = [ctypes.windll.user32.GetSystemMetrics(0),ctypes.windll.user32.GetSystemMetrics(1)]
+        windowsize = [self.safety_limits.width(),self.safety_limits.height()]
+        screencenter = [(screensize[0]-windowsize[0])/2,(screensize[1]-windowsize[1])/2]
+        self.safety_limits.move(screencenter[0],screencenter[1])
+        self.safety_limits.show()
         yield None
     @inlineCallbacks
     def set_voltage(self, value):

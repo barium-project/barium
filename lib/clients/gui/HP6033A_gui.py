@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'Z:\Group_Share\Barium\Users\Calvin\Dev\GUIs\HP6033A_gui.ui'
+# Form implementation generated from reading ui file 'C:\Users\Barium133\Code\barium\lib\clients\gui\HP6033A_gui.ui'
 #
 # Created by: PyQt4 UI code generator 4.11.4
 #
@@ -132,6 +132,9 @@ class HP6033A_UI(QtGui.QWidget):
         font.setPointSize(12)
         self.ps_pulse_voltage_spinbox.setFont(font)
         self.ps_pulse_voltage_spinbox.setObjectName(_fromUtf8("ps_pulse_voltage_spinbox"))
+        self.ps_set_safety_limits_button = QtGui.QPushButton(self.frame)
+        self.ps_set_safety_limits_button.setGeometry(QtCore.QRect(180, 10, 191, 23))
+        self.ps_set_safety_limits_button.setObjectName(_fromUtf8("ps_set_safety_limits_button"))
 
         self.retranslateUi()
         QtCore.QObject.connect(self.ps_pulse_mode_checkbox, QtCore.SIGNAL(_fromUtf8("toggled(bool)")), self.ps_pulse_voltage_button.setEnabled)
@@ -159,4 +162,5 @@ class HP6033A_UI(QtGui.QWidget):
         self.ps_update_button.setText(_translate("Form", "Update Measurements", None))
         self.ps_pulse_current_button.setText(_translate("Form", "Pulse Current", None))
         self.label_8.setText(_translate("Form", "Pulse Voltage (V)", None))
+        self.ps_set_safety_limits_button.setText(_translate("Form", "Set Safety Limits", None))
 
