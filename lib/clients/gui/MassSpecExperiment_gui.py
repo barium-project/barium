@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\barium133\code\barium\lib\clients\gui\MassSpecExperiment_gui.ui'
+# Form implementation generated from reading ui file 'C:\Users\barium133\Code\barium\lib\clients\gui\MassSpecExperiment_gui.ui'
 #
 # Created by: PyQt4 UI code generator 4.11.4
 #
@@ -95,7 +95,7 @@ class MassSpecExperiment_UI(QtGui.QWidget):
         self.ms_trigger_frequency_spinbox = QtGui.QDoubleSpinBox(self.frame)
         self.ms_trigger_frequency_spinbox.setGeometry(QtCore.QRect(260, 160, 101, 22))
         self.ms_trigger_frequency_spinbox.setSingleStep(0.01)
-        self.ms_trigger_frequency_spinbox.setProperty("value", 5.80)
+        self.ms_trigger_frequency_spinbox.setProperty("value", 5.83)
         self.ms_trigger_frequency_spinbox.setObjectName(_fromUtf8("ms_trigger_frequency_spinbox"))
         self.ms_count_time_per_sweep_lcd = QtGui.QLCDNumber(self.frame)
         self.ms_count_time_per_sweep_lcd.setGeometry(QtCore.QRect(140, 210, 101, 23))
@@ -112,6 +112,9 @@ class MassSpecExperiment_UI(QtGui.QWidget):
         self.label_2 = QtGui.QLabel(self.frame)
         self.label_2.setGeometry(QtCore.QRect(10, 90, 151, 16))
         self.label_2.setObjectName(_fromUtf8("label_2"))
+        self.ms_show_data_log_button = QtGui.QPushButton(self.frame)
+        self.ms_show_data_log_button.setGeometry(QtCore.QRect(20, 240, 101, 31))
+        self.ms_show_data_log_button.setObjectName(_fromUtf8("ms_show_data_log_button"))
 
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -143,4 +146,5 @@ class MassSpecExperiment_UI(QtGui.QWidget):
         self.ms_current_sweep_select.setItemText(0, _translate("Form", "[12]", None))
         self.ms_current_sweep_select.setItemText(1, _translate("Form", "[10,10.25,10.50,10.75,11,11.25,11.50,11.75,12.00,12.25,12.50,12.75,13,13.25,13.50]", None))
         self.label_2.setText(_translate("Form", "Currrent Sweep List (A)", None))
+        self.ms_show_data_log_button.setText(_translate("Form", "Show Data Log", None))
 

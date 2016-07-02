@@ -22,6 +22,7 @@ class RGA_Client(RGA_UI):
         self.cxn = yield connectAsync(host=host_ip, name="RGA Client")
         try:
             self.rga = self.cxn.rga_server
+            print 'Connected to RGA Server.'
         except:
             print 'RGA Server Unavailable. Client is not connected.'
     @inlineCallbacks

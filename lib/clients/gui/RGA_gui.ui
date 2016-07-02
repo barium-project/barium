@@ -100,7 +100,7 @@
      </font>
     </property>
     <property name="maximum">
-     <number>2200</number>
+     <number>2500</number>
     </property>
     <property name="singleStep">
      <number>200</number>
@@ -160,7 +160,7 @@
      <double>0.500000000000000</double>
     </property>
     <property name="value">
-     <double>133.000000000000000</double>
+     <double>0.000000000000000</double>
     </property>
    </widget>
    <widget class="QPushButton" name="rga_hv_button">

@@ -111,6 +111,8 @@ class HP6033A_Client(HP6033A_UI):
         yield self.hp.pulse_current(current, time)
     @inlineCallbacks
     def closeEvent(self, x):
+        self.set_current(0)
+        self.set_voltage(0)
         yield None
         reactor.stop()
 

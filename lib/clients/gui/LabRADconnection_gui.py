@@ -46,10 +46,14 @@ class LabRADconnection_UI(QtGui.QWidget):
         self.host_ip_text.setObjectName(_fromUtf8("host_ip_text"))
         self.host_ip_text.addItem(_fromUtf8(""))
         self.host_ip_text.addItem(_fromUtf8(""))
+        self.host_ip_text.addItem(_fromUtf8(""))
+        self.host_ip_text.addItem(_fromUtf8(""))
         self.host_name_text = QtGui.QComboBox(self.frame)
         self.host_name_text.setGeometry(QtCore.QRect(180, 70, 201, 22))
         self.host_name_text.setEditable(True)
         self.host_name_text.setObjectName(_fromUtf8("host_name_text"))
+        self.host_name_text.addItem(_fromUtf8(""))
+        self.host_name_text.addItem(_fromUtf8(""))
         self.host_name_text.addItem(_fromUtf8(""))
         self.host_name_text.addItem(_fromUtf8(""))
         self.label_2 = QtGui.QLabel(self.frame)
@@ -66,13 +70,20 @@ class LabRADconnection_UI(QtGui.QWidget):
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self):
+        from os import environ
+        host_name = environ['LABRADNODE']
+        host_name.replace(" ","_")
         Form = self
         Form.setWindowTitle(_translate("Form", "Form", None))
         self.label.setText(_translate("Form", "LabRAD Connection", None))
         self.host_ip_text.setItemText(0, _translate("Form", "127.0.0.1", None))
         self.host_ip_text.setItemText(1, _translate("Form", "10.97.111.1", None))
-        self.host_name_text.setItemText(0, _translate("Form", "flexo", None))
-        self.host_name_text.setItemText(1, _translate("Form", "planet_express", None))
+        self.host_ip_text.setItemText(2, _translate("Form", "10.97.111.2", None))
+        self.host_ip_text.setItemText(3, _translate("Form", "10.97.111.3", None))
+        self.host_name_text.setItemText(0, _translate("Form", host_name, None))
+        self.host_name_text.setItemText(1, _translate("Form", "PlanetExpress", None))
+        self.host_name_text.setItemText(2, _translate("Form", "bender", None))
+        self.host_name_text.setItemText(3, _translate("Form", "flexo", None))
         self.label_2.setText(_translate("Form", "Host IP", None))
         self.label_3.setText(_translate("Form", "Host Name (with underscores)", None))
         self.autoconnect_button.setText(_translate("Form", "Autoconnect Everything (Clients and Servers)", None))

@@ -21,6 +21,7 @@ class SR430_Scalar_Client(Scalar_UI):
         self.cxn = yield connectAsync(host=host_ip, name="SR430 Scalar Client")
         try:
             self.sca = self.cxn.sr430_scalar_server
+            print 'Connected to SR430 Scalar Server.'
             self.sca.select_device(0)
         except:
             print 'SR430 Scalar Server Unavailable. Client is not connected.'
@@ -77,7 +78,7 @@ class SR430_Scalar_Client(Scalar_UI):
         
     @inlineCallbacks
     def closeEvent(self, x):
-        print 'close event'
+        self.stop_scan()
         yield None
         reactor.stop()
 

@@ -70,6 +70,16 @@
       <string>10.97.111.1</string>
      </property>
     </item>
+    <item>
+     <property name="text">
+      <string>10.97.111.2</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>10.97.111.3</string>
+     </property>
+    </item>
    </widget>
    <widget class="QComboBox" name="host_name_text">
     <property name="geometry">
@@ -85,12 +95,17 @@
     </property>
     <item>
      <property name="text">
-      <string>flexo</string>
+      <string>PlanetExpress</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>planet_express</string>
+      <string>bender</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>flexo</string>
      </property>
     </item>
    </widget>
