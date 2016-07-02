@@ -33,6 +33,10 @@ class RGA_Client(RGA_UI):
         self.rga_voltage_spinbox.valueChanged.connect(lambda value=voltage :self.set_voltage(value))
         self.rga_mass_lock_spinbox.valueChanged.connect(lambda value=mass :self.set_mass_lock(value))
         self.rga_id_button.clicked.connect(lambda :self.get_id())
+        self.rga_fl_button.clicked.connect(lambda :self.get_filament_status())
+        self.rga_hv_button.clicked.connect(lambda :self.get_voltage())
+        self.rga_read_buffer_button.clicked.connect(lambda :self.read_buffer())
+        self.rga_clear_button.clicked.connect(lambda :self.clear_buffer())
         yield None
     @inlineCallbacks
     def set_filament_state(self,state):
@@ -41,26 +45,29 @@ class RGA_Client(RGA_UI):
         else:
             bit = 0
         yield self.rga.filament(bit)
-        #self.update_indicators()
     @inlineCallbacks
     def set_voltage(self,value):
         yield self.rga.high_voltage(value)
-        #self.update_indicators()
     @inlineCallbacks
     def set_mass_lock(self,value):
         yield self.rga.mass_lock(value)
     @inlineCallbacks
     def get_id(self):
-        idn = yield self.rga.identify()
-        self.rga_id_text.setText(idn)
+        yield self.rga.identify()
     @inlineCallbacks
-    def update_indicators(self):
-        mode = yield self.rga.filament()
-        mode = float(mode)
-        self.rga_filament_lcd.display(mode)
-        voltage = yield self.rga.high_voltage()
-        voltage = float(voltage)
-        self.rga_voltage_lcd.display(voltage)
+    def get_filament_status(self):
+        yield self.rga.filament()
+    @inlineCallbacks
+    def get_voltage(self):
+        yield self.rga.high_voltage()
+    @inlineCallbacks
+    def read_buffer(self):
+        message = yield self.rga.read_buffer()
+        self.rga_buffer_text.appendPlainText(message)
+    @inlineCallbacks
+    def clear_buffer(self):
+        self.rga_buffer_text.clear()
+        yield None
     @inlineCallbacks
     def closeEvent(self,x):
         self.set_voltage(0)

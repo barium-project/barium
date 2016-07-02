@@ -73,7 +73,6 @@ class MassSpecExperiment_UI(QtGui.QWidget):
         font.setBold(True)
         font.setWeight(75)
         self.ms_begin_experiment_button.setFont(font)
-        self.ms_begin_experiment_button.setCheckable(True)
         self.ms_begin_experiment_button.setObjectName(_fromUtf8("ms_begin_experiment_button"))
         self.ms_calculate_time_button = QtGui.QPushButton(self.frame)
         self.ms_calculate_time_button.setGeometry(QtCore.QRect(140, 240, 101, 31))

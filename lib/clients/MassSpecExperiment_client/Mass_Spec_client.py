@@ -4,6 +4,8 @@ from barium.lib.clients.gui.Scalar_gui import Scalar_UI
 from barium.lib.clients.gui.LabRADconnection_gui import LabRADconnection_UI
 from barium.lib.clients.gui.MassSpecExperiment_gui import MassSpecExperiment_UI
 from barium.lib.clients.gui.SaveDirectory_gui import SaveDirectory_UI
+from barium.lib.clients.gui.CommandLine_gui import CommandLine_UI
+from barium.lib.clients.gui.Timers_gui import Timers_UI
 
 from barium.lib.clients.HP6033A_client.HP6033Aclient import HP6033A_Client
 from barium.lib.clients.RGA_client.RGAclient import RGA_Client
@@ -42,6 +44,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
         self.rgaui = RGA_Client(reactor, host_ip, host_name)
         self.savdirui = SaveDirectory_UI()      #instantiates extra GUI's
         self.massspecui = MassSpecExperiment_UI()
+        self.commui = CommandLine_UI()
+        self.timeui = Timers_UI
         if True:
             self.autoconnect_button.setDisabled(True)
             self.autoconnect_button.setText("Connected")
@@ -56,20 +60,26 @@ class LabRADconnection_Client(LabRADconnection_UI):
         self.rgaui.setParent(self)
         self.massspecui.setParent(self)
         self.savdirui.setParent(self)
+        self.commui.setParent(self)
+        self.timeui.setParent(self)
         
         self.massspecui.setupUi()   #setupUi for widgets that do not self-setup on initialize
         self.savdirui.setupUi()
+        self.commui.setupUi()
+        self.timeui.setupUi()
         
         #---Widget Orientation---#
         #Row 1#
         self.hpui.move(0,115)       #Column 1
         self.scaui.move(400,115)    #Column 2
-        self.savdirui.move(800,115) #Column 3
+        self.savdirui.move(800,115) #Column 3 Half-height
+        self.timeui.move(800,115+150) #Column 3 Half-height
         #Row 1#
         
         #Row 2#
         self.rgaui.move(0,115+300)          #Column 1
         self.massspecui.move(400,115+300)   #Column 2
+        self.commui.move(800,115+300)       #Column 3 Half-height
         #Row 2#
         #---Widget Orientation---#
         
@@ -78,6 +88,16 @@ class LabRADconnection_Client(LabRADconnection_UI):
         self.rgaui.show()
         self.massspecui.show()
         self.savdirui.show()
+        self.timeui.show()
+        self.commui.show()
+
+        self.timeui.t_right_button.setText(_translate("Form", "Stop Timer", None))  #Sets up timer widget
+        self.timeui.t_right_label.setText(_translate("Form", "User Timer", None))
+        self.timeui.t_middle_button.setText(_translate("Form", "Start Timer", None))
+        self.timeui.t_middle_label.setText(_translate("Form", "Experiment Timer", None))
+        self.timeui.t_left_label.setText(_translate("Form", "Datapoint Counter", None))
+        self.t_spinbox.hide()
+        
         
         self.experiment_signal_connect()
 
@@ -96,8 +116,15 @@ class LabRADconnection_Client(LabRADconnection_UI):
         self.massspecui.ms_calculate_time_button.clicked.connect(lambda :self.calculate_time())
         self.massspecui.ms_begin_experiment_button.clicked.connect(lambda :self.begin_experiment())
 
-        self.timer= QtCore.QTimer()                                         #Required for timed_mass_loop
-        self.timer_countdown.timeout.connect(lambda :self.timer_tick())     #Required for timed_mass_loop
+        self.timer= QtCore.QTimer()                             #Required for timed_mass_loop
+        self.timer.timeout.connect(lambda :self.timer_tick())   #Required for timed_mass_loop
+
+        self.user_timer=QtCore.QTimer()
+        self.user_timer.timeout.connect(lambda :self.user_timer_tick())             #Connects timer widget
+        self.timeui.t_right_button.clicked.connect(lambda :self.user_timer.stop())
+        self.timeui.t_left_button.clicked.connect(lambda :self.user_timer.start())
+
+        self.commui.cl_command_button.clicked.connect(lambda :self.send_command())
         yield None
         
     @inlineCallbacks
@@ -106,8 +133,10 @@ class LabRADconnection_Client(LabRADconnection_UI):
         trigger_frequency = self.massspecui.ms_trigger_frequency_spinbox.value()
         #mass_list = self.massspecui.ms_mass_sweep_select.currentText()
         #current_list = self.massspecui.ms_current_sweep_select.currentText()
-        exec 'mass_list='+str(self.massspecui.ms_mass_sweep_select.currentText()
-        exec 'current_list='+str(self.massspecui.ms_current_sweep_select.currentText())
+        command1 = 'mass_list='+str(self.massspecui.ms_mass_sweep_select.currentText())
+        command2 = 'current_list='+str(self.massspecui.ms_current_sweep_select.currentText())
+        exec command1
+        exec command2
         mass_iterations = len(mass_list)
         current_iterations = len(current_list)
         sweep_iterations = self.massspecui.ms_iterations_spinbox.value()
@@ -130,6 +159,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
         command2 = 'self.current_list = '+str(self.massspecui.ms_current_sweep_select.currentText())
         exec str(command1)
         exec str(command2)
+        self.experiment_time = 0 #For timer display
+        self.datapoint = 0
         yield None
                               
     @inlineCallbacks
@@ -144,58 +175,73 @@ class LabRADconnection_Client(LabRADconnection_UI):
         self.sweep_iterations = self.massspecui.ms_iterations_spinbox.value()
 
         self.results = np.array([[0,0,0,0,0,0,0,0]])
-        self.experiment_iteration_loop(0,self.sweep_iterations) #Starts the top experimental loop
+        print 'Beginning experiment.  Avoid changing any parameters unless necessary!  (You can change the discriminator level)'
+        self.experiment_iteration_loop(0) #Starts the top experimental loop
         yield None
                               
     @inlineCallbacks
-    def timed_mass_loop(self,i,tick_time):  #--This is the bottom experimental loop--
+    def timed_mass_loop(self,i):  #--This is the bottom experimental loop--
         self.i=i
-        self.tick_time=tick_time
-        self.timer.start(tick_time) #starts timer
-        yield None
-                              
+        self.timer.start(self.count_time_per_point*1000) #starts timer (timeout in miliseconds)
+        self.mass_loop_tasks()
+        yield None                              
     @inlineCallbacks
     def timer_tick(self):   #--This is part of timed_mass_loop--
+        self.experiment_time += 1
+        self.timeui.t_middle_lcd.display(self.experiment_time)
         if self.i<len(self.mass_list):
-            mass = self.mass_list[self.i]
-            self.mass_data = mass
-            self.hpui.update_indicators()
-            self.rgaui.set_mass_lock(mass)
-            self.scaui.clear_scan()
-            self.scaui.start_scan()
             self.update_data()
-            self.i += 1
+            self.mass_loop_tasks()
         else:
+            print 'mass loop finished'
             self.timer.stop()
             self.current_loop(self.j) #calls next current_loop iteration
+            self.datapoint+=1
+            self.timeui.t_left_lcd.display(self.datapoint)
+        yield None
+    @inlineCallbacks
+    def mass_loop_tasks(self):  #--This is part of timed_mass_loop--
+        mass = self.mass_list[self.i]
+        print 'Setting mass to '+str(mass),'Mass list index: '+str(self.i)
+        self.mass_data = mass
+        self.hpui.update_indicators()
+        self.rgaui.set_mass_lock(mass)
+        self.scaui.clear_scan()
+        self.scaui.start_scan()
+        self.i += 1
         yield None
                               
     @inlineCallbacks
     def current_loop(self,j):   #--This is the middle experimental loop--
         self.j=j
         if self.j<len(self.current_list):
+            current = self.current_list[self.j]
+            print 'Setting current to '+str(current),'Current list index: '+str(self.j)
             self.hpui.set_current(current)
             self.current_data = current
-            self.timed_mass_loop(0,len(self.mass_list),self.count_time_per_point) #calls new timed_mass_loop
+            self.timed_mass_loop(0) #calls new timed_mass_loop
             self.j+=1
         else:
+            print 'current loop finished'
             self.experiment_iteration_loop(self.k) #calls next experimental_iteration_loop iteration
         yield None
                               
     @inlineCallbacks
-    def experiment_interation_loop(self,k): #--This is the top experimental loop--
+    def experiment_iteration_loop(self,k): #--This is the top experimental loop--
         self.k = k
         if self.k < self.sweep_iterations:
-            self.iteration_data = iteration
-            self.current_loop(0,len(self.current_list)) #calls new current_loop
+            print 'Loop iteration: '+str(self.k)
+            self.iteration_data = self.k
+            self.current_loop(0) #calls new current_loop
             self.k+=1
         else:
             self.hpui.set_current(0)
             print 'Experiment Finished'
+            self.scaui.stop_scan()
         yield None
                               
     @inlineCallbacks
-    def update_data(self):
+    def update_data(self):  #Updates ans saves data
         filepath = self.savdirui.sd_save_path_select.currentText()
         filename = self.savdirui.sd_filename_text.text()
 
@@ -203,16 +249,21 @@ class LabRADconnection_Client(LabRADconnection_UI):
         current = self.current_data
         iteration = self.iteration_data
         
-        self.scaui.get_counts()
+        yield self.scaui.get_counts()
         counts = self.scaui.sca_counts_lcd.value()
         t = datetime.now().timetuple()
         voltage = yield self.hpui.get_voltage()
         current = yield self.hpui.get_current()
         new_data = np.array([[mass,counts,t[2],t[3],t[4],t[5],voltage,current]])
-        print str(self.k+1),str(new_data)
+        print str(1),str(new_data)
         self.results = np.concatenate((self.results,new_data),axis=0)
         np.savetxt(str(filepath+filename),self.results,fmt="%0.5e")
-                              
+
+    @inlineCallbacks
+    def send_command(self):
+        command = str(self.commui.cl_command_text.toPlainText())
+        exec command
+        yield None
     @inlineCallbacks
     def closeEvent(self, x):
         yield None
