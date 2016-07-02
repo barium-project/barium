@@ -79,8 +79,8 @@ class RGA_Server( SerialDeviceServer ):
         Returns the RGA's IDN. RGACOM command: 'id?'
         '''
         yield self.ser.write_line('id?')
-        idn = yield self.ser.read_line()
-        returnValue(idn)
+        message = "id? command sent."
+        returnValue(message)
 
     @setting(2, value='w',returns='s')
     def filament(self, c, value=None):
@@ -88,21 +88,19 @@ class RGA_Server( SerialDeviceServer ):
         Sets the filament on/off mode, or read its value.
         ".filament(0)" shuts off the filament.  RGACOM command: "fl0"
         ".filament(1)" turns on the filament.  RGACOM command: "fl1"
-        ".filament()" returns the filament mode.  RGACOM command: "fl?"
+        ".filament()" asks for the filament mode.  RGACOM command: "fl?"
         '''
         if value > 1:
             message = 'Input out of range. Acceptable inputs: 0 and 1.'
         elif value==1:
             yield self.ser.write_line('fl1')
             message = 'Filament on command sent.'
-            yield self.ser.read_line()
         elif value==0:
             yield self.ser.write_line('fl0')
             message = 'Filament off command sent.'
-            yield self.ser.read_line()
         elif value==None:
             yield self.ser.write_line('fl?')
-            message = yield self.ser.read_line()
+            message = 'fl? command sent.'
         returnValue(message)
 
     @setting(3, value='v', returns='s')
@@ -116,25 +114,30 @@ class RGA_Server( SerialDeviceServer ):
         else:
             yield self.ser.write_line('ml'+str(value))
             message = 'Mass lock for '+str(value)+' amu command sent.'
-            yield self.ser.read_line()
         returnValue(message)
 
     @setting(4, value='w', returns='s')
     def high_voltage(self, c, value=None):
         '''
         Sets the electron multiplier voltage.  Acceptable range: [0,2500]
-        ".high_voltage()" queries the electron multiplier voltage.  RGACOM command: "hv?"
+        ".high_voltage()" asks for the electron multiplier voltage.  RGACOM command: "hv?"
         ".high_voltage(x)" sets the electron multiplier voltage to x (positive integer representing volts).  RGA COM command: "hvx"
         '''
         if value==None:
             yield self.ser.write_line('hv?')
-            message = yield self.ser.read_line()
+            message = 'hv? request sent.'
         elif value > 2500:
             message = 'Voltage out of range.  Acceptable range: [0,2500]'
         else:
             yield self.ser.write_line('hv'+str(value))
             message = 'High voltage (electron multiplier) command sent.'
-            yield self.ser.read_line()
+        returnValue(message)
+    @setting(5, returns='s')
+    def read_buffer(self, c):
+        '''
+        Reads the RGA buffer.  Equivalent to reading the serial line buffer.
+        '''
+        message = yield self.ser.read_line()
         returnValue(message)
 
 __server__ = RGA_Server()

@@ -55,7 +55,7 @@ counting_time = RECORDS_PER_SCAN*trigger_period + 1 #in seconds
 # time in seconds between each data point
 exp_t = 1
 
-SWEEP_ITERATIONS = 36               ### Edit this to change the number of sweeps
+SWEEP_ITERATIONS = 48               ### Edit this to change the number of sweeps
 
 
 #Initialize data array(mass,counts,day,hour,minute,second,voltage,current)
@@ -80,7 +80,7 @@ for iteration in range(SWEEP_ITERATIONS):
             new_data = np.array([[mass,counts,t[2],t[3],t[4],t[5],voltage,current]])
             print iteration, new_data
             results = np.concatenate((results,new_data),axis = 0)
-            np.savetxt('Z:/Group_Share/Barium/Data/2016/6/30/burn_off(2)_13,5amps_HV2200_500rps.txt',results,fmt="%0.5e")
+            np.savetxt('Z:/Group_Share/Barium/Data/2016/7/1/burn_off(4)_13,5amps_HV2200_500rps.txt',results,fmt="%0.5e")
             time.sleep(exp_t) # Wait to do next run
     
 # close ports

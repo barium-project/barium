@@ -22,8 +22,9 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
-class Ui_Form(object):
-    def setupUi(self, Form):
+class CommandLine_UI(QtGui.QWidget):
+    def setupUi(self):
+        Form = self
         Form.setObjectName(_fromUtf8("Form"))
         Form.resize(400, 150)
         self.frame = QtGui.QFrame(Form)
@@ -39,20 +40,21 @@ class Ui_Form(object):
         font.setWeight(75)
         self.label.setFont(font)
         self.label.setObjectName(_fromUtf8("label"))
-        self.cd_command_text = QtGui.QPlainTextEdit(self.frame)
-        self.cd_command_text.setGeometry(QtCore.QRect(10, 40, 361, 81))
-        self.cd_command_text.setObjectName(_fromUtf8("cd_command_text"))
+        self.cl_command_text = QtGui.QPlainTextEdit(self.frame)
+        self.cl_command_text.setGeometry(QtCore.QRect(10, 40, 361, 81))
+        self.cl_command_text.setObjectName(_fromUtf8("cl_command_text"))
         self.cl_command_button = QtGui.QPushButton(self.frame)
         self.cl_command_button.setGeometry(QtCore.QRect(214, 10, 151, 23))
         self.cl_command_button.setObjectName(_fromUtf8("cl_command_button"))
 
-        self.retranslateUi(Form)
+        self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(Form)
 
-    def retranslateUi(self, Form):
+    def retranslateUi(self):
+        Form = self
         Form.setWindowTitle(_translate("Form", "Form", None))
         self.label.setText(_translate("Form", "Command Line", None))
-        self.cd_command_text.setToolTip(_translate("Form", "cl_command_text", None))
+        self.cl_command_text.setToolTip(_translate("Form", "cl_command_text", None))
         self.cl_command_button.setToolTip(_translate("Form", "cl_command_button", None))
         self.cl_command_button.setText(_translate("Form", "Send Command", None))
 
