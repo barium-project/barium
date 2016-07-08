@@ -53,7 +53,7 @@ class CommandLine_UI(QtGui.QWidget):
     def retranslateUi(self):
         Form = self
         Form.setWindowTitle(_translate("Form", "Form", None))
-        self.label.setText(_translate("Form", "Command Line", None))
+        self.label.setText(_translate("Form", "Command Line (Python)", None))
         self.cl_command_text.setToolTip(_translate("Form", "cl_command_text", None))
         self.cl_command_button.setToolTip(_translate("Form", "cl_command_button", None))
         self.cl_command_button.setText(_translate("Form", "Send Command", None))

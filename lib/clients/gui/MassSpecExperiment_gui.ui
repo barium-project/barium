@@ -70,7 +70,7 @@
    <widget class="QSpinBox" name="ms_iterations_spinbox">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>160</y>
       <width>101</width>
       <height>22</height>
@@ -78,19 +78,6 @@
     </property>
     <property name="value">
      <number>1</number>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_19">
-    <property name="geometry">
-     <rect>
-      <x>140</x>
-      <y>140</y>
-      <width>101</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Extra Wait Time (s)</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_20">
@@ -104,19 +91,6 @@
     </property>
     <property name="text">
      <string>Total Count Time</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_17">
-    <property name="geometry">
-     <rect>
-      <x>260</x>
-      <y>140</y>
-      <width>111</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Trigger Frequency (Hz)</string>
     </property>
    </widget>
    <widget class="QComboBox" name="ms_mass_sweep_select">
@@ -163,9 +137,9 @@
    <widget class="QPushButton" name="ms_begin_experiment_button">
     <property name="geometry">
      <rect>
-      <x>250</x>
+      <x>200</x>
       <y>240</y>
-      <width>121</width>
+      <width>171</width>
       <height>31</height>
      </rect>
     </property>
@@ -188,8 +162,8 @@
    <widget class="QPushButton" name="ms_calculate_time_button">
     <property name="geometry">
      <rect>
-      <x>140</x>
-      <y>240</y>
+      <x>260</x>
+      <y>150</y>
       <width>101</width>
       <height>31</height>
      </rect>
@@ -199,25 +173,6 @@
     </property>
     <property name="text">
      <string>Calculate Time</string>
-    </property>
-   </widget>
-   <widget class="QDoubleSpinBox" name="ms_wait_time_spinbox">
-    <property name="geometry">
-     <rect>
-      <x>140</x>
-      <y>160</y>
-      <width>101</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="maximum">
-     <double>5.000000000000000</double>
-    </property>
-    <property name="singleStep">
-     <double>0.100000000000000</double>
-    </property>
-    <property name="value">
-     <double>1.000000000000000</double>
     </property>
    </widget>
    <widget class="QLCDNumber" name="ms_total_count_time_lcd">
@@ -249,7 +204,7 @@
    <widget class="QLabel" name="label_21">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>140</y>
       <width>91</width>
       <height>16</height>
@@ -257,25 +212,6 @@
     </property>
     <property name="text">
      <string>Sweep Iterations</string>
-    </property>
-   </widget>
-   <widget class="QDoubleSpinBox" name="ms_trigger_frequency_spinbox">
-    <property name="geometry">
-     <rect>
-      <x>260</x>
-      <y>160</y>
-      <width>101</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="toolTip">
-     <string>The pulse frequency of the trigger input</string>
-    </property>
-    <property name="singleStep">
-     <double>0.010000000000000</double>
-    </property>
-    <property name="value">
-     <double>5.830000000000000</double>
     </property>
    </widget>
    <widget class="QLCDNumber" name="ms_count_time_per_sweep_lcd">
@@ -346,9 +282,9 @@
    <widget class="QPushButton" name="ms_show_data_log_button">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>240</y>
-      <width>101</width>
+      <width>171</width>
       <height>31</height>
      </rect>
     </property>

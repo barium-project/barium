@@ -86,5 +86,5 @@ class LabRADconnection_UI(QtGui.QWidget):
         self.host_name_text.setItemText(3, _translate("Form", "flexo", None))
         self.label_2.setText(_translate("Form", "Host IP", None))
         self.label_3.setText(_translate("Form", "Host Name (with underscores)", None))
-        self.autoconnect_button.setText(_translate("Form", "Autoconnect Everything (Clients and Servers)", None))
+        self.autoconnect_button.setText(_translate("Form", "Connect to LabRAD and run Clients (HP6033A, SR430 Scalar, and RGA)", None))
 

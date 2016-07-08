@@ -80,7 +80,7 @@ import sys
 
 if __name__ == "__main__":
     a = QtGui.QApplication( [] )
-    from common.lib.clients import qt4reactor
+    import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
     from socket import gethostname

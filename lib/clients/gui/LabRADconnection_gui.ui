@@ -145,7 +145,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Autoconnect Everything (Clients and Servers)</string>
+     <string>Connect to LabRAD and run Clients (HP6033A, SR430 Scalar, and RGA)</string>
     </property>
     <property name="checkable">
      <bool>false</bool>

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\Barium133\Code\barium\lib\clients\gui\HP6033A_gui.ui'
+# Form implementation generated from reading ui file 'C:\Users\barium133\Code\barium\lib\clients\gui\HP6033A_gui.ui'
 #
 # Created by: PyQt4 UI code generator 4.11.4
 #
@@ -88,8 +88,8 @@ class HP6033A_UI(QtGui.QWidget):
         self.ps_pulse_mode_checkbox = QtGui.QCheckBox(self.frame)
         self.ps_pulse_mode_checkbox.setGeometry(QtCore.QRect(190, 40, 81, 21))
         self.ps_pulse_mode_checkbox.setObjectName(_fromUtf8("ps_pulse_mode_checkbox"))
-        self.ps_output_button = QtGui.QPushButton(self.frame)
-        self.ps_output_button.setGeometry(QtCore.QRect(250, 170, 121, 41))
+        self.ps_output_button = QtGui.QCheckBox(self.frame)
+        self.ps_output_button.setGeometry(QtCore.QRect(260, 180, 111, 31))
         self.ps_output_button.setCheckable(True)
         self.ps_output_button.setChecked(True)
         self.ps_output_button.setObjectName(_fromUtf8("ps_output_button"))
@@ -115,9 +115,6 @@ class HP6033A_UI(QtGui.QWidget):
         self.label_7 = QtGui.QLabel(self.frame)
         self.label_7.setGeometry(QtCore.QRect(10, 80, 91, 21))
         self.label_7.setObjectName(_fromUtf8("label_7"))
-        self.ps_update_button = QtGui.QPushButton(self.frame)
-        self.ps_update_button.setGeometry(QtCore.QRect(250, 230, 121, 41))
-        self.ps_update_button.setObjectName(_fromUtf8("ps_update_button"))
         self.ps_pulse_current_button = QtGui.QPushButton(self.frame)
         self.ps_pulse_current_button.setEnabled(False)
         self.ps_pulse_current_button.setGeometry(QtCore.QRect(180, 70, 121, 41))
@@ -159,7 +156,6 @@ class HP6033A_UI(QtGui.QWidget):
         self.ps_pulse_voltage_button.setText(_translate("Form", "Pulse Voltage", None))
         self.label_6.setText(_translate("Form", "Power Supply", None))
         self.label_7.setText(_translate("Form", "Pulse Current (A)", None))
-        self.ps_update_button.setText(_translate("Form", "Update Measurements", None))
         self.ps_pulse_current_button.setText(_translate("Form", "Pulse Current", None))
         self.label_8.setText(_translate("Form", "Pulse Voltage (V)", None))
         self.ps_set_safety_limits_button.setText(_translate("Form", "Set Safety Limits", None))

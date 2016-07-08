@@ -68,6 +68,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
         if True:
             self.autoconnect_button.setDisabled(True)
             self.autoconnect_button.setText("Connected")
+            self.host_ip_text.setDisabled(True)
+            self.host_name_text.setDisabled(True)
             self.setup_experiment()
         yield None
         
@@ -355,7 +357,7 @@ import sys
 
 if __name__ == "__main__":
     a = QtGui.QApplication ([])
-    from common.lib.clients import qt4reactor
+    import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
     client = LabRADconnection_Client(reactor)

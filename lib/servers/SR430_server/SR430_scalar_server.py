@@ -36,14 +36,21 @@ from twisted.internet import reactor
 from labrad.server import Signal, setting
 from labrad import types as T
 from twisted.internet.task import LoopingCall
-from twisted.internet.defer import returnValue
-from labrad.support import getNodeName
+from twisted.internet.defer import returnValue, inlineCallbacks
+from labrad.support import getNodeName, MultiDict
 from labrad.units import WithUnit as U
 from time import sleep
+from PyQt4 import QtCore, QtGui
 
-class SR430_Scalar_Wrapper(GPIBDeviceWrapper):
-    def initialize(self):
-        pass
+BPRSIGNAL = 275299
+BWSIGNAL = 275301
+RPSSIGNAL = 275302
+DLSIGNAL = 275393
+STARTSIGNAL = 275304
+STOPSIGNAL = 275305
+CLEARSIGNAL = 275306
+RECORDSIGNAL = 275307
+
 
 class SR430_Scalar_Server(GPIBManagedServer):
     '''
@@ -51,7 +58,56 @@ class SR430_Scalar_Server(GPIBManagedServer):
     '''
     name = "SR430 Scalar Server"
     deviceName = "Stanford_Research_Systems SR430"
-    deviceWrapper = SR430_Scalar_Wrapper
+
+    bprsignal = Signal(BPRSIGNAL, 'signal: bins per record changed', 'w')
+    bwsignal = Signal(BWSIGNAL, 'signal: bin width changed', 'w')
+    rpssignal = Signal(RPSSIGNAL, 'signal: records per scan changed', 'w')
+    dlsignal = Signal(DLSIGNAL, 'signal: discriminator level changed', 'v')
+    startsignal = Signal(STARTSIGNAL, 'signal: start scan')
+    stopsignal = Signal(STOPSIGNAL, 'signal: stop scan')
+    clearsignal = Signal(CLEARSIGNAL, 'signal: clear scan')
+    recordsignal = Signal(RECORDSIGNAL, 'signal: record tick', 'w')
+
+    listeners = set()
+    updating_settings = 0
+
+    record = 0
+    timer = QtCore.QTimer()
+    timer.timeout.connect(lambda : timer_tick())
+    
+    def initContext(self, c):
+        self.listeners.add(c.ID)
+    def expireContext(self, c):
+        self.listeners.remove(c.ID)
+        if 'device' in c:
+            alias = c['device']
+            try:
+                dev = self.devices[alias]
+                if dev.lockedInContext(c):
+                    dev.unlock(c)
+                dev.deselect(c)
+            except KeyError:
+                pass
+    def getOtherListeners(self, c):
+        notified = self.listeners.copy()
+        if c.ID in notified:
+            notified.remove(c.ID)
+        return notified
+    #@setting(97, 'Begin Updates', returns = 's')
+    #def begin_updates(self, c):
+    #    if self.updating_settings != 0:
+    #        self.updating_settings+=1
+    #        self.update_settings(c)
+    #    returnValue('Nonthing')
+    @setting(96, 'Update Settings', returns = 's')
+    def update_settings(self, c):
+        reactor.callLater(2, lambda c=c:self.update_settings(c))
+        dev = self.selectedDevice(c)
+        yield self.bins_per_record(c,0)
+        yield self.bin_width(c,0)
+        yield self.discriminator_level(c)
+        yield self.records_per_scan(c)
+        returnValue('Nothing')
 
     @setting(10, 'IDN', returns = 's')
     def idn(self, c):
@@ -93,9 +149,13 @@ class SR430_Scalar_Server(GPIBManagedServer):
          Equivalent to DCLV.
         '''
         dev = self.selectedDevice(c)
+        notified = self.getOtherListeners(c)
         if value==None:
             yield dev.write('DCLV?')
             message = yield dev.read()
+            voltage = U(float(message),'V')
+            print 'dl on '+message
+            self.dlsignal(voltage['mV'], notified)
             returnValue(message)
         else:
             if value['V'] > 0.300 or value['V'] < -0.300:
@@ -103,6 +163,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
                 returnValue(message)
             elif value['V'] <= 0.300 and value['V'] >= -0.300:
                 yield dev.write('DCLV '+str(value['V']))
+                #self.dlsignal(value['mV'], notified)
                 returnValue('Success')
 
     @setting(13, 'Records Per Scan', value='w', returns='s')
@@ -114,6 +175,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
          Equivalent to RSCN.
         '''
         dev = self.selectedDevice(c)
+        notified = self.getOtherListeners(c)
         if value==None:
             yield dev.write('RSCN?')
             read_rps = yield dev.read()
@@ -121,6 +183,8 @@ class SR430_Scalar_Server(GPIBManagedServer):
                 rps = int(read_rps) + 65536    #will return as N - 65536
             else:
                 rps = int(read_rps)
+            print 'rps on '+str(rps)
+            self.rpssignal(rps, notified)
             message = str(rps)
             returnValue(message)
         elif value == 32768:
@@ -131,6 +195,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
                 returnValue(message)
             elif value <= 65535:
                 yield dev.write('RSCN '+str(value))
+                #self.rpssignal(value, notified)
                 returnValue('Success')
 
     @setting(14, 'Output GPIB')
@@ -151,7 +216,22 @@ class SR430_Scalar_Server(GPIBManagedServer):
          Equivalent to SSCN.
         '''
         dev = self.selectedDevice(c)
+        notified = self.getOtherListeners(c)
+        bins_per_record = yield self.bins_per_record(c,0)
+        bin_width = yield self.bin_width(c,0)
+        bins_per_record = int(bins_per_record)
+        bin_width = bin_width
+        trigger_period = (bins_per_record*bin_width + bins_per_record*250 + 150*(10**3))*10**(-6)+1
         yield dev.write('SSCN')
+        self.startsignal(None,notified)
+        self.timer.start(trigger_period)
+    @setting(95, 'Timer Tick')
+    def timer_tick(self):
+        print 'tick'
+        notified = self.getOtherListeners(c)
+        self.record += 1
+        self.recordsignal(self.record, notified)
+        yield None
 
     @setting(16, 'Stop Scan')
     def stop_scan(self, c):
@@ -160,7 +240,10 @@ class SR430_Scalar_Server(GPIBManagedServer):
          Equivalent to PAUS.
         '''
         dev = self.selectedDevice(c)
+        notified = self.getOtherListeners(c)
+        self.stopsignal(None,notified)
         yield dev.write('PAUS')
+        self.timer.stop()
 
     @setting(17, 'Clear Scan')
     def clear_scan(self, c):
@@ -169,6 +252,9 @@ class SR430_Scalar_Server(GPIBManagedServer):
          Equivalent to CLRS
         '''
         dev = self.selectedDevice(c)
+        notified = self.getOtherListeners(c)
+        self.clearsignal(None,notified)
+        self.record = 0
         yield dev.write('CLRS')
 
     @setting(18, 'Start New Scan', returns='s', wait_time='v[s]')
@@ -202,7 +288,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
         last_bin_index = int(bins_per_record) - 1
         yield dev.write('RLIM '+str(last_bin_index))    #Lets the right limit as the total number of bins - 1 (last bin)
         yield dev.write('STAT')
-        sleep(1)
+        sleep(0.5)
         yield dev.write('SPAR?2')           #Queries for the total # of counts (SPAR?2) See Manual
         number_of_counts = yield dev.read() #Reads the buffer for total # of counts
         returnValue(int(float(number_of_counts)))  #Returns total # of counts as an integer
@@ -218,6 +304,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
          Equivalent to BREC
         '''
         dev = self.selectedDevice(c)
+        notified = self.getOtherListeners(c)
         argument_dictionary = {1024: 1, 2*1024: 2, 3*1024: 3, 4*1024: 4, 5*1024: 5,
                                6*1024: 6, 7*1024: 7, 8*1024: 8, 9*1024: 9, 10*1024: 10,
                                 11*1024: 11, 12*1024: 12, 13*1024: 13, 14*1024: 14,
@@ -231,9 +318,12 @@ class SR430_Scalar_Server(GPIBManagedServer):
             yield dev.write('BREC?')
             bit = yield dev.read()                 #Reads in bit
             message = str(inverted_dictionary[int(bit)]) #Uses dictionary to convert bit to number of bins per record value
+            print 'bpr on '+str(bit)
+            self.bprsignal(int(bit), notified)
             returnValue(message)
         elif value in supported_arguments:
             yield dev.write('BREC '+str(argument_dictionary[value]))  #Uses dictionary to look up the input value's corresponding bit
+            #self.bprsignal(argument_dictionary[value], notified)
             returnValue('Success')
         else:
             message = 'Unsupported argument. Supported arguments: '+str(supported_arguments)
@@ -250,6 +340,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
          Equivalent to BWTH
         '''
         dev = self.selectedDevice(c)
+        notified = self.getOtherListeners(c)
         argument_dictionary = {5: 0,40: 1,80: 2,160: 3,320: 4,640: 5,1280: 6,2560: 7, 5120: 8,      #Defines dictionary
                                10240: 9, 20480: 10, 40960: 11, 81920: 12, 163840: 13, 327680: 14,
                                655360: 15, 1310720: 16, 2621400: 17, 5242900: 18, 10486000: 19}
@@ -262,10 +353,13 @@ class SR430_Scalar_Server(GPIBManagedServer):
         elif value==0:
             yield dev.write('BWTH?')
             bit = yield dev.read()            #Reads in bit
-            message = str(inverted_dictionary[int(bit)])+' ns' #Uses dictionary to convert bit to width value
+            message = inverted_dictionary[int(bit)] #Uses dictionary to convert bit to width value
+            print 'bw on '+bit
+            self.bwsignal(int(bit), notified)
             returnValue(message)
         elif value in supported_arguments:
             yield dev.write('BWTH '+str(argument_dictionary[value]))        #Converts value to corresponding bit
+            #self.bwsignal(argument_dictionary[value], notified)
             returnValue('Success')
         else:
             message = 'Unsupported argument.  Supported arguments: '+str(supported_arguments)
@@ -307,8 +401,10 @@ class SR430_Scalar_Server(GPIBManagedServer):
                         '; Command Error '+command_error+'; URQ '+URQ+'; PON '+PON)
         returnValue(message)
 
+
 __server__ = SR430_Scalar_Server()
 
 if __name__ == "__main__":
+    a = QtGui.QApplication([])
     from labrad import util
     util.runServer(__server__)

@@ -45,7 +45,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Command Line</string>
+     <string>Command Line (Python)</string>
     </property>
    </widget>
    <widget class="QPlainTextEdit" name="cd_command_text">
