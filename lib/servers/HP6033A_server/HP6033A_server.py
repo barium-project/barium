@@ -18,7 +18,7 @@
 [info]
 name = HP6033A Server
 version = 1.3
-description = 
+description =
 
 [startup]
 cmdline = %PYTHON% %FILE%
@@ -30,11 +30,17 @@ timeout = 5
 ### END NODE INFO
 """
 
-from labrad.server import setting
+from labrad.server import setting, Signal
 from labrad.gpib import GPIBManagedServer, GPIBDeviceWrapper
 from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet import reactor
 from labrad.units import WithUnit as U
 from time import sleep
+
+CURRSIGNAL = 186421
+VOLTSIGNAL = 186422
+MEASSIGNAL = 186423
+OUTPSIGNAL = 186424
 
 class HP6033A_Server(GPIBManagedServer):
     '''
@@ -48,18 +54,76 @@ class HP6033A_Server(GPIBManagedServer):
     '''
     name = 'HP6033A Server'
     deviceName = 'HEWLETT-PACKARD 6033A'
-    @setting(10, 'Get VOLTage' , returns = 'v[V]')
+
+    currsignal = Signal(CURRSIGNAL, 'signal: current changed', 'v[A]')
+    voltsignal = Signal(VOLTSIGNAL, 'signal: voltage changed', 'v[V]')
+    meassignal = Signal(MEASSIGNAL, 'signal: get measurements', '(v[V]v[A])')
+    outpsignal = Signal(OUTPSIGNAL, 'signal: output changed', 'b')
+
+    def __init__(self):
+        super(HP6033A_Server, self).__init__()
+        self.listeners = set()
+        self.updating = False
+    def initContext(self, c):          #Adds new contexts to the listeners list?
+        self.listeners.add(c.ID)
+        if self.updating == False:
+            self.updating = True
+            #self.update_settings(c)    #The server will initially get a "No devices has be selected" error, but this will pass once the client selects a device.
+    def expireContext(self, c):        #Removes expired contexts from the listeners list?
+        self.listeners.remove(c.ID)
+        if 'device' in c:
+            alias = c['device']
+            try:
+                dev = self.devices[alias]
+                if dev.lockedInContext(c):
+                    dev.unlock(c)
+                dev.deselect(c)
+            except KeyError:
+                pass
+    def getOtherListeners(self, c):    #Returns a list of listeners without the context itself.
+        notified = self.listeners.copy()
+        if c.ID in notified:
+            notified.remove(c.ID)
+        return notified
+
+    @setting(96, 'Update Settings', returns = 's')
+    def update_settings(self, c):
+        '''
+        This begins a self-calling loop which updates the power supply settings to the client.
+        '''
+
+        reactor.callLater(1, lambda c=c:self.update_settings(c))
+        notified = self.listeners.copy()
+
+        #output_state = yield self.output_state(c)
+        #print output_state
+        #self.outpsignal(int(output_state),notified)
+
+        #set_voltage = yield self.get_set_voltage(c)
+        #print set_voltage
+        #self.voltsignal(set_voltage,notified)
+
+        #set_current = yield self.get_set_current(c)
+        #print set_current
+        #self.currsignal(set_current,notified)
+
+        measured_voltage = yield self.get_voltage(c)
+        measured_current = yield self.get_current(c)
+        self.meassignal([measured_voltage, measured_current],notified)
+
+
+        returnValue('Nothing')
+    @setting(10, 'Get VOLTage', returns = 'v[V]')
     def get_voltage(self, c):
         '''
         Measures the voltage on the power supply and returns a value with unit V.
-        
+
          Equivalent to MEAS:VOLT?
         '''
         dev = self.selectedDevice(c)    #This line allows .read() and .write() to be called from the GPIBDeviceWrapper
         yield dev.write('MEAS:VOLT?')
-        sleep(0.1)
-        voltage = yield dev.read()      #dev.read() returns a string
-        voltage = U(float(voltage),'V') #convert string to float with units
+        result = yield dev.read()      #dev.read() returns a string
+        voltage = U(float(result),'V') #convert string to float with units
         self.clear_status(c)
         returnValue(voltage)
 
@@ -67,22 +131,29 @@ class HP6033A_Server(GPIBManagedServer):
     def get_current(self, c):
         '''
         Measures the current on the power supply and returns a value with unit A.
-        
+
          Equivalent to MEAS:CURR?
         '''
         dev = self.selectedDevice(c)
         yield dev.write('MEAS:CURR?')
-        sleep(0.1)
-        current = yield dev.read()
-        current = U(float(current),'A') #convert string to float with units
+        result = yield dev.read()
+        current = U(float(result),'A') #convert string to float with units
         self.clear_status(c)
         returnValue(current)
+
+    @setting(103, 'Pulse Initialize')
+    def pulse_initialize(self, c):
+        '''
+        Initializes the power supply for pulse mode by setting voltage and current to 0.
+        '''
+        yield self.set_voltage(U(0,'V'))
+        yield self.set_current(U(0,'A'))
 
     @setting(101, 'Pulse Voltage', value = 'v[V]', duration = 'v[s]', returns='s')
     def pulse_voltage(self, c, value, duration):
         '''
         Instructs the power supply to output a square pulse at a desired voltage [Volts] for a desired duration [seconds].
-        
+
          Be sure to first initialize the voltage to 0 V.
         '''
         dev = self.selectedDevice(c)
@@ -90,19 +161,20 @@ class HP6033A_Server(GPIBManagedServer):
             message = "Input voltage, "+str(value['V'])+" V, out of range.  (Range: 0-20 V)"
             returnValue(message)
         else:
+            yield dev.write('CURR '+30+' A')
             yield dev.write('VOLT '+str(value['V'])+' V')    #sets the voltage to value
             print "Pulsing "+str(value['V'])+" V over "+str(duration['s'])+" s..."
             sleep(duration['s'])                   #waits for the duration
             yield dev.write('VOLT 0 V')                 #sets the voltage back to 0
             print "Finished pulsing."
-            error = yield self.error(c) #Calls the .error() method to read the error message register
+            error = 'none'#yield self.error(c) #Calls the .error() method to read the error message register
             returnValue(error)          #Returns the message to the user. '+0, "No error"' means no error.
 
     @setting(102, 'Pulse Current', value = 'v[A]', duration = 'v[s]', returns='s')
     def pulse_current(self, c, value, duration):
         '''
         Instructs the power supply to output a square pulse at a desired current [Amps] for a desired duration [seconds].
-        
+
          Be sure to first initialize the current to 0 A.
         '''
         dev = self.selectedDevice(c)
@@ -110,61 +182,84 @@ class HP6033A_Server(GPIBManagedServer):
             message = "Input current, "+str(value['A'])+" A, out of range.  (Range: 0-30 A)"
             returnValue(message)
         else:
+            yield dev.write('VOLT '+20+' V')
             yield dev.write('CURR '+str(value['A'])+' A')
             print "Pulsing "+str(value['A'])+" A over "+str(duration['s'])+" s..."
             sleep(duration['s'])
             yield dev.write('CURR 0 A')
             print "Finished pulsing."
-            error = yield self.error(c)
+            error = 'none'#yield self.error(c)
             returnValue(error)
 
     @setting(13, 'Set Current', value = 'v[A]', returns='s')
     def set_current(self, c, value):
         '''
         Sets the immediate current on the power supply.
-        
+
          The immediate current is the current programmed for the output terminals.
          Equivalent to CURR <value> <units>
         '''
         dev = self.selectedDevice(c)
+        notified = self.getOtherListeners(c)
         if value['A'] > 30 or value['A'] < 0:
             message = "Input current, "+str(value['A'])+" A, out of range.  (Range: 0-30 A)"
             returnValue(message)
         else:
             yield dev.write('CURR '+str(value['A'])+' A')
+            self.currsignal(value,notified)
             error = yield self.error(c)
+            print error
             returnValue(error)
 
     @setting(14, 'Set Voltage', value = 'v[V]', returns='s')
     def set_voltage(self, c, value):
         '''
         Sets the immediate voltage on the power supply.
-        
+
          The immediate voltage is the voltage programmed for the output terminals.
          Equivlanet to VOLT <value> <units>
         '''
         dev = self.selectedDevice(c)
+        notified = self.getOtherListeners(c)
         if value['V'] > 20 or value['V'] < 0:
             message = "Input voltage, "+str(value['V'])+" V, out of range.  (Range: 0-20 V)"
             returnValue(message)
         else:
             yield dev.write('VOLT '+str(value['V'])+' V')
+            self.voltsignal(value,notified)
             error = yield self.error(c)
+            print error
             returnValue(error)
+
+    @setting(31, 'Get Set Current', returns = 'v[A]')
+    def get_set_current(self, c):
+        dev = self.selectedDevice(c)
+        yield dev.write('CURR:LEV?')
+        message = yield dev.read()
+        result = U(float(message),'A')
+        returnValue(result)
+
+    @setting(32, 'Get Set Voltage', returns = 'v[V]')
+    def get_set_voltage(self, c):
+        dev = self.selectedDevice(c)
+        yield dev.write('VOLT:LEV?')
+        message = yield dev.read()
+        result = U(float(message),'V')
+        returnValue(result)
 
     @setting(15, 'Output State', value = 'b', returns = 's')
     def output_state(self, c, value=None):#Overloaded Function
         '''
         Passing a boolean value (True or False, case sensitive) sets on/off state of the output on the power supply.
-        
+
          Equivalent to OUTP <0/1>
          Passing no arguments will query the power supply for its state.
          Equivalent to OUTP:STAT?
         '''
         dev = self.selectedDevice(c)
+        notified = self.getOtherListeners(c)
         if value==None:                     #This is the behavior if no input is given
             yield dev.write('OUTP:STAT?')
-            sleep(0.1)
             state = yield dev.read()
             self.clear_status(c)
             returnValue(state)
@@ -174,7 +269,8 @@ class HP6033A_Server(GPIBManagedServer):
             elif value == False:
                  bit = 0
             yield dev.write('OUTP '+str(bit))
-            error = yield self.error(c)
+            self.outpsignal(value,notified)
+            error = 'none'#yield self.error(c)
             returnValue(error)
 
     @setting(16, 'Output Clear', returns='s')
@@ -182,19 +278,19 @@ class HP6033A_Server(GPIBManagedServer):
         #Not Yet Tested but should work
         '''
         Clears output overvoltage, overcurrent, or overtemperature status condition.
-        
+
          Equivalent to OUTP:PROT:CLE
         '''
         dev = self.selectedDevice(c)
         yield dev.write('OUTP:PROT:CLE')
-        error = yield self.error(c)
+        error = 'none'#yield self.error(c)
         returnValue(error)
-             
+
     @setting(17, 'IDN', returns = 's')
     def idn(self, c):
         '''
         Requests the device identify itself.
-        
+
          Equivalent to *IDN?
         '''
         dev = self.selectedDevice(c)
@@ -203,12 +299,12 @@ class HP6033A_Server(GPIBManagedServer):
         idn = yield dev.read()
         self.clear_status(c)
         returnValue(idn)
-             
+
     @setting(18, 'Settings Recall', value = 'i', returns='s')
     def settings_recall(self, c, value):
         '''
         Recalls power supply settings from 1 of 5 memory locations (index 0 to 4).
-        
+
          Settings affected:  Current, Voltage, Output
          Equivalent to *RCL <value>
          Use settings_save to save settings.
@@ -219,27 +315,27 @@ class HP6033A_Server(GPIBManagedServer):
             returnValue(message)
         elif value>=0 and value <=4:
             yield dev.write('*RCL '+str(value))
-            error = yield self.error(c)
+            error = 'none'#yield self.error(c)
             returnValue(error)
-    
+
     @setting(19, 'Settings Reset', returns='s')
     def settings_reset(self, c):
         '''
         Resets the power supply to factory defined settings.
-        
+
          Note that this will disable the Output.
          Equivalent to *RST
         '''
         dev = self.selectedDevice(c)
         yield dev.write('*RST')
-        error = yield self.error(c)
+        error = 'none'#yield self.error(c)
         returnValue(error)
-             
+
     @setting(20, 'Settings Save', value = 'i', returns='s')
     def settings_save(self, c, value):
         '''
         Saves the power supply settings to 1 of 5 memory locations (index 0 to 4).
-        
+
          Settings saved:  Current, Voltage, Output
          Equivalent to *SAV <value>
          Use settings_recall to recall settings.
@@ -250,14 +346,14 @@ class HP6033A_Server(GPIBManagedServer):
             returnValue(message)
         elif value>=0 and value <=4:
             yield dev.write('*SAV '+str(value))
-            error = yield self.error(c)
+            error = 'none'#yield self.error(c)
             returnValue(error)
-             
+
     @setting(21, 'Clear Status')
     def clear_status(self, c):
         '''
         Clears error statuses.
-        
+
          Equivalent to *CLS
         '''
         dev = self.selectedDevice(c)
@@ -267,23 +363,19 @@ class HP6033A_Server(GPIBManagedServer):
     def error(self, c):
         '''
         Reads the error message register.
-        
+
          Equivalent to SYST:ERR?
         '''
         dev = self.selectedDevice(c)
         yield dev.write('SYST:ERR?')
-        sleep(0.1)
         error = yield dev.read()
-        if error == '+0,"No error"':
-            returnValue('No error.')
-        else:
-            returnValue('Error Message: '+error)
+        returnValue(error)
 
     @setting(23, 'Status Byte',returns = 's')
     def status_byte(self, c):
         '''
         Reads the status byte without clearing it.
-        
+
          Equivalent to *STB?
         '''
         dev = self.selectedDevice(c)
@@ -311,7 +403,7 @@ class HP6033A_Server(GPIBManagedServer):
         else:
             returnValue(result+' Failed')
 
-    @setting(25, 'Status Oper Cond', returns = 's')
+    @setting(25, 'Status Oper Cond', returns = 'w')
     def status_oper_cond(self, c):
         '''
         Queries the power supply's Operation Condition register.
@@ -325,13 +417,13 @@ class HP6033A_Server(GPIBManagedServer):
         self.clear_status(c)
         dict={'+1024': 'CC: Constant Current', '+256': 'CV: Constant Voltage',
               '+32': 'WTG: Waiting for Trigger', '+0': 'None'}
-        returnValue(result+' '+dict[result])
+        returnValue(int(result))
 
     @setting(26, 'Status Ques Cond', returns = 's')
     def status_ques_cond(self, c):
         '''
         Queries the power supply's Questionable Condition register.
-        
+
          Equivalent to STAT:QUES:COND?
         '''
         dev = self.selectedDevice(c)
@@ -353,6 +445,18 @@ class HP6033A_Server(GPIBManagedServer):
         current = yield self.get_current(c)
         output_state = yield self.output_state(c)
         returnValue('Voltage: '+str(voltage['V'])+' V, Current: '+str(current['A'])+' A, Output: '+output_state)
+
+    @setting(28, "CC Mode", returns = 'b')
+    def cc_mode(self, c):
+        operating_condition = yield self.status_oper_cond(c)
+        result = '0b01000000000' and bin(operating_condition) #1024 = CC Mode
+        returnValue(result==bin(1024))
+
+    @setting(29, "CV Mode", returns = 'b')
+    def cv_mode(self, c):
+        operating_condition = yield self.status_oper_cond(c)
+        result = '0b00100000000' and bin(operating_condition) #256 = CC Mode
+        returnValue(result==bin(256))
 
 __server__ = HP6033A_Server()
 

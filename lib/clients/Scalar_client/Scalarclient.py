@@ -6,10 +6,8 @@ BPRSIGNALID = 275309
 BWSIGNALID = 275311
 RPSSIGNALID = 275312
 DLSIGNALID = 275313
-STARTSIGNALID = 275314
-STOPSIGNALID = 275315
-CLEARSIGNALID = 275316
 RECORDSIGNALID = 275317
+PANELSIGNALID = 275318
 
 class SR430_Scalar_Client(Scalar_UI):
     def __init__(self, reactor, parent = None):
@@ -31,7 +29,7 @@ class SR430_Scalar_Client(Scalar_UI):
         print 'Connected to SR430 Scalar Server.'
         yield self.server.select_device(0)
         self.signal_connect()
-        yield self.server.update_settings()
+        #yield self.server.update_settings()
         #except:
         #    print 'SR430 Scalar Server Unavailable. Client is not connected.'
     @inlineCallbacks
@@ -40,21 +38,17 @@ class SR430_Scalar_Client(Scalar_UI):
         yield self.server.signal__bin_width_changed(BWSIGNALID)
         yield self.server.signal__discriminator_level_changed(DLSIGNALID)
         yield self.server.signal__records_per_scan_changed(RPSSIGNALID)
-        yield self.server.signal__start_scan(STARTSIGNALID)
-        yield self.server.signal__stop_scan(STOPSIGNALID)
-        yield self.server.signal__clear_scan(CLEARSIGNALID)
-        yield self.server.signal__record_tick(RECORDSIGNALID)
-        
-        
+        yield self.server.signal__record_signal(RECORDSIGNALID)
+        yield self.server.signal__panel_signal(PANELSIGNALID)
+
+
         yield self.server.addListener(listener = self.update_bpr, source = None, ID = BPRSIGNALID)
         yield self.server.addListener(listener = self.update_bw, source = None, ID = BWSIGNALID)
         yield self.server.addListener(listener = self.update_dl, source = None, ID = DLSIGNALID)
         yield self.server.addListener(listener = self.update_rps, source = None, ID = RPSSIGNALID)
-        yield self.server.addListener(listener = self.start_update, source = None, ID = STARTSIGNALID)
-        yield self.server.addListener(listener = self.stop_update, source = None, ID = STOPSIGNALID)
-        yield self.server.addListener(listener = self.clear_update, source = None, ID = CLEARSIGNALID)
         yield self.server.addListener(listener = self.record_update, source = None, ID = RECORDSIGNALID)
-        
+        yield self.server.addListener(listener = self.panel_update, source = None, ID = PANELSIGNALID)
+
         self.sca_discriminator_level_spinbox.valueChanged.connect(lambda :self.set_discriminator_level())
         self.sca_records_per_scan_spinbox.valueChanged.connect(lambda :self.set_records_per_scan())
         self.sca_bins_per_record_select.currentIndexChanged.connect(lambda :self.set_bins_per_record())
@@ -67,7 +61,7 @@ class SR430_Scalar_Client(Scalar_UI):
 
         self.set_trigger_frequency()
         yield None
-        
+
     def update_bpr(self, c, signal):
         argument_dictionary = {1024: 1, 2*1024: 2, 3*1024: 3, 4*1024: 4, 5*1024: 5,
                                 6*1024: 6, 7*1024: 7, 8*1024: 8, 9*1024: 9, 10*1024: 10,
@@ -83,15 +77,19 @@ class SR430_Scalar_Client(Scalar_UI):
         self.sca_records_per_scan_spinbox.setValue(signal)
     def update_dl(self, c, signal):
         self.sca_discriminator_level_spinbox.setValue(int(signal))
-    def start_update(self, c, var):
-        self.frame_1.setDisabled(True)
-        self.frame_2.setDisabled(True)
-    def stop_update(self, c, var):
-        self.frame_2.setEnabled(True)
-    def clear_update(self, c, var):
-        self.frame_1.setEnabled(True)
     def record_update(self, c, signal):
         self.sca_progress_bar.setValue(signal)
+    def panel_update(self, c, signal):
+        if signal == 'scanning':
+            self.frame_1.setDisabled(True)
+            self.frame_2.setDisabled(True)
+        elif signal == 'paused':
+            self.frame_1.setDisabled(True)
+            self.frame_2.setEnabled(True)
+        elif signal == 'cleared':
+            self.frame_1.setEnabled(True)
+            self.frame_2.setEnabled(True)
+            self.sca_progress_bar.setValue(0)
     @inlineCallbacks
     def set_discriminator_level(self):
         discriminator_level = self.sca_discriminator_level_spinbox.value()
@@ -104,6 +102,7 @@ class SR430_Scalar_Client(Scalar_UI):
         self.sca_progress_bar.setMaximum(self.sca_records_per_scan_spinbox.value())
     @inlineCallbacks
     def set_bins_per_record(self):
+        print 'set bpr called'
         bins_per_record = int(self.sca_bins_per_record_select.currentText())
         yield self.server.bins_per_record(bins_per_record)
         self.set_trigger_frequency()
@@ -124,7 +123,7 @@ class SR430_Scalar_Client(Scalar_UI):
         self.trigger_period = (bins_per_record*bin_width + bins_per_record*250 + 150*(10**3))*10**(-6)+1
         #trigger_period(ms) = (bpr*bw(ns) + bpr*250ns + 150us) + 1ms
         self.trigger_frequency = round(1/(self.trigger_period*10**(-3)),3)
-        
+
         self.sca_trigger_frequency_lcd.display(self.trigger_frequency)
         yield None
     @inlineCallbacks
@@ -141,18 +140,16 @@ class SR430_Scalar_Client(Scalar_UI):
     @inlineCallbacks
     def clear_scan(self):
         yield self.server.clear_scan()
-        self.sca_progress_bar.setValue(0)
     @inlineCallbacks
     def get_counts(self):
         self.sca_counts_lcd.display('...')
         counts = yield self.server.get_counts()
         self.sca_counts_lcd.display(counts)
         returnValue(counts)
-    
-        
+
+
     @inlineCallbacks
     def closeEvent(self, x):
-        self.stop_scan()
         yield None
         reactor.stop()
 

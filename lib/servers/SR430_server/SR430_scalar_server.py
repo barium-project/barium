@@ -18,7 +18,7 @@
 [info]
 name = SR430 Scalar Server
 version = 1.3
-description = 
+description =
 
 [startup]
 cmdline = %PYTHON% %FILE%
@@ -46,10 +46,8 @@ BPRSIGNAL = 275299
 BWSIGNAL = 275301
 RPSSIGNAL = 275302
 DLSIGNAL = 275393
-STARTSIGNAL = 275304
-STOPSIGNAL = 275305
-CLEARSIGNAL = 275306
 RECORDSIGNAL = 275307
+PANELSIGNAL = 275308
 
 
 class SR430_Scalar_Server(GPIBManagedServer):
@@ -63,21 +61,21 @@ class SR430_Scalar_Server(GPIBManagedServer):
     bwsignal = Signal(BWSIGNAL, 'signal: bin width changed', 'w')
     rpssignal = Signal(RPSSIGNAL, 'signal: records per scan changed', 'w')
     dlsignal = Signal(DLSIGNAL, 'signal: discriminator level changed', 'v')
-    startsignal = Signal(STARTSIGNAL, 'signal: start scan')
-    stopsignal = Signal(STOPSIGNAL, 'signal: stop scan')
-    clearsignal = Signal(CLEARSIGNAL, 'signal: clear scan')
-    recordsignal = Signal(RECORDSIGNAL, 'signal: record tick', 'w')
+    recordsignal = Signal(RECORDSIGNAL, 'signal: record signal', 'w')#Updates the client with the current record
+    panelsignal = Signal(PANELSIGNAL, 'signal: panel signal', 's')#Update the client with the scalar state: 'scanning', 'paused', or 'cleared'
 
-    listeners = set()
-    updating_settings = 0
+    def __init__(self):
+        super(SR430_Scalar_Server, self).__init__()
+        self.listeners = set()
 
-    record = 0
-    timer = QtCore.QTimer()
-    timer.timeout.connect(lambda : timer_tick())
-    
-    def initContext(self, c):
+        self.scalar_state = 'cleared'    #Make sure the scalar is cleared before you start the server, or this attribute is wrong
+        self.updating = False
+    def initContext(self, c):          #Adds new contexts to the listeners list?
         self.listeners.add(c.ID)
-    def expireContext(self, c):
+        if self.updating == False:
+            self.updating = True
+            self.update_settings(c)    #The server will initially get a "No devices has be selected" error, but this will pass once the client selects a device.
+    def expireContext(self, c):        #Removes expired contexts from the listeners list?
         self.listeners.remove(c.ID)
         if 'device' in c:
             alias = c['device']
@@ -88,25 +86,39 @@ class SR430_Scalar_Server(GPIBManagedServer):
                 dev.deselect(c)
             except KeyError:
                 pass
-    def getOtherListeners(self, c):
+    def getOtherListeners(self, c):    #Returns a list of listeners without the context itself.
         notified = self.listeners.copy()
         if c.ID in notified:
             notified.remove(c.ID)
         return notified
-    #@setting(97, 'Begin Updates', returns = 's')
-    #def begin_updates(self, c):
-    #    if self.updating_settings != 0:
-    #        self.updating_settings+=1
-    #        self.update_settings(c)
-    #    returnValue('Nonthing')
+
     @setting(96, 'Update Settings', returns = 's')
     def update_settings(self, c):
-        reactor.callLater(2, lambda c=c:self.update_settings(c))
-        dev = self.selectedDevice(c)
-        yield self.bins_per_record(c,0)
-        yield self.bin_width(c,0)
+        '''
+        This begins a self-calling loop which queries the bins per record, bin width, discriminator level,
+        records per scan, and record, and sends the appropriate signals to tell listeners to update them.
+        This function is automatically initialized by the server when the first client connects.
+
+        WARNING:  If the loop occurs too quickly, conflicts may occur for the different query commands when
+        communicating with the Scalar.  For instance, dev.read() might read in the records per scan (i.e. at 500)
+        when it was called to read the discriminator level, hence the program will try to change the client's
+        discriminator level spinbox to 500 (but the max is 300).  Or, the inputs would simply be incompatible
+        and you would get error messages.  If this occurs, the reactor.callLater() delay may need to be increased,
+        sacrificing update rate.  The server may still run even if there are dev.read() conflicts, but if it
+        becomes unusable, it will need to be restarted.
+        '''
+        reactor.callLater(0.20, lambda c=c:self.update_settings(c))
+        notified = self.listeners.copy()
+        if self.scalar_state == 'cleared':
+            yield self.bins_per_record(c,0)
+            print 'bpr update'
+            yield self.bin_width(c,0)
+            yield self.records_per_scan(c)
+        elif self.scalar_state == 'scanning':
+            record = yield self.get_record(c)
+            self.recordsignal(record)
         yield self.discriminator_level(c)
-        yield self.records_per_scan(c)
+        self.panelsignal(self.scalar_state, notified)
         returnValue('Nothing')
 
     @setting(10, 'IDN', returns = 's')
@@ -145,7 +157,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
         '''
         Sets or queries the discriminator level.
          ".discriminator_level(x)" sets the discriminator level to x (number with voltage unit).  Acceptable range: [U(-0.300,'V'),U(0.300,'V')]
-         ".discriminator_level()" queries.
+         ".discriminator_level()" queries.  This is used with .update_settings()
          Equivalent to DCLV.
         '''
         dev = self.selectedDevice(c)
@@ -154,7 +166,6 @@ class SR430_Scalar_Server(GPIBManagedServer):
             yield dev.write('DCLV?')
             message = yield dev.read()
             voltage = U(float(message),'V')
-            print 'dl on '+message
             self.dlsignal(voltage['mV'], notified)
             returnValue(message)
         else:
@@ -163,7 +174,6 @@ class SR430_Scalar_Server(GPIBManagedServer):
                 returnValue(message)
             elif value['V'] <= 0.300 and value['V'] >= -0.300:
                 yield dev.write('DCLV '+str(value['V']))
-                #self.dlsignal(value['mV'], notified)
                 returnValue('Success')
 
     @setting(13, 'Records Per Scan', value='w', returns='s')
@@ -171,7 +181,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
         '''
         Sets or queries the records per scan
          ".records_per_scan(x)" sets the records per scan to x.  Acceptable range: [0,32767)U(32769,65535] (Due to the internal programming of the scalar, 32768 is not a working input.)
-         ".records_per_scan()" queries.
+         ".records_per_scan()" queries.  This is used with .update_settings()
          Equivalent to RSCN.
         '''
         dev = self.selectedDevice(c)
@@ -183,7 +193,6 @@ class SR430_Scalar_Server(GPIBManagedServer):
                 rps = int(read_rps) + 65536    #will return as N - 65536
             else:
                 rps = int(read_rps)
-            print 'rps on '+str(rps)
             self.rpssignal(rps, notified)
             message = str(rps)
             returnValue(message)
@@ -195,71 +204,122 @@ class SR430_Scalar_Server(GPIBManagedServer):
                 returnValue(message)
             elif value <= 65535:
                 yield dev.write('RSCN '+str(value))
-                #self.rpssignal(value, notified)
                 returnValue('Success')
 
-    @setting(14, 'Output GPIB')
-    def output_gpib(self, c):
+    @setting(20, 'Bins Per Record', value='w', returns='s')
+    def bins_per_record(self, c, value=None):
         '''
-        Sets query output to GPIB.  This is necessary so that any queries to the
-         scalar will output to the GPIB port.
-         Equivlanet to OUTP 1.
+        Sets or queries bins per record.
+         ".bins_per_record(x)" sets the bins per record to x (nonzero positive number).
+         ".bins_per_record(0)" queries.  This is used with .update_settings()
+         ".bins_per_record()" returns a list of supported arguments.  Accepts integer multiples of 1024 as arguments up to 16*1024.
+         Example: "bins_per_record(1024)" sets the bins per record to 1024 steps.
+         Equivalent to BREC
         '''
         dev = self.selectedDevice(c)
-        yield dev.write('OUTP 1')
+        notified = self.getOtherListeners(c)
+        argument_dictionary = {1024: 1, 2*1024: 2, 3*1024: 3, 4*1024: 4, 5*1024: 5,
+                               6*1024: 6, 7*1024: 7, 8*1024: 8, 9*1024: 9, 10*1024: 10,
+                                11*1024: 11, 12*1024: 12, 13*1024: 13, 14*1024: 14,
+                                15*1024: 15, 16*1024: 16}
+        inverted_dictionary = dict([[v,k] for k,v in argument_dictionary.items()])
+        supported_arguments = argument_dictionary.keys()            #Defines an array with dictionary keys
+        if value==None:
+            message = 'Supported arguments: '+str(supported_arguments)
+            returnValue(message)
+        elif value==0:
+            yield dev.write('BREC?')
+            bit = yield dev.read()                 #Reads in bit
+            message = str(inverted_dictionary[int(bit)]) #Uses dictionary to convert bit to number of bins per record value
+            self.bprsignal(int(bit), notified)
+            returnValue(message)
+        elif value in supported_arguments:
+            yield dev.write('BREC '+str(argument_dictionary[value]))  #Uses dictionary to look up the input value's corresponding bit
+            print 'server bpr called'
+            returnValue('Success')
+        else:
+            message = 'Unsupported argument. Supported arguments: '+str(supported_arguments)
+            returnValue(message)
+
+    @setting(21, 'Bin Width', value='w', returns='s')
+    def bin_width(self, c, value=None):
+        '''
+        Sets or queries bin width (unsigned integervalue representing bin width in ns)
+         ".bin_width(x)" sets the bin width to x (nonzero positive number).
+         ".bin_width(0)" queries.  This is used with .update_settings()
+         ".bin_width()" returns a list of supported arguments.  Supported arguments: [5,40,80,160,320,640,1280,2560,5120,10240,20480,40960,81920,163840,327680,655360,1310700,2621400,5242900,1048600]
+         Example: "bin_width(5)" sets the bin width to 5 ns.
+         Equivalent to BWTH
+        '''
+        dev = self.selectedDevice(c)
+        notified = self.getOtherListeners(c)
+        argument_dictionary = {5: 0,40: 1,80: 2,160: 3,320: 4,640: 5,1280: 6,2560: 7, 5120: 8,      #Defines dictionary
+                               10240: 9, 20480: 10, 40960: 11, 81920: 12, 163840: 13, 327680: 14,
+                               655360: 15, 1310720: 16, 2621400: 17, 5242900: 18, 10486000: 19}
+        inverted_dictionary = dict([[v,k] for k,v in argument_dictionary.items()])
+        supported_arguments = argument_dictionary.keys()            #Defines array with dictionary keys
+
+        if value==None:
+            message = 'Supported arguments: '+str(supported_arguments)
+            returnValue(message)
+        elif value==0:
+            yield dev.write('BWTH?')
+            bit = yield dev.read()            #Reads in bit
+            message = inverted_dictionary[int(bit)] #Uses dictionary to convert bit to width value
+            self.bwsignal(int(bit), notified)
+            returnValue(message)
+        elif value in supported_arguments:
+            yield dev.write('BWTH '+str(argument_dictionary[value]))        #Converts value to corresponding bit
+            returnValue('Success')
+        else:
+            message = 'Unsupported argument.  Supported arguments: '+str(supported_arguments)
+            returnValue(message)
 
     @setting(15, 'Start Scan')
     def start_scan(self, c):
         '''
         Starts scan (without clearing).  Same as pressing the [START] key.
+        This updates the .scalar_state attribute to 'scanning'
          For starting a scan with clearing, use start_new_scan().
          Equivalent to SSCN.
         '''
         dev = self.selectedDevice(c)
-        notified = self.getOtherListeners(c)
-        bins_per_record = yield self.bins_per_record(c,0)
-        bin_width = yield self.bin_width(c,0)
-        bins_per_record = int(bins_per_record)
-        bin_width = bin_width
-        trigger_period = (bins_per_record*bin_width + bins_per_record*250 + 150*(10**3))*10**(-6)+1
+        notified = self.listeners.copy()
+        self.scalar_state = 'scanning'    #scalar_state can be 'scanning', 'paused', or 'cleared'
+        self.panelsignal(self.scalar_state, notified)
         yield dev.write('SSCN')
-        self.startsignal(None,notified)
-        self.timer.start(trigger_period)
-    @setting(95, 'Timer Tick')
-    def timer_tick(self):
-        print 'tick'
-        notified = self.getOtherListeners(c)
-        self.record += 1
-        self.recordsignal(self.record, notified)
-        yield None
 
     @setting(16, 'Stop Scan')
     def stop_scan(self, c):
         '''
         Pauses a scan in progress.  Same as pressing [STOP] key.
+        This updates the .scalar_state attribute to 'paused'
          Equivalent to PAUS.
         '''
         dev = self.selectedDevice(c)
-        notified = self.getOtherListeners(c)
-        self.stopsignal(None,notified)
+        notified = self.listeners.copy()
+        self.scalar_state = 'paused'
+        self.panelsignal(self.scalar_state, notified)
         yield dev.write('PAUS')
-        self.timer.stop()
+        self.scanning = False
 
     @setting(17, 'Clear Scan')
     def clear_scan(self, c):
         '''
         Resets the unit to CLEAR state, losing all data.  Same as pressing [STOP],[STOP]
+        This updates the .scalar_state attribute to 'cleared'
          Equivalent to CLRS
         '''
         dev = self.selectedDevice(c)
-        notified = self.getOtherListeners(c)
-        self.clearsignal(None,notified)
-        self.record = 0
+        notified = self.listeners.copy()
+        self.scalar_state = 'cleared'
+        self.panelsignal(self.scalar_state, notified)
         yield dev.write('CLRS')
 
     @setting(18, 'Start New Scan', returns='s', wait_time='v[s]')
     def start_new_scan(self, c, wait_time):
         '''
+        This is an old function used for scripting.
         Clears current data and starts new scan, and pauses the program over the input wait_time to allow scan to run uninterrupted.
          ".start_new_scan(wait_time)" is the proper syntax, where wait_time is a number with time unit in seconds, i.e. U(1.0,'s').
          Uses both clear_scan() and start_scan() methods.
@@ -288,82 +348,25 @@ class SR430_Scalar_Server(GPIBManagedServer):
         last_bin_index = int(bins_per_record) - 1
         yield dev.write('RLIM '+str(last_bin_index))    #Lets the right limit as the total number of bins - 1 (last bin)
         yield dev.write('STAT')
-        sleep(0.5)
+        sleep(1)
         yield dev.write('SPAR?2')           #Queries for the total # of counts (SPAR?2) See Manual
         number_of_counts = yield dev.read() #Reads the buffer for total # of counts
         returnValue(int(float(number_of_counts)))  #Returns total # of counts as an integer
 
-    @setting(20, 'Bins Per Record', value='w', returns='s')
-    def bins_per_record(self, c, value=None):
+    @setting(25, 'Get Record', returns='w')
+    def get_record(self, c):
         '''
-        Sets or queries bins per record.
-         ".bins_per_record(x)" sets the bins per record to x (nonzero positive number).
-         ".bins_per_record(0)" queries.
-         ".bins_per_record()" returns a list of supported arguments.  Accepts integer multiples of 1024 as arguments up to 16*1024.
-         Example: "bins_per_record(1024)" sets the bins per record to 1024 steps.
-         Equivalent to BREC
+        Gets the current record being scanned, and returns it as an integer.
+        ".get_record()" queries for the record.  This is used with .update_settings()
+        Equivalent to SCAN?
         '''
         dev = self.selectedDevice(c)
-        notified = self.getOtherListeners(c)
-        argument_dictionary = {1024: 1, 2*1024: 2, 3*1024: 3, 4*1024: 4, 5*1024: 5,
-                               6*1024: 6, 7*1024: 7, 8*1024: 8, 9*1024: 9, 10*1024: 10,
-                                11*1024: 11, 12*1024: 12, 13*1024: 13, 14*1024: 14,
-                                15*1024: 15, 16*1024: 16}
-        inverted_dictionary = dict([[v,k] for k,v in argument_dictionary.items()])
-        supported_arguments = argument_dictionary.keys()            #Defines an array with dictionary keys
-        if value==None:
-            message = 'Supported arguments: '+str(supported_arguments)
-            returnValue(message)
-        elif value==0:
-            yield dev.write('BREC?')
-            bit = yield dev.read()                 #Reads in bit
-            message = str(inverted_dictionary[int(bit)]) #Uses dictionary to convert bit to number of bins per record value
-            print 'bpr on '+str(bit)
-            self.bprsignal(int(bit), notified)
-            returnValue(message)
-        elif value in supported_arguments:
-            yield dev.write('BREC '+str(argument_dictionary[value]))  #Uses dictionary to look up the input value's corresponding bit
-            #self.bprsignal(argument_dictionary[value], notified)
-            returnValue('Success')
-        else:
-            message = 'Unsupported argument. Supported arguments: '+str(supported_arguments)
-            returnValue(message)
-
-    @setting(21, 'Bin Width', value='w', returns='s')
-    def bin_width(self, c, value=None):
-        '''
-        Sets or queries bin width (unsigned integervalue representing bin width in ns)
-         ".bin_width(x)" sets the bin width to x (nonzero positive number).
-         ".bin_width(0)" queries.
-         ".bin_width()" returns a list of supported arguments.  Supported arguments: [5,40,80,160,320,640,1280,2560,5120,10240,20480,40960,81920,163840,327680,655360,1310700,2621400,5242900,1048600]
-         Example: "bin_width(5)" sets the bin width to 5 ns.
-         Equivalent to BWTH
-        '''
-        dev = self.selectedDevice(c)
-        notified = self.getOtherListeners(c)
-        argument_dictionary = {5: 0,40: 1,80: 2,160: 3,320: 4,640: 5,1280: 6,2560: 7, 5120: 8,      #Defines dictionary
-                               10240: 9, 20480: 10, 40960: 11, 81920: 12, 163840: 13, 327680: 14,
-                               655360: 15, 1310720: 16, 2621400: 17, 5242900: 18, 10486000: 19}
-        inverted_dictionary = dict([[v,k] for k,v in argument_dictionary.items()])
-        supported_arguments = argument_dictionary.keys()            #Defines array with dictionary keys
-
-        if value==None:
-            message = 'Supported arguments: '+str(supported_arguments)
-            returnValue(message)
-        elif value==0:
-            yield dev.write('BWTH?')
-            bit = yield dev.read()            #Reads in bit
-            message = inverted_dictionary[int(bit)] #Uses dictionary to convert bit to width value
-            print 'bw on '+bit
-            self.bwsignal(int(bit), notified)
-            returnValue(message)
-        elif value in supported_arguments:
-            yield dev.write('BWTH '+str(argument_dictionary[value]))        #Converts value to corresponding bit
-            #self.bwsignal(argument_dictionary[value], notified)
-            returnValue('Success')
-        else:
-            message = 'Unsupported argument.  Supported arguments: '+str(supported_arguments)
-            returnValue(message)
+        notified = self.listeners.copy()
+        yield dev.write('SCAN?')
+        record = yield dev.read()
+        record = int(record)
+        self.recordsignal(record, notified)
+        returnValue(record)
 
     @setting(23, 'Clear Status')
     def clear_status(self, c):
@@ -373,6 +376,16 @@ class SR430_Scalar_Server(GPIBManagedServer):
         '''
         dev = self.selectedDevice(c)
         yield dev.write('*CLS')
+
+    @setting(14, 'Output GPIB')
+    def output_gpib(self, c):
+        '''
+        Sets query output to GPIB.  This is necessary so that any queries to the
+         scalar will output to the GPIB port.
+         Equivlanet to OUTP 1.
+        '''
+        dev = self.selectedDevice(c)
+        yield dev.write('OUTP 1')
 
     @setting(24, 'Error', returns='s')
     def error(self, c):

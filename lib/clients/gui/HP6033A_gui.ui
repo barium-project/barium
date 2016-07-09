@@ -193,11 +193,11 @@
      <string>Pulse Mode</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="ps_output_button">
+   <widget class="QCheckBox" name="ps_output_checkbox">
     <property name="geometry">
      <rect>
       <x>260</x>
-      <y>180</y>
+      <y>240</y>
       <width>111</width>
       <height>31</height>
      </rect>
@@ -211,6 +211,9 @@
     <property name="checked">
      <bool>true</bool>
     </property>
+    <property name="tristate">
+     <bool>false</bool>
+    </property>
    </widget>
    <widget class="QPushButton" name="ps_pulse_voltage_button">
     <property name="enabled">
@@ -220,7 +223,7 @@
      <rect>
       <x>180</x>
       <y>110</y>
-      <width>121</width>
+      <width>111</width>
       <height>41</height>
      </rect>
     </property>
@@ -287,7 +290,7 @@
      <rect>
       <x>180</x>
       <y>70</y>
-      <width>121</width>
+      <width>111</width>
       <height>41</height>
      </rect>
     </property>
@@ -337,6 +340,53 @@
     </property>
     <property name="text">
      <string>Set Safety Limits</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ps_apply_settings_button">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>170</y>
+      <width>121</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Apply Settings</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="ps_mode_text">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>110</y>
+      <width>41</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_9">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>90</y>
+      <width>46</width>
+      <height>13</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Mode</string>
     </property>
    </widget>
   </widget>
