@@ -2,31 +2,45 @@ from barium.lib.clients.gui.RGA_gui import RGA_UI
 from twisted.internet.defer import inlineCallbacks, returnValue
 from PyQt4 import QtGui, QtCore
 
-
 class RGA_Client(RGA_UI):
-    def __init__(self, reactor, host_ip, host_name, parent = None):
+    FILSIGNALID = 315039
+    MLSIGNALID = 315040
+    HVSIGNALID = 315041
+    BUFSIGNALID = 315042
+    QUESIGNALID = 315043
+    def __init__(self, reactor, parent = None):
         from labrad.units import WithUnit
         self.U = WithUnit
         super(RGA_Client, self).__init__()
         self.reactor = reactor
-        self.initialize(host_ip, host_name)
+        self.initialize()
     @inlineCallbacks
-    def initialize(self, host_ip, host_name):
-        self.connect(host_ip, host_name)
+    def initialize(self):
         self.setupUi()
-        self.signal_connect()
         yield None
     @inlineCallbacks
-    def connect(self, host_ip, host_name):
+    def self_connect(self, host_ip, host_name):
         from labrad.wrappers import connectAsync
-        self.cxn = yield connectAsync(host=host_ip, name="RGA Client")
+        self.cxn = yield connectAsync(host=host_ip, name="RGA Client", password="lab")
         try:
-            self.rga = self.cxn.rga_server
+            self.server = self.cxn.rga_server
             print 'Connected to RGA Server.'
+            yield self.server.signal__filament_changed(self.FILSIGNALID)
+            yield self.server.signal__mass_lock_changed(self.MLSIGNALID)
+            yield self.server.signal__high_voltage_changed(self.HVSIGNALID)
+            yield self.server.signal__buffer_read(self.BUFSIGNALID)
+            yield self.server.signal__query_sent(self.QUESIGNALID)
+            yield self.server.addListener(listener = self.update_fil, source = None, ID = self.FILSIGNALID)
+            yield self.server.addListener(listener = self.update_ml, source = None, ID = self.MLSIGNALID)
+            yield self.server.addListener(listener = self.update_hv, source = None, ID = self.HVSIGNALID)
+            yield self.server.addListener(listener = self.update_buf, source = None, ID = self.BUFSIGNALID)
+            yield self.server.addListener(listener = self.update_que, source = None, ID = self.QUESIGNALID)
+
+            self.signal_connect()
         except:
             print 'RGA Server Unavailable. Client is not connected.'
     @inlineCallbacks
-    def signal_connect(self):
+    def signal_connect(self):        
         filament_state = self.rga_filament_checkbox.isChecked()
         voltage = self.rga_voltage_spinbox.value()
         mass = self.rga_mass_lock_spinbox.value()
@@ -39,31 +53,45 @@ class RGA_Client(RGA_UI):
         self.rga_read_buffer_button.clicked.connect(lambda :self.read_buffer())
         self.rga_clear_button.clicked.connect(lambda :self.clear_buffer())
         yield None
+    def update_fil(self, c, signal):
+        if signal == 1:
+            self.rga_filament_checkbox.setChecked(True)
+        elif signal == 0:
+            self.rga_filament_checkbox.setChecked(False)
+    def update_ml(self, c, signal):
+        self.rga_mass_lock_spinbox.setValue(signal)
+    def update_hv(self, c, signal):
+        self.rga_voltage_spinbox.setValue(signal)
+    def update_buf(self, c, signal):
+        self.rga_buffer_text.appendPlainText(signal)
+    def update_que(self, c, signal):
+        self.rga_buffer_text.appendPlainText(signal)
+        
     @inlineCallbacks
     def set_filament_state(self,state):
         if state==True:
             bit = 1
         else:
             bit = 0
-        yield self.rga.filament(bit)
+        yield self.server.filament(bit)
     @inlineCallbacks
     def set_voltage(self,value):
-        yield self.rga.high_voltage(value)
+        yield self.server.high_voltage(value)
     @inlineCallbacks
     def set_mass_lock(self,value):
-        yield self.rga.mass_lock(value)
+        yield self.server.mass_lock(value)
     @inlineCallbacks
     def get_id(self):
-        yield self.rga.identify()
+        yield self.server.identify()
     @inlineCallbacks
     def get_filament_status(self):
-        yield self.rga.filament()
+        yield self.server.filament()
     @inlineCallbacks
     def get_voltage(self):
         yield self.rga.high_voltage()
     @inlineCallbacks
     def read_buffer(self):
-        message = yield self.rga.read_buffer()
+        message = yield self.server.read_buffer()
         self.rga_buffer_text.appendPlainText(message)
     @inlineCallbacks
     def clear_buffer(self):
@@ -71,9 +99,7 @@ class RGA_Client(RGA_UI):
         yield None
     @inlineCallbacks
     def closeEvent(self,x):
-        self.set_voltage(0)
-        self.set_filament_state(False)
-        reactor.stop()
+        self.reactor.stop()
         yield None
 
 import sys
@@ -85,7 +111,8 @@ if __name__ == "__main__":
     from twisted.internet import reactor
     from socket import gethostname
 
-    client = RGA_Client(reactor,'127.0.0.1',gethostname())
+    client = RGA_Client(reactor)
+    client.self_connect('127.0.0.1',gethostname())
     client.show()
 
     reactor.run()

@@ -2,14 +2,13 @@ from barium.lib.clients.gui.Scalar_gui import Scalar_UI
 from twisted.internet.defer import inlineCallbacks, returnValue
 from PyQt4 import QtGui, QtCore
 
-BPRSIGNALID = 275309
-BWSIGNALID = 275311
-RPSSIGNALID = 275312
-DLSIGNALID = 275313
-RECORDSIGNALID = 275317
-PANELSIGNALID = 275318
-
 class SR430_Scalar_Client(Scalar_UI):
+    BPRSIGNALID = 275309
+    BWSIGNALID = 275311
+    RPSSIGNALID = 275312
+    DLSIGNALID = 275313
+    RECORDSIGNALID = 275317
+    PANELSIGNALID = 275318
     def __init__(self, reactor, parent = None):
         from labrad.units import WithUnit
         self.U = WithUnit
@@ -28,27 +27,26 @@ class SR430_Scalar_Client(Scalar_UI):
         self.server = yield self.cxn.sr430_scalar_server
         print 'Connected to SR430 Scalar Server.'
         yield self.server.select_device(0)
+        
+        yield self.server.signal__bins_per_record_changed(self.BPRSIGNALID)
+        yield self.server.signal__bin_width_changed(self.BWSIGNALID)
+        yield self.server.signal__discriminator_level_changed(self.DLSIGNALID)
+        yield self.server.signal__records_per_scan_changed(self.RPSSIGNALID)
+        yield self.server.signal__record_signal(self.RECORDSIGNALID)
+        yield self.server.signal__panel_signal(self.PANELSIGNALID)
+        yield self.server.addListener(listener = self.update_bpr, source = None, ID = self.BPRSIGNALID)
+        yield self.server.addListener(listener = self.update_bw, source = None, ID = self.BWSIGNALID)
+        yield self.server.addListener(listener = self.update_dl, source = None, ID = self.DLSIGNALID)
+        yield self.server.addListener(listener = self.update_rps, source = None, ID = self.RPSSIGNALID)
+        yield self.server.addListener(listener = self.record_update, source = None, ID = self.RECORDSIGNALID)
+        yield self.server.addListener(listener = self.panel_update, source = None, ID = self.PANELSIGNALID)
+        
         self.signal_connect()
         #yield self.server.update_settings()
         #except:
         #    print 'SR430 Scalar Server Unavailable. Client is not connected.'
     @inlineCallbacks
     def signal_connect(self):
-        yield self.server.signal__bins_per_record_changed(BPRSIGNALID)
-        yield self.server.signal__bin_width_changed(BWSIGNALID)
-        yield self.server.signal__discriminator_level_changed(DLSIGNALID)
-        yield self.server.signal__records_per_scan_changed(RPSSIGNALID)
-        yield self.server.signal__record_signal(RECORDSIGNALID)
-        yield self.server.signal__panel_signal(PANELSIGNALID)
-
-
-        yield self.server.addListener(listener = self.update_bpr, source = None, ID = BPRSIGNALID)
-        yield self.server.addListener(listener = self.update_bw, source = None, ID = BWSIGNALID)
-        yield self.server.addListener(listener = self.update_dl, source = None, ID = DLSIGNALID)
-        yield self.server.addListener(listener = self.update_rps, source = None, ID = RPSSIGNALID)
-        yield self.server.addListener(listener = self.record_update, source = None, ID = RECORDSIGNALID)
-        yield self.server.addListener(listener = self.panel_update, source = None, ID = PANELSIGNALID)
-
         self.sca_discriminator_level_spinbox.valueChanged.connect(lambda :self.set_discriminator_level())
         self.sca_records_per_scan_spinbox.valueChanged.connect(lambda :self.set_records_per_scan())
         self.sca_bins_per_record_select.currentIndexChanged.connect(lambda :self.set_bins_per_record())
@@ -151,7 +149,7 @@ class SR430_Scalar_Client(Scalar_UI):
     @inlineCallbacks
     def closeEvent(self, x):
         yield None
-        reactor.stop()
+        self.reactor.stop()
 
 import sys
 

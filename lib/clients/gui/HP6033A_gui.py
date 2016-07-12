@@ -173,7 +173,7 @@ class HP6033A_UI(QtGui.QWidget):
         self.label_7.setText(_translate("Form", "Pulse Current (A)", None))
         self.ps_pulse_current_button.setText(_translate("Form", "Pulse Current", None))
         self.label_8.setText(_translate("Form", "Pulse Voltage (V)", None))
-        self.ps_set_safety_limits_button.setText(_translate("Form", "Set Safety Limits", None))
+        self.ps_set_safety_limits_button.setText(_translate("Form", "Set Safety Limits ...", None))
         self.ps_apply_settings_button.setText(_translate("Form", "Apply Settings", None))
         self.label_9.setText(_translate("Form", "Mode", None))
 

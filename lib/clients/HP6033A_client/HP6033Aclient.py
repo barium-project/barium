@@ -3,15 +3,12 @@ from barium.lib.clients.gui.HP6033A_safety_gui import HP6033A_Safety_UI
 from twisted.internet.defer import inlineCallbacks, returnValue
 from PyQt4 import QtGui, QtCore
 
-CURRSIGNALID = 147901
-VOLTSIGNALID = 147902
-MEASSIGNALID = 147903
-OUTPSIGNALID = 147904
-
 
 class HP6033A_Client(HP6033A_UI):
-
-
+    CURRSIGNALID = 147901
+    VOLTSIGNALID = 147902
+    MEASSIGNALID = 147903
+    OUTPSIGNALID = 147904
     def __init__(self, reactor, parent = None):
         from labrad.units import WithUnit
         self.U = WithUnit
@@ -30,21 +27,22 @@ class HP6033A_Client(HP6033A_UI):
             self.server = self.cxn.hp6033a_server
             print 'Connected to HP6033A Server'
             self.server.select_device(0)
+            
+            yield self.server.signal__current_changed(self.CURRSIGNALID)
+            yield self.server.signal__voltage_changed(self.VOLTSIGNALID)
+            yield self.server.signal__get_measurements(self.MEASSIGNALID)
+            yield self.server.signal__output_changed(self.OUTPSIGNALID)
+            yield self.server.addListener(listener = self.update_curr, source = None, ID = self.CURRSIGNALID)
+            yield self.server.addListener(listener = self.update_volt, source = None, ID = self.VOLTSIGNALID)
+            yield self.server.addListener(listener = self.update_meas, source = None, ID = self.MEASSIGNALID)
+            yield self.server.addListener(listener = self.update_outp, source = None, ID = self.OUTPSIGNALID)
+            
             self.signal_connect()
         except:
             print 'HP6033A Server Unavailable. Client is not connected.'
     @inlineCallbacks
     def signal_connect(self):
-        yield self.server.signal__current_changed(CURRSIGNALID)
-        yield self.server.signal__voltage_changed(VOLTSIGNALID)
-        yield self.server.signal__get_measurements(MEASSIGNALID)
-        yield self.server.signal__output_changed(OUTPSIGNALID)
-
-        yield self.server.addListener(listener = self.update_curr, source = None, ID = CURRSIGNALID)
-        yield self.server.addListener(listener = self.update_volt, source = None, ID = VOLTSIGNALID)
-        yield self.server.addListener(listener = self.update_meas, source = None, ID = MEASSIGNALID)
-        yield self.server.addListener(listener = self.update_outp, source = None, ID = OUTPSIGNALID)
-
+        
         #self.ps_voltage_spinbox.valueChanged.connect(lambda :self.set_voltage())
         #self.ps_current_spinbox.valueChanged.connect(lambda :self.set_current())
         #self.ps_output_checkbox.toggled.connect(lambda :self.output())
@@ -64,7 +62,9 @@ class HP6033A_Client(HP6033A_UI):
         self.safety_limits.ps_max_current_spinbox.valueChanged.connect(lambda :self.update_safety())
         self.safety_limits.ps_min_current_spinbox.valueChanged.connect(lambda :self.update_safety())
         self.ps_set_safety_limits_button.clicked.connect(lambda :self.show_safety_limits())
+
         yield None
+
     def update_curr(self,c,signal):
         self.ps_current_spinbox.setValue(signal['A'])
     def update_volt(self,c,signal):
@@ -98,29 +98,27 @@ class HP6033A_Client(HP6033A_UI):
         self.safety_limits.show()
         yield None
     @inlineCallbacks
-    def set_voltage(self):
-        print 'setting voltage'
-        value = self.ps_voltage_spinbox.value()
+    def set_voltage(self, value):
         value = self.U(value,'V')
         yield self.server.set_voltage(value)
         #self.update_indicators()
     @inlineCallbacks
-    def set_current(self):
-        print 'setting current'
-        value = self.ps_current_spinbox.value()
+    def set_current(self, value):
         value = self.U(value,'A')
         yield self.server.set_current(value)
         #self.update_indicators()
     @inlineCallbacks
-    def output(self):
-        state = self.ps_output_checkbox.isChecked()
+    def output(self, state):
         yield self.server.output_state(state)
         #self.update_indicators()
     @inlineCallbacks
     def apply_settings(self):
-        self.set_voltage()
-        self.set_current()
-        self.output()
+        voltage = self.ps_voltage_spinbox.value()
+        current = self.ps_current_spinbox.value()
+        state = self.ps_output_checkbox.isChecked()
+        self.set_voltage(voltage)
+        self.set_current(current)
+        self.output(state)
         self.update_indicators()
         yield None
     @inlineCallbacks
@@ -153,10 +151,9 @@ class HP6033A_Client(HP6033A_UI):
         time = self.U(self.ps_pulse_time_spinbox.value(), 's')
         yield self.server.pulse_current(current, time)
     @inlineCallbacks
-    @inlineCallbacks
     def closeEvent(self, x):
+        self.reactor.stop()
         yield None
-        reactor.stop()
 
 import sys
 

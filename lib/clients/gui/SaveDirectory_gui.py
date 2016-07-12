@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\barium133\code\barium\lib\clients\gui\SaveDirectory_gui.ui'
+# Form implementation generated from reading ui file 'C:\Users\barium133\Code\barium\lib\clients\gui\SaveDirectory_gui.ui'
 #
 # Created by: PyQt4 UI code generator 4.11.4
 #
@@ -55,6 +55,9 @@ class SaveDirectory_UI(QtGui.QWidget):
         font.setWeight(75)
         self.label.setFont(font)
         self.label.setObjectName(_fromUtf8("label"))
+        self.sd_select_path_button = QtGui.QPushButton(self.frame)
+        self.sd_select_path_button.setGeometry(QtCore.QRect(250, 50, 121, 21))
+        self.sd_select_path_button.setObjectName(_fromUtf8("sd_select_path_button"))
 
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -70,4 +73,5 @@ class SaveDirectory_UI(QtGui.QWidget):
         self.sd_save_path_select.setItemText(0, _translate("Form", "Z:\\Group_Share\\Barium\\Data\\", None))
         self.sd_save_path_select.setItemText(1, _translate("Form", "C:\\Users\\barium133\\Desktop\\", None))
         self.label.setText(_translate("Form", "Save Directory", None))
+        self.sd_select_path_button.setText(_translate("Form", "Select Path ...", None))
 

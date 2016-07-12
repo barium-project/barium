@@ -54,12 +54,69 @@ class LabRADconnection_Client(LabRADconnection_UI):
         
     @inlineCallbacks
     def connect(self):
+        from labrad.wrappers import connectAsync
         host_ip = str(self.host_ip_text.currentText())
         host_name = str(self.host_name_text.currentText())
+        SINGLE_CONNECTION = False
+
+        if SINGLE_CONNECTION:
+            self.cxn = yield connectAsync(host=host_ip, name="Mass Spectrum Client", password="lab")
         
-        self.hpui = HP6033A_Client(reactor, host_ip, host_name)         #instantiates device clients
-        self.scaui = SR430_Scalar_Client(reactor, host_ip, host_name)
-        self.rgaui = RGA_Client(reactor, host_ip, host_name)
+        self.hpui = HP6033A_Client(reactor)         #Instantiates HP6033A Client
+        if not SINGLE_CONNECTION:
+            self.hpui.self_connect(host_ip, "Mass Spec HP6033A Client")
+        if SINGLE_CONNECTION:
+            self.hpui.server = self.cxn.hp6033a_server  #Maps HP6033A Server to HP6033A.server attribute
+            yield self.hpui.server.select_device(0)
+            #LabRAD Signal Connections:
+            yield self.hpui.server.signal__current_changed(self.hpui.CURRSIGNALID)
+            yield self.hpui.server.signal__voltage_changed(self.hpui.VOLTSIGNALID)
+            yield self.hpui.server.signal__get_measurements(self.hpui.MEASSIGNALID)
+            yield self.hpui.server.signal__output_changed(self.hpui.OUTPSIGNALID)
+            yield self.hpui.server.addListener(listener = self.hpui.update_curr, source = None, ID = self.hpui.CURRSIGNALID)
+            yield self.hpui.server.addListener(listener = self.hpui.update_volt, source = None, ID = self.hpui.VOLTSIGNALID)
+            yield self.hpui.server.addListener(listener = self.hpui.update_meas, source = None, ID = self.hpui.MEASSIGNALID)
+            yield self.hpui.server.addListener(listener = self.hpui.update_outp, source = None, ID = self.hpui.OUTPSIGNALID)
+            self.hpui.signal_connect()                  #Connects signals between GUI objects and client functions
+
+        self.scaui = SR430_Scalar_Client(reactor)
+        if not SINGLE_CONNECTION:
+            self.scaui.self_connect(host_ip, "Mass Spec Scalar Client")
+        if SINGLE_CONNECTION:
+            self.scaui.server = self.cxn.sr430_scalar_server
+            yield self.scaui.server.select_device(0)
+            yield self.scaui.server.signal__bins_per_record_changed(self.scaui.BPRSIGNALID)
+            yield self.scaui.server.signal__bin_width_changed(self.scaui.BWSIGNALID)
+            yield self.scaui.server.signal__discriminator_level_changed(self.scaui.DLSIGNALID)
+            yield self.scaui.server.signal__records_per_scan_changed(self.scaui.RPSSIGNALID)
+            yield self.scaui.server.signal__record_signal(self.scaui.RECORDSIGNALID)
+            yield self.scaui.server.signal__panel_signal(self.scaui.PANELSIGNALID)
+            yield self.scaui.server.addListener(listener = self.scaui.update_bpr, source = None, ID = self.scaui.BPRSIGNALID)
+            yield self.scaui.server.addListener(listener = self.scaui.update_bw, source = None, ID = self.scaui.BWSIGNALID)
+            yield self.scaui.server.addListener(listener = self.scaui.update_dl, source = None, ID = self.scaui.DLSIGNALID)
+            yield self.scaui.server.addListener(listener = self.scaui.update_rps, source = None, ID = self.scaui.RPSSIGNALID)
+            yield self.scaui.server.addListener(listener = self.scaui.record_update, source = None, ID = self.scaui.RECORDSIGNALID)
+            yield self.scaui.server.addListener(listener = self.scaui.panel_update, source = None, ID = self.scaui.PANELSIGNALID)
+            yield self.scaui.server.addListener(listener = self.panel_update_test, source = None, ID = self.scaui.PANELSIGNALID)
+            self.scaui.signal_connect()
+        
+        self.rgaui = RGA_Client(reactor)
+        if not SINGLE_CONNECTION:
+            self.rgaui.self_connect(host_ip, "Mass Spec RGA Client")
+        if SINGLE_CONNECTION:
+            self.rgaui.server = self.cxn.rga_server
+            yield self.rgaui.server.signal__filament_changed(self.rgaui.FILSIGNALID)
+            yield self.rgaui.server.signal__mass_lock_changed(self.rgaui.MLSIGNALID)
+            yield self.rgaui.server.signal__high_voltage_changed(self.rgaui.HVSIGNALID)
+            yield self.rgaui.server.signal__buffer_read(self.rgaui.BUFSIGNALID)
+            yield self.rgaui.server.signal__query_sent(self.rgaui.QUESIGNALID)
+            yield self.rgaui.server.addListener(listener = self.rgaui.update_fil, source = None, ID = self.rgaui.FILSIGNALID)
+            yield self.rgaui.server.addListener(listener = self.rgaui.update_ml, source = None, ID = self.rgaui.MLSIGNALID)
+            yield self.rgaui.server.addListener(listener = self.rgaui.update_hv, source = None, ID = self.rgaui.HVSIGNALID)
+            yield self.rgaui.server.addListener(listener = self.rgaui.update_buf, source = None, ID = self.rgaui.BUFSIGNALID)
+            yield self.rgaui.server.addListener(listener = self.rgaui.update_que, source = None, ID = self.rgaui.QUESIGNALID)
+            self.rgaui.signal_connect()
+        
         self.savdirui = SaveDirectory_UI()      #instantiates extra GUI's
         self.massspecui = MassSpecExperiment_UI()
         self.commui = CommandLine_UI()
@@ -72,7 +129,17 @@ class LabRADconnection_Client(LabRADconnection_UI):
             self.host_name_text.setDisabled(True)
             self.setup_experiment()
         yield None
-        
+    def panel_update_test(self,c,signal):
+        if signal == 'scanning':
+            self.scaui.frame_1.setDisabled(True)
+            self.scaui.frame_2.setDisabled(True)
+        elif signal == 'paused':
+            self.scaui.frame_1.setDisabled(True)
+            self.scaui.frame_2.setEnabled(True)
+        elif signal == 'cleared':
+            self.scaui.frame_1.setEnabled(True)
+            self.scaui.frame_2.setEnabled(True)
+            self.scaui.sca_progress_bar.setValue(0)
     @inlineCallbacks
     def setup_experiment(self):
         self.hpui.setParent(self)   #embeds widgets inside window
@@ -128,6 +195,10 @@ class LabRADconnection_Client(LabRADconnection_UI):
         windowsize = [self.width(),self.height()]
         screencenter = [(screensize[0]-windowsize[0])/2,(screensize[1]-windowsize[1])/2]
         self.move(screencenter[0],screencenter[1])
+
+        dialog = QtGui.QFileDialog()
+        dialog.setDirectory('Z:\Group_Share\Barium\Data')
+        self.savdirui.sd_select_path_button.clicked.connect(lambda : self.savdirui.sd_save_path_select.setEditText(dialog.getExistingDirectory()))
                 
         reactor.run()
         yield None
@@ -303,7 +374,7 @@ class LabRADconnection_Client(LabRADconnection_UI):
         new_data = np.array([[mass,counts,t[2],t[3],t[4],t[5],voltage,current]])
         self.dataui.ms_data_text.appendPlainText(str(self.datapoint),str(new_data))
         self.results = np.concatenate((self.results,new_data),axis=0)
-        np.savetxt(str(filepath+filename),self.results,fmt="%0.5e")
+        np.savetxt(str(filepath+'\\'+filename),self.results,fmt="%0.5e")
         self.datapoint+=1
         
     @inlineCallbacks

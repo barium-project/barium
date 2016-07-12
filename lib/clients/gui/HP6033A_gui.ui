@@ -339,7 +339,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Set Safety Limits</string>
+     <string>Set Safety Limits ...</string>
     </property>
    </widget>
    <widget class="QPushButton" name="ps_apply_settings_button">
