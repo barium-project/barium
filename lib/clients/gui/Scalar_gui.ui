@@ -114,7 +114,7 @@
      <rect>
       <x>10</x>
       <y>40</y>
-      <width>201</width>
+      <width>221</width>
       <height>101</height>
      </rect>
     </property>
@@ -397,6 +397,29 @@
       </property>
      </item>
     </widget>
+    <widget class="QLCDNumber" name="sca_integration_time_lcd">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>20</y>
+       <width>91</width>
+       <height>23</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_8">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>0</y>
+       <width>121</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Integration Time (ms)</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QLabel" name="label_6">
     <property name="geometry">
@@ -465,7 +488,7 @@
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>240</x>
       <y>40</y>
       <width>121</width>
       <height>21</height>
@@ -478,7 +501,7 @@
    <widget class="QSpinBox" name="sca_discriminator_level_spinbox">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>240</x>
       <y>60</y>
       <width>71</width>
       <height>22</height>
@@ -494,7 +517,7 @@
    <widget class="QLabel" name="label_7">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>240</x>
       <y>90</y>
       <width>131</width>
       <height>21</height>
@@ -507,7 +530,7 @@
    <widget class="QLCDNumber" name="sca_trigger_frequency_lcd">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>240</x>
       <y>110</y>
       <width>121</width>
       <height>31</height>

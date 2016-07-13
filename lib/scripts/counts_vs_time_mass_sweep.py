@@ -29,34 +29,34 @@ hp.select_device()
 
 # Set SCALAR parameters
 
-DISCRIMINATOR_LEVEL = U(0.2,'V')  ### Edit this to change the discriminator level
+DISCRIMINATOR_LEVEL = U(0.06,'V')  ### Edit this to change the discriminator level
 sca.discriminator_level(DISCRIMINATOR_LEVEL)# set discriminator level
-RECORDS_PER_SCAN = 1000            ### Edit this to change the records per scan
+RECORDS_PER_SCAN = 500            ### Edit this to change the records per scan
 sca.records_per_scan(RECORDS_PER_SCAN) # set records per scan
 sca.bins_per_record(1024)              # set bins per record
 sca.bin_width(163840)                  # set bin width
+sca.updating = False                   # stops the scalar from autoupdating, since this is not needed in a script
 
 # Set RGA mass to look at
-MASS_LIST = [130., 130.5, 131., 131.5, 132., 132.5, 133., 133.5, 134., 134.5, \
-135., 135.5, 136., 136.5, 137., 137.5, 138., 138.5, 139., 139.5]         ### Edit this to change this list of masses to sweep through
+MASS_LIST = [39., 39.25, 39.5, 39.75, 40., 40.25, 40.5, 40.75, 41., 41.25]         ### Edit this to change this list of masses to sweep through
 rga.write_line('hv2200')
 rga.write_line('fl1')
 time.sleep(1)
 
 # Set the POWER SUPPLY Parameters
-FILAMENT_CURRENT = U(13.5,'A')      ### Edit this to change the power supply current
+FILAMENT_CURRENT = U(13,'A')      ### Edit this to change the power supply current
 hp.set_voltage(U(10,'V'))
 hp.set_current(FILAMENT_CURRENT)
 
 # Provide the TRIGGER parameters
-TRIGGER_FREQUENCY = 5.91            ### Edit this to provide the trigger frequency (in Hz)
+TRIGGER_FREQUENCY = 5.911        ### Edit this to provide the trigger frequency (in Hz)
 trigger_period = 1/TRIGGER_FREQUENCY
-counting_time = 171
+counting_time = 100
 
 # time in seconds between each data point
 exp_t = 1
 
-SWEEP_ITERATIONS = 1             ### Edit this to change the number of sweeps
+SWEEP_ITERATIONS = 5             ### Edit this to change the number of sweeps
 
 
 #Initialize data array(mass,counts,day,hour,minute,second,voltage,current)
@@ -69,7 +69,7 @@ for iteration in range(SWEEP_ITERATIONS):
                 sca.discriminator_level(U(0.22,'V'))
             else:
                 sca.discriminator_level(DISCRIMINATOR_LEVEL)
-                print '200mV Discrim'
+                print DISCRIMINATOR_LEVEL+' Discrim'
             rga.write_line('ml'+str(mass)) # selects the mass
             sca.clear_scan() # clear the last run
             sca.start_new_scan(U(counting_time,'s')) # start scan
@@ -81,7 +81,7 @@ for iteration in range(SWEEP_ITERATIONS):
             new_data = np.array([[mass,counts,t[2],t[3],t[4],t[5],voltage,current]])
             print iteration, new_data
             results = np.concatenate((results,new_data),axis = 0)
-            np.savetxt('Z:/Group_Share/Barium/Data/2016/7/11/BaSpec_13,5amps_HV2200_10VDCbias_1000rps.txt',results,fmt="%0.5e")
+            np.savetxt('Z:/Group_Share/Barium/Data/2016/7/13/CaSpec_time_scan_13amps_HV2200_10VDCbias_500rps.txt',results,fmt="%0.5e")
             time.sleep(exp_t) # Wait to do next run
     
 # close ports

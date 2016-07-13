@@ -118,10 +118,12 @@ class SR430_Scalar_Client(Scalar_UI):
         bins_per_record = int(bins_per_record)
         bin_width = int(bin_width)
 
+        self.integration_time = bins_per_record*bin_width*records_per_scan*10**(-9)
         self.trigger_period = (bins_per_record*bin_width + bins_per_record*250 + 150*(10**3))*10**(-6)+1
         #trigger_period(ms) = (bpr*bw(ns) + bpr*250ns + 150us) + 1ms
         self.trigger_frequency = round(1/(self.trigger_period*10**(-3)),3)
-
+        
+        self.sca_integration_time_lcd.display(self.integration_time)
         self.sca_trigger_frequency_lcd.display(self.trigger_frequency)
         yield None
     @inlineCallbacks

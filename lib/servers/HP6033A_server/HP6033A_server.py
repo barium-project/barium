@@ -41,6 +41,7 @@ CURRSIGNAL = 186421
 VOLTSIGNAL = 186422
 MEASSIGNAL = 186423
 OUTPSIGNAL = 186424
+PULMSIGNAL = 186425
 
 class HP6033A_Server(GPIBManagedServer):
     '''
@@ -59,6 +60,7 @@ class HP6033A_Server(GPIBManagedServer):
     voltsignal = Signal(VOLTSIGNAL, 'signal: voltage changed', 'v[V]')
     meassignal = Signal(MEASSIGNAL, 'signal: get measurements', '(v[V]v[A])')
     outpsignal = Signal(OUTPSIGNAL, 'signal: output changed', 'b')
+    pulmsignal = Signal(PULMSIGNAL, 'signal: pulse mode changed', 'b')
 
     def __init__(self):
         super(HP6033A_Server, self).__init__()
@@ -141,13 +143,17 @@ class HP6033A_Server(GPIBManagedServer):
         self.clear_status(c)
         returnValue(current)
 
-    @setting(103, 'Pulse Initialize')
-    def pulse_initialize(self, c):
+    @setting(103, 'Pulse Initialize', value = 'b')
+    def pulse_initialize(self, c, value):
         '''
         Initializes the power supply for pulse mode by setting voltage and current to 0.
         '''
-        yield self.set_voltage(U(0,'V'))
-        yield self.set_current(U(0,'A'))
+        notified = self.getOtherListeners(c)
+        if value==True:
+            yield self.set_voltage(U(0,'V'))
+            yield self.set_current(U(0,'A'))
+        self.pulmsignal(value, notified)
+            
 
     @setting(101, 'Pulse Voltage', value = 'v[V]', duration = 'v[s]', returns='s')
     def pulse_voltage(self, c, value, duration):

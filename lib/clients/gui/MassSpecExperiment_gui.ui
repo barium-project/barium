@@ -289,7 +289,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Show Data Log</string>
+     <string>Show Data Log ...</string>
     </property>
    </widget>
   </widget>

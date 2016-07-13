@@ -9,6 +9,7 @@ class HP6033A_Client(HP6033A_UI):
     VOLTSIGNALID = 147902
     MEASSIGNALID = 147903
     OUTPSIGNALID = 147904
+    PULMSIGNALID = 147905
     def __init__(self, reactor, parent = None):
         from labrad.units import WithUnit
         self.U = WithUnit
@@ -32,10 +33,12 @@ class HP6033A_Client(HP6033A_UI):
             yield self.server.signal__voltage_changed(self.VOLTSIGNALID)
             yield self.server.signal__get_measurements(self.MEASSIGNALID)
             yield self.server.signal__output_changed(self.OUTPSIGNALID)
+            yield self.server.signal__pulse_mode_changed(self.PULMSIGNALID)
             yield self.server.addListener(listener = self.update_curr, source = None, ID = self.CURRSIGNALID)
             yield self.server.addListener(listener = self.update_volt, source = None, ID = self.VOLTSIGNALID)
             yield self.server.addListener(listener = self.update_meas, source = None, ID = self.MEASSIGNALID)
             yield self.server.addListener(listener = self.update_outp, source = None, ID = self.OUTPSIGNALID)
+            yield self.server.addListener(listener = self.update_pulm, source = None, ID = self.PULMSIGNALID)
             
             self.signal_connect()
         except:
@@ -76,6 +79,8 @@ class HP6033A_Client(HP6033A_UI):
         self.ps_current_lcd.display(current)
     def update_outp(self,c,signal):
         self.ps_output_checkbox.setChecked(signal)
+    def update_pulm(self,c,signal):
+        self.ps_pulse_mode_checkbox.setChecked(signal)
 
     @inlineCallbacks
     def update_safety(self):

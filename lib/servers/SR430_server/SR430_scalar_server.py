@@ -107,18 +107,19 @@ class SR430_Scalar_Server(GPIBManagedServer):
         sacrificing update rate.  The server may still run even if there are dev.read() conflicts, but if it
         becomes unusable, it will need to be restarted.
         '''
-        reactor.callLater(0.20, lambda c=c:self.update_settings(c))
-        notified = self.listeners.copy()
-        if self.scalar_state == 'cleared':
-            yield self.bins_per_record(c,0)
-            print 'bpr update'
-            yield self.bin_width(c,0)
-            yield self.records_per_scan(c)
-        elif self.scalar_state == 'scanning':
-            record = yield self.get_record(c)
-            self.recordsignal(record)
-        yield self.discriminator_level(c)
-        self.panelsignal(self.scalar_state, notified)
+        reactor.callLater(1, lambda c=c:self.update_settings(c))
+        if self.updating == True:
+            notified = self.listeners.copy()
+            if self.scalar_state == 'cleared':
+                yield self.bins_per_record(c,0)
+                print 'bpr update'
+                yield self.bin_width(c,0)
+                yield self.records_per_scan(c)
+            elif self.scalar_state == 'scanning':
+                record = yield self.get_record(c)
+                self.recordsignal(record)
+            yield self.discriminator_level(c)
+            self.panelsignal(self.scalar_state, notified)
         returnValue('Nothing')
 
     @setting(10, 'IDN', returns = 's')

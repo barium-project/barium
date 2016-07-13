@@ -127,5 +127,5 @@ class MassSpecExperiment_UI(QtGui.QWidget):
         self.ms_current_sweep_select.setItemText(0, _translate("Form", "[12]", None))
         self.ms_current_sweep_select.setItemText(1, _translate("Form", "[10,10.25,10.50,10.75,11,11.25,11.50,11.75,12.00,12.25,12.50,12.75,13,13.25,13.50]", None))
         self.label_2.setText(_translate("Form", "Currrent Sweep List (A)", None))
-        self.ms_show_data_log_button.setText(_translate("Form", "Show Data Log", None))
+        self.ms_show_data_log_button.setText(_translate("Form", "Show Data Log ...", None))
 

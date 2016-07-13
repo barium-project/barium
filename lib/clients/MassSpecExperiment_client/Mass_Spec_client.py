@@ -63,10 +63,15 @@ class LabRADconnection_Client(LabRADconnection_UI):
             self.cxn = yield connectAsync(host=host_ip, name="Mass Spectrum Client", password="lab")
         
         self.hpui = HP6033A_Client(reactor)         #Instantiates HP6033A Client
+        self.scaui = SR430_Scalar_Client(reactor)
+        self.rgaui = RGA_Client(reactor)
+        
         if not SINGLE_CONNECTION:
-            self.hpui.self_connect(host_ip, "Mass Spec HP6033A Client")
+            self.hpui.self_connect(host_ip, "Mass Spec HP6033A Client") #Tells hpui object to connect to labrad if SINGLE_CONNECTION == False
+            self.scaui.self_connect(host_ip, "Mass Spec Scalar Client")
+            self.rgaui.self_connect(host_ip, "Mass Spec RGA Client")
         if SINGLE_CONNECTION:
-            self.hpui.server = self.cxn.hp6033a_server  #Maps HP6033A Server to HP6033A.server attribute
+            self.hpui.server = self.cxn.hp6033a_server  #Maps HP6033A Server to HP6033A.server attribute if SINGLE_CONNECTION == True
             yield self.hpui.server.select_device(0)
             #LabRAD Signal Connections:
             yield self.hpui.server.signal__current_changed(self.hpui.CURRSIGNALID)
@@ -79,10 +84,6 @@ class LabRADconnection_Client(LabRADconnection_UI):
             yield self.hpui.server.addListener(listener = self.hpui.update_outp, source = None, ID = self.hpui.OUTPSIGNALID)
             self.hpui.signal_connect()                  #Connects signals between GUI objects and client functions
 
-        self.scaui = SR430_Scalar_Client(reactor)
-        if not SINGLE_CONNECTION:
-            self.scaui.self_connect(host_ip, "Mass Spec Scalar Client")
-        if SINGLE_CONNECTION:
             self.scaui.server = self.cxn.sr430_scalar_server
             yield self.scaui.server.select_device(0)
             yield self.scaui.server.signal__bins_per_record_changed(self.scaui.BPRSIGNALID)
@@ -99,11 +100,7 @@ class LabRADconnection_Client(LabRADconnection_UI):
             yield self.scaui.server.addListener(listener = self.scaui.panel_update, source = None, ID = self.scaui.PANELSIGNALID)
             yield self.scaui.server.addListener(listener = self.panel_update_test, source = None, ID = self.scaui.PANELSIGNALID)
             self.scaui.signal_connect()
-        
-        self.rgaui = RGA_Client(reactor)
-        if not SINGLE_CONNECTION:
-            self.rgaui.self_connect(host_ip, "Mass Spec RGA Client")
-        if SINGLE_CONNECTION:
+
             self.rgaui.server = self.cxn.rga_server
             yield self.rgaui.server.signal__filament_changed(self.rgaui.FILSIGNALID)
             yield self.rgaui.server.signal__mass_lock_changed(self.rgaui.MLSIGNALID)
@@ -196,7 +193,7 @@ class LabRADconnection_Client(LabRADconnection_UI):
         screencenter = [(screensize[0]-windowsize[0])/2,(screensize[1]-windowsize[1])/2]
         self.move(screencenter[0],screencenter[1])
 
-        dialog = QtGui.QFileDialog()
+        dialog = QtGui.QFileDialog()    #Sets up the Save Directory widget
         dialog.setDirectory('Z:\Group_Share\Barium\Data')
         self.savdirui.sd_select_path_button.clicked.connect(lambda : self.savdirui.sd_save_path_select.setEditText(dialog.getExistingDirectory()))
                 
@@ -229,9 +226,7 @@ class LabRADconnection_Client(LabRADconnection_UI):
     @inlineCallbacks
     def calculate_time(self):
         records_per_scan = self.scaui.sca_records_per_scan_spinbox.value()  #Gathers input values
-        trigger_frequency = self.massspecui.ms_trigger_frequency_spinbox.value()
-        #mass_list = self.massspecui.ms_mass_sweep_select.currentText()
-        #current_list = self.massspecui.ms_current_sweep_select.currentText()
+        trigger_frequency = self.scaui.sca_trigger_frequency_lcd.value()
         command1 = 'mass_list='+str(self.massspecui.ms_mass_sweep_select.currentText())
         command2 = 'current_list='+str(self.massspecui.ms_current_sweep_select.currentText())
         exec command1
@@ -239,9 +234,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
         mass_iterations = len(mass_list)
         current_iterations = len(current_list)
         sweep_iterations = self.massspecui.ms_iterations_spinbox.value()
-        wait_time = self.massspecui.ms_wait_time_spinbox.value()
 
-        count_time_per_point = records_per_scan/trigger_frequency+wait_time+3   #Performs calculations
+        count_time_per_point = records_per_scan/trigger_frequency+1   #Performs calculations
         count_time_per_sweep = count_time_per_point*mass_iterations*current_iterations
         total_count_time = count_time_per_sweep*sweep_iterations
 
@@ -277,7 +271,7 @@ class LabRADconnection_Client(LabRADconnection_UI):
         self.total_count_time = time_list[1]
         self.sweep_iterations = self.massspecui.ms_iterations_spinbox.value()
 
-        self.results = np.array([[0,0,0,0,0,0,0,0]])
+        self.results = np.array([[0,0,0,0,0,0,0,0,0]])
         self.experiment_timer.start(100)
         print 'Beginning experiment.  Avoid changing any parameters unless necessary!  (You can change the discriminator level)'
         self.dataui.ms_data_text.appendPlainText('Start of experiment.')
@@ -365,14 +359,15 @@ class LabRADconnection_Client(LabRADconnection_UI):
         mass = self.mass_data
         current = self.current_data
         iteration = self.iteration_data
+        integration_time = self.scaui.integration_time
         
         yield self.scaui.get_counts()
         counts = self.scaui.sca_counts_lcd.value()
         t = datetime.now().timetuple()
         voltage = yield self.hpui.get_voltage()
         current = yield self.hpui.get_current()
-        new_data = np.array([[mass,counts,t[2],t[3],t[4],t[5],voltage,current]])
-        self.dataui.ms_data_text.appendPlainText(str(self.datapoint),str(new_data))
+        new_data = np.array([[mass,counts,t[2],t[3],t[4],t[5],voltage,current,integration_time]])
+        self.dataui.ms_data_text.appendPlainText(str(self.datapoint)+","+str(new_data))
         self.results = np.concatenate((self.results,new_data),axis=0)
         np.savetxt(str(filepath+'\\'+filename),self.results,fmt="%0.5e")
         self.datapoint+=1

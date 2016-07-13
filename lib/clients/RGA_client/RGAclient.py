@@ -88,7 +88,7 @@ class RGA_Client(RGA_UI):
         yield self.server.filament()
     @inlineCallbacks
     def get_voltage(self):
-        yield self.rga.high_voltage()
+        yield self.server.high_voltage()
     @inlineCallbacks
     def read_buffer(self):
         message = yield self.server.read_buffer()
