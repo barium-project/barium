@@ -26,9 +26,9 @@ class DataLog_UI(QtGui.QWidget):
     def setupUi(self):
         Form = self
         Form.setObjectName(_fromUtf8("Form"))
-        Form.resize(400, 300)
+        Form.resize(800, 600)
         self.frame = QtGui.QFrame(Form)
-        self.frame.setGeometry(QtCore.QRect(10, 10, 381, 281))
+        self.frame.setGeometry(QtCore.QRect(10, 10, 781, 581))
         self.frame.setFrameShape(QtGui.QFrame.Box)
         self.frame.setFrameShadow(QtGui.QFrame.Raised)
         self.frame.setObjectName(_fromUtf8("frame"))
@@ -41,7 +41,7 @@ class DataLog_UI(QtGui.QWidget):
         self.label.setFont(font)
         self.label.setObjectName(_fromUtf8("label"))
         self.ms_data_text = QtGui.QPlainTextEdit(self.frame)
-        self.ms_data_text.setGeometry(QtCore.QRect(10, 40, 361, 231))
+        self.ms_data_text.setGeometry(QtCore.QRect(10, 40, 761, 531))
         self.ms_data_text.setReadOnly(True)
         self.ms_data_text.setOverwriteMode(False)
         self.ms_data_text.setObjectName(_fromUtf8("ms_data_text"))

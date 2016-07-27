@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>120</height>
+    <height>140</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
      <x>10</x>
      <y>10</y>
      <width>1181</width>
-     <height>101</height>
+     <height>121</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -48,100 +48,13 @@
      <string>LabRAD Connection</string>
     </property>
    </widget>
-   <widget class="QComboBox" name="host_ip_text">
-    <property name="geometry">
-     <rect>
-      <x>180</x>
-      <y>40</y>
-      <width>201</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="editable">
-     <bool>true</bool>
-    </property>
-    <item>
-     <property name="text">
-      <string>127.0.0.1</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>10.97.111.1</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>10.97.111.2</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>10.97.111.3</string>
-     </property>
-    </item>
-   </widget>
-   <widget class="QComboBox" name="host_name_text">
-    <property name="geometry">
-     <rect>
-      <x>180</x>
-      <y>70</y>
-      <width>201</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="editable">
-     <bool>true</bool>
-    </property>
-    <item>
-     <property name="text">
-      <string>PlanetExpress</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>bender</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>flexo</string>
-     </property>
-    </item>
-   </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>40</y>
-      <width>61</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Host IP</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_3">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>70</y>
-      <width>151</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Host Name (with underscores)</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="autoconnect_button">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>420</x>
       <y>40</y>
       <width>371</width>
-      <height>51</height>
+      <height>71</height>
      </rect>
     </property>
     <property name="text">
@@ -150,6 +63,123 @@
     <property name="checkable">
      <bool>false</bool>
     </property>
+   </widget>
+   <widget class="QFrame" name="frame_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>401</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Panel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QLabel" name="label_2">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>171</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Leave at 0 if only one HP6033A device connected.</string>
+     </property>
+     <property name="text">
+      <string>HP6033A Power Supply Device ID:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_3">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>151</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Host Name</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="host_name_text">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>10</y>
+       <width>211</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="editable">
+      <bool>true</bool>
+     </property>
+     <item>
+      <property name="text">
+       <string>PlanetExpress</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>bender</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>flexo</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>calculon</string>
+      </property>
+     </item>
+    </widget>
+    <widget class="QSpinBox" name="lc_power_supply_id_spinbox">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>40</y>
+       <width>42</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="lc_scalar_id_spinbox">
+     <property name="geometry">
+      <rect>
+       <x>350</x>
+       <y>40</y>
+       <width>42</width>
+       <height>22</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_4">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>40</y>
+       <width>121</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Leave at 0 if only one SR430 device connected.</string>
+     </property>
+     <property name="text">
+      <string>SR430 Scalar Device ID:</string>
+     </property>
+    </widget>
    </widget>
   </widget>
  </widget>

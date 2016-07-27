@@ -1,3 +1,18 @@
+# Copyright (C) 2016 Calvin He
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
 from barium.lib.clients.gui.RGA_gui import RGA_UI
 from twisted.internet.defer import inlineCallbacks, returnValue
 from PyQt4 import QtGui, QtCore
@@ -16,12 +31,16 @@ class RGA_Client(RGA_UI):
         self.initialize()
     @inlineCallbacks
     def initialize(self):
+        """Initializes the client by setting up its GUI objects.
+        """
         self.setupUi()
         yield None
     @inlineCallbacks
-    def self_connect(self, host_ip, host_name):
+    def self_connect(self, host_name, client_name):
+        """Connects this object to LabRAD and the RGA Server.
+        """
         from labrad.wrappers import connectAsync
-        self.cxn = yield connectAsync(host=host_ip, name="RGA Client", password="lab")
+        self.cxn = yield connectAsync(host=host_name, name=client_name, password="lab")
         try:
             self.server = self.cxn.rga_server
             print 'Connected to RGA Server.'
@@ -40,7 +59,9 @@ class RGA_Client(RGA_UI):
         except:
             print 'RGA Server Unavailable. Client is not connected.'
     @inlineCallbacks
-    def signal_connect(self):        
+    def signal_connect(self):
+        """Connect PyQt4 signals to slots.
+        """
         filament_state = self.rga_filament_checkbox.isChecked()
         voltage = self.rga_voltage_spinbox.value()
         mass = self.rga_mass_lock_spinbox.value()
@@ -53,6 +74,7 @@ class RGA_Client(RGA_UI):
         self.rga_read_buffer_button.clicked.connect(lambda :self.read_buffer())
         self.rga_clear_button.clicked.connect(lambda :self.clear_buffer())
         yield None
+    #These update the GUI whenever settings are changed from other clients via LabRAD signals:
     def update_fil(self, c, signal):
         if signal == 1:
             self.rga_filament_checkbox.setChecked(True)
@@ -66,7 +88,8 @@ class RGA_Client(RGA_UI):
         self.rga_buffer_text.appendPlainText(signal)
     def update_que(self, c, signal):
         self.rga_buffer_text.appendPlainText(signal)
-        
+
+    #RGA Functions:
     @inlineCallbacks
     def set_filament_state(self,state):
         if state==True:
@@ -97,6 +120,8 @@ class RGA_Client(RGA_UI):
     def clear_buffer(self):
         self.rga_buffer_text.clear()
         yield None
+
+    #Close event:
     @inlineCallbacks
     def closeEvent(self,x):
         self.reactor.stop()
@@ -109,10 +134,9 @@ if __name__ == "__main__":
     import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
-    from socket import gethostname
 
     client = RGA_Client(reactor)
-    client.self_connect('127.0.0.1',gethostname())
+    client.self_connect('planetexpress', 'RGA Client')
     client.show()
 
     reactor.run()

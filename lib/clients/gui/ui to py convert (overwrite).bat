@@ -1,0 +1,1 @@
+START cmd /k "pyuic4 %~dp0MassSpecExperiment_II_gui.ui > %~dp0MassSpecExperiment_II_gui.py"

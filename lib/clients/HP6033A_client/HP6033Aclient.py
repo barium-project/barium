@@ -1,3 +1,18 @@
+# Copyright (C) 2016 Calvin He
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
 from barium.lib.clients.gui.HP6033A_gui import HP6033A_UI
 from barium.lib.clients.gui.HP6033A_safety_gui import HP6033A_Safety_UI
 from twisted.internet.defer import inlineCallbacks, returnValue
@@ -18,16 +33,21 @@ class HP6033A_Client(HP6033A_UI):
         self.initialize()
     @inlineCallbacks
     def initialize(self):
+        """Initializes the client by setting up its GUI objects
+        """
         self.setupUi()
         yield None
     @inlineCallbacks
-    def self_connect(self, host_ip, host_name):
+    def self_connect(self, host_name, client_name, device_id):
+        """Connects to LabRAD, HP6033A Server, and establishes LabRAD signal connections
+        """
         from labrad.wrappers import connectAsync
-        self.cxn = yield connectAsync(host=host_ip, name="HP6033A Client", password="lab")
+        self.cxn = yield connectAsync(host=host_name, name=client_name, password="lab")
         try:
             self.server = self.cxn.hp6033a_server
             print 'Connected to HP6033A Server'
-            self.server.select_device(0)
+            self.device_id = device_id
+            self.server.select_device(self.device_id)
             
             yield self.server.signal__current_changed(self.CURRSIGNALID)
             yield self.server.signal__voltage_changed(self.VOLTSIGNALID)
@@ -45,10 +65,8 @@ class HP6033A_Client(HP6033A_UI):
             print 'HP6033A Server Unavailable. Client is not connected.'
     @inlineCallbacks
     def signal_connect(self):
-        
-        #self.ps_voltage_spinbox.valueChanged.connect(lambda :self.set_voltage())
-        #self.ps_current_spinbox.valueChanged.connect(lambda :self.set_current())
-        #self.ps_output_checkbox.toggled.connect(lambda :self.output())
+        """Connects the PyQt4 signals to slots
+        """
         self.ps_apply_settings_button.clicked.connect(lambda :self.apply_settings())
         self.ps_pulse_voltage_button.clicked.connect(lambda :self.pulse_voltage())
         self.ps_pulse_current_button.clicked.connect(lambda :self.pulse_current())
@@ -67,21 +85,27 @@ class HP6033A_Client(HP6033A_UI):
         self.ps_set_safety_limits_button.clicked.connect(lambda :self.show_safety_limits())
 
         yield None
-
+    #The following updates the client via LabRAD signals whenever settings are changed:
     def update_curr(self,c,signal):
-        self.ps_current_spinbox.setValue(signal['A'])
+        if c.ID[0] == self.device_id:
+            self.ps_current_spinbox.setValue(signal['A'])
     def update_volt(self,c,signal):
-        self.ps_voltage_spinbox.setValue(signal['V'])
+        if c.ID[0] == self.device_id:
+            self.ps_voltage_spinbox.setValue(signal['V'])
     def update_meas(self,c,signal):
-        voltage = signal[0]['V']
-        current = signal[1]['A']
-        self.ps_voltage_lcd.display(voltage)
-        self.ps_current_lcd.display(current)
+        if c.ID[0] == self.device_id:
+            voltage = signal[0]['V']
+            current = signal[1]['A']
+            self.ps_voltage_lcd.display(voltage)
+            self.ps_current_lcd.display(current)
     def update_outp(self,c,signal):
-        self.ps_output_checkbox.setChecked(signal)
+        if c.ID[0] == self.device_id:
+            self.ps_output_checkbox.setChecked(signal)
     def update_pulm(self,c,signal):
-        self.ps_pulse_mode_checkbox.setChecked(signal)
+        if c.ID[0] == self.device_id:
+            self.ps_pulse_mode_checkbox.setChecked(signal)
 
+    #HP6033A Functions:
     @inlineCallbacks
     def update_safety(self):
         self.max_voltage = self.safety_limits.ps_max_voltage_spinbox.value()
@@ -155,6 +179,8 @@ class HP6033A_Client(HP6033A_UI):
         voltage = self.U(self.ps_pulse_voltage_spinbox.value(),'V')
         time = self.U(self.ps_pulse_time_spinbox.value(), 's')
         yield self.server.pulse_current(current, time)
+
+    #Close event:
     @inlineCallbacks
     def closeEvent(self, x):
         self.reactor.stop()
@@ -167,10 +193,9 @@ if __name__ == "__main__":
     import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
-    from socket import gethostname
 
     client = HP6033A_Client(reactor)
-    client.self_connect('127.0.0.1',gethostname())
+    client.self_connect('planetexpress',"HP6033A Client",0)  #.self_connect(host_name, client_name, device_id)
     client.show()
 
     reactor.run()

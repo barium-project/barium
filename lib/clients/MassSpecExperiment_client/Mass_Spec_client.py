@@ -1,3 +1,18 @@
+# Copyright (C) 2016 Calvin He
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+
 from barium.lib.clients.gui.HP6033A_gui import HP6033A_UI
 from barium.lib.clients.gui.RGA_gui import RGA_UI
 from barium.lib.clients.gui.Scalar_gui import Scalar_UI
@@ -35,13 +50,16 @@ except AttributeError:
         return QtGui.QApplication.translate(context, text, disambig)
 #
 
-class LabRADconnection_Client(LabRADconnection_UI):
+
+class Mass_Spec_Client(LabRADconnection_UI):
     def __init__(self, reactor, parent = None):
-        super(LabRADconnection_Client, self).__init__()
+        super(LabRADconnection_UI, self).__init__()
         self.initialize()
         
     @inlineCallbacks
     def initialize(self):
+        """Sets up the client GUI object to accept user input for LabRAD connection
+        """
         self.setupUi()
         self.signal_connect()
         self.setWindowTitle("Mass Spectrum Experiment Client")
@@ -49,30 +67,36 @@ class LabRADconnection_Client(LabRADconnection_UI):
         
     @inlineCallbacks    
     def signal_connect(self):
+        """Connects the autoconnect_button clicked event to the .connect() slot
+        """
         self.autoconnect_button.clicked.connect(lambda :self.connect())
         yield None
         
     @inlineCallbacks
     def connect(self):
+        """Creates an HP6033A_Client, SR430_Scalar_Client, RGA_Client and connects each one of them to
+        LabRAD and their respective clients, and establishes LabRAD signal connections.  Then instantiates
+        miscellaneous GUI objects and calls .setup_experiment()
+        """
         from labrad.wrappers import connectAsync
-        host_ip = str(self.host_ip_text.currentText())
         host_name = str(self.host_name_text.currentText())
-        SINGLE_CONNECTION = False
+        SINGLE_CONNECTION = False   #Single Connection does not work so far
 
-        if SINGLE_CONNECTION:
-            self.cxn = yield connectAsync(host=host_ip, name="Mass Spectrum Client", password="lab")
-        
         self.hpui = HP6033A_Client(reactor)         #Instantiates HP6033A Client
         self.scaui = SR430_Scalar_Client(reactor)
         self.rgaui = RGA_Client(reactor)
-        
+
         if not SINGLE_CONNECTION:
-            self.hpui.self_connect(host_ip, "Mass Spec HP6033A Client") #Tells hpui object to connect to labrad if SINGLE_CONNECTION == False
-            self.scaui.self_connect(host_ip, "Mass Spec Scalar Client")
-            self.rgaui.self_connect(host_ip, "Mass Spec RGA Client")
+            self.hpui.self_connect(host_name, "Mass Spec HP6033A Client", self.lc_power_supply_id_spinbox.value()) #Tells hpui object to connect to labrad if SINGLE_CONNECTION == False
+            self.scaui.self_connect(host_name, "Mass Spec Scalar Client", self.lc_scalar_id_spinbox.value())
+            self.rgaui.self_connect(host_name, "Mass Spec RGA Client")
+
+
         if SINGLE_CONNECTION:
+            self.cxn = yield connectAsync(host=host_name, name="Mass Spectrum Client", password="lab")
+
             self.hpui.server = self.cxn.hp6033a_server  #Maps HP6033A Server to HP6033A.server attribute if SINGLE_CONNECTION == True
-            yield self.hpui.server.select_device(0)
+            yield self.hpui.server.select_device(self.lc_power_supply_id_spinbox.value())
             #LabRAD Signal Connections:
             yield self.hpui.server.signal__current_changed(self.hpui.CURRSIGNALID)
             yield self.hpui.server.signal__voltage_changed(self.hpui.VOLTSIGNALID)
@@ -85,7 +109,7 @@ class LabRADconnection_Client(LabRADconnection_UI):
             self.hpui.signal_connect()                  #Connects signals between GUI objects and client functions
 
             self.scaui.server = self.cxn.sr430_scalar_server
-            yield self.scaui.server.select_device(0)
+            yield self.scaui.server.select_device(self.lc_scalar_id_spinbox.value())
             yield self.scaui.server.signal__bins_per_record_changed(self.scaui.BPRSIGNALID)
             yield self.scaui.server.signal__bin_width_changed(self.scaui.BWSIGNALID)
             yield self.scaui.server.signal__discriminator_level_changed(self.scaui.DLSIGNALID)
@@ -122,8 +146,9 @@ class LabRADconnection_Client(LabRADconnection_UI):
         if True:
             self.autoconnect_button.setDisabled(True)
             self.autoconnect_button.setText("Connected")
-            self.host_ip_text.setDisabled(True)
             self.host_name_text.setDisabled(True)
+            self.lc_power_supply_id_spinbox.setDisabled(True)
+            self.lc_power_supply_id_spinbox.setDisabled(True)
             self.setup_experiment()
         yield None
     def panel_update_test(self,c,signal):
@@ -139,6 +164,9 @@ class LabRADconnection_Client(LabRADconnection_UI):
             self.scaui.sca_progress_bar.setValue(0)
     @inlineCallbacks
     def setup_experiment(self):
+        """Embeds, sets up, and orients the individual widgets into the main window.
+        Resizes and centers window, then calls .experiment_signal_connect()
+        """
         self.hpui.setParent(self)   #embeds widgets inside window
         self.scaui.setParent(self)
         self.savdirui.setParent(self)
@@ -156,16 +184,16 @@ class LabRADconnection_Client(LabRADconnection_UI):
         
         #---Widget Orientation---#
         #Row 1#
-        self.hpui.move(0,115)       #Column 1
-        self.scaui.move(400,115)    #Column 2
-        self.savdirui.move(800,115) #Column 3 Half-height
-        self.timeui.move(800,115+150) #Column 3 Half-height
+        self.hpui.move(0,130)       #Column 1
+        self.scaui.move(400,130)    #Column 2
+        self.savdirui.move(800,130) #Column 3 Half-height
+        self.timeui.move(800,130+150) #Column 3 Half-height
         #Row 1#
         
         #Row 2#
-        self.rgaui.move(0,115+300)          #Column 1
-        self.massspecui.move(400,115+300)   #Column 2
-        self.commui.move(800,115+300)       #Column 3 Half-height
+        self.rgaui.move(0,130+300)          #Column 1
+        self.massspecui.move(400,130+300)   #Column 2
+        self.commui.move(800,130+300)       #Column 3 Half-height
         #Row 2#
         #---Widget Orientation---#
         
@@ -187,7 +215,7 @@ class LabRADconnection_Client(LabRADconnection_UI):
         
         self.experiment_signal_connect()
 
-        self.resize(self.width(),115+300*2) #resizes and centers the window
+        self.resize(self.width(),130+300*2) #resizes and centers the window
         screensize = [ctypes.windll.user32.GetSystemMetrics(0),ctypes.windll.user32.GetSystemMetrics(1)]
         windowsize = [self.width(),self.height()]
         screencenter = [(screensize[0]-windowsize[0])/2,(screensize[1]-windowsize[1])/2]
@@ -202,6 +230,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
         
     @inlineCallbacks
     def experiment_signal_connect(self):
+        """Connects PyQt4 signals to slots.  Sets up timers (currently, the timers run slower compared to real time)
+        """
         self.massspecui.ms_calculate_time_button.clicked.connect(lambda :self.calculate_time())
         self.massspecui.ms_begin_experiment_button.clicked.connect(lambda :self.begin_experiment())
         self.massspecui.ms_show_data_log_button.clicked.connect(lambda :self.show_data())
@@ -225,6 +255,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
         
     @inlineCallbacks
     def calculate_time(self):
+        """Calculates the count times
+        """
         records_per_scan = self.scaui.sca_records_per_scan_spinbox.value()  #Gathers input values
         trigger_frequency = self.scaui.sca_trigger_frequency_lcd.value()
         command1 = 'mass_list='+str(self.massspecui.ms_mass_sweep_select.currentText())
@@ -248,6 +280,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
                               
     @inlineCallbacks
     def prepare_experiment(self):#Called in the beginning of begin_experiment
+        """Sets up the initial conditions for a data run.
+        """
         command1 = 'self.mass_list = '+str(self.massspecui.ms_mass_sweep_select.currentText())
         command2 = 'self.current_list = '+str(self.massspecui.ms_current_sweep_select.currentText())
         exec str(command1)
@@ -260,6 +294,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
                               
     @inlineCallbacks
     def begin_experiment(self):
+        """Executes the beginning of the datarun and disables frames
+        """
         if self.hpui.ps_pulse_mode_checkbox.isChecked == True:
             print 'Turn off pulse mode before beginning experiment.'
             returnValue(None)
@@ -286,12 +322,16 @@ class LabRADconnection_Client(LabRADconnection_UI):
                               
     @inlineCallbacks
     def timed_mass_loop(self,i):                    #--This is the bottom experimental loop--#
+        """This is called first in a mass sweep, starting the timer and the initial mass_loop_tasks() call
+        """
         self.i=i
         self.timer.start(self.count_time_per_point*1000) #starts timer (timeout in miliseconds)
         self.mass_loop_tasks()
         yield None                              
     @inlineCallbacks
     def timer_tick(self):                           #--This is part of timed_mass_loop--#
+        """This calls subsequent mass_loop_tasks() and checks when the mass list has been completely swept through
+        """
         if self.i<len(self.mass_list):
             self.update_data()
             self.mass_loop_tasks()
@@ -303,6 +343,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
         yield None
     @inlineCallbacks
     def mass_loop_tasks(self):                      #--This is part of timed_mass_loop--#
+        """This changes the mass on the RGA and begins a scan on the Scalar
+        """
         mass = self.mass_list[self.i]
         print 'Setting mass to '+str(mass),'Mass list index: '+str(self.i)
         self.mass_data = mass
@@ -315,6 +357,9 @@ class LabRADconnection_Client(LabRADconnection_UI):
                               
     @inlineCallbacks
     def current_loop(self,j):                       #--This is the middle experimental loop--#
+        """This sets the next current and initiates a new mass sweep.  Or it calls the next experiment iteration
+        when the current list has been swept through
+        """
         self.j=j
         if self.j<len(self.current_list):
             current = self.current_list[self.j]
@@ -330,6 +375,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
                               
     @inlineCallbacks
     def experiment_iteration_loop(self,k):          #--This is the top experimental loop--#
+        """This calls new current loops and repeats depending on the number of iterations set by the user.
+        """
         self.k = k
         if self.k < self.sweep_iterations:
             print 'Loop iteration: '+str(self.k)
@@ -349,6 +396,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
                               
     @inlineCallbacks
     def update_data(self):  #Updates and saves data
+        """Reads the counts from the Scalar and saves it into a text file.
+        """
         print 'Generating data...'
 
         self.timeui.t_left_lcd.display(self.datapoint)
@@ -379,6 +428,8 @@ class LabRADconnection_Client(LabRADconnection_UI):
         yield None
     @inlineCallbacks
     def show_data(self):
+        """Shows the data log GUI with the experimental data that has been logged.
+        """
         screensize = [ctypes.windll.user32.GetSystemMetrics(0),ctypes.windll.user32.GetSystemMetrics(1)]
         windowsize = [self.dataui.width(),self.dataui.height()]
         screencenter = [(screensize[0]-windowsize[0])/2,(screensize[1]-windowsize[1])/2]
@@ -406,9 +457,13 @@ class LabRADconnection_Client(LabRADconnection_UI):
         
     @inlineCallbacks
     def send_command(self):             #Command Line Functions
+        """Sends command from the Command Line GUI.
+        """
         command = str(self.commui.cl_command_text.toPlainText())
         exec command
         yield None
+
+    #Close Event:
     @inlineCallbacks
     def closeEvent(self, x):
         self.hpui.set_current(0)
@@ -426,7 +481,7 @@ if __name__ == "__main__":
     import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
-    client = LabRADconnection_Client(reactor)
+    client = Mass_Spec_Client(reactor)
     client.show()
     
     sys.exit(a.exec_())
