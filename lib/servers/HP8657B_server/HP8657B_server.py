@@ -38,6 +38,14 @@ from labrad.units import WithUnit as U
 from time import sleep
 
 class HP8657B_Server(GPIBManagedServer):
+    """
+    This server talks to the HP8657B Microwave Signal Generator.
+
+    Since the HP8657B does not have talk capability, it will not respond to a *IDN?
+    query and therefore will not provide a device name.  Instead, we use the deviceIdentFunc
+    option which returns 'Generic GPIB Device' as the name, so that the GPIB Device Manager
+    will map any devices that do not respond to *IDN? to this generic device name.
+    """
     name = 'HP8657B Server'
     deviceName = 'Generic GPIB Device'
     deviceIdentFunc = 'identify_device'
@@ -58,6 +66,8 @@ class HP8657B_Server(GPIBManagedServer):
 
     @setting(201, value='v[dBm]')
     def amplitude(self, c, value):
+        """Sets the amplitude of the signal generator.  Uses units of dBm.
+        """
         dev = self.selectedDevice(c)
         if value['dBm'] < -143.5 or value['dBm'] > 13:
             print "Out of range.  Acceptable range: [-143.5 dBm, 13 dBm]"
@@ -90,6 +100,8 @@ class HP8657B_Server(GPIBManagedServer):
         
     @setting(205, value='v[MHz]')
     def frequency(self, c, value):
+        """Sets the frequency of the signal generator.  Uses units of frequency (i.e. MHz).
+        """
         dev = self.selectedDevice(c)
         if value['MHz'] > 2060 or value['MHz'] < 0:
             print "Value out of range.  Acceptable range: [0 MHz, 2060 MHz]"
@@ -126,6 +138,8 @@ class HP8657B_Server(GPIBManagedServer):
         
     @setting(209, value='w')
     def recall(self, c, value):
+        """Recalls settings from a memory location [0,99].
+        """
         dev = self.selectedDevice(c)
         if value < 10:
             dev.write("RC 0"+str(value))
@@ -137,6 +151,8 @@ class HP8657B_Server(GPIBManagedServer):
         
     @setting(210, value='w')
     def save(self, c, value):
+        """Saves settings to a memory location [0,99].
+        """
         dev = self.selectedDevice(c)
         if value < 10:
             dev.write("SV 0"+str(value))
@@ -198,7 +214,7 @@ class HP8657B_Server(GPIBManagedServer):
         yield None
         
     @setting(218, value='s')
-    def shut_off_external(self, c, value):
+    def shutoff_external(self, c, value):
         dev = self.selectedDevice(c)
         if value.upper == "AM":
             dev.write("AM S1 S4")
@@ -209,7 +225,7 @@ class HP8657B_Server(GPIBManagedServer):
         yield None
         
     @setting(219, value='s')
-    def shut_off_internal_400(self, c, value):
+    def shutoff_internal_400(self, c, value):
         dev = self.selectedDevice(c)
         if value.upper == "AM":
             dev.write("AM S2 S4")
@@ -220,7 +236,7 @@ class HP8657B_Server(GPIBManagedServer):
         yield None
         
     @setting(220, value='s')
-    def shut_off_internal_1000(self, c, value):
+    def shutoff_internal_1000(self, c, value):
         dev = self.selectedDevice(c)
         if value.upper == "AM":
             dev.write("AM S3 S4")
@@ -231,9 +247,45 @@ class HP8657B_Server(GPIBManagedServer):
         yield None
         
     @setting(221)
-    def shut_off_DC_FM(self, c):
+    def shutoff_DC_FM(self, c):
         dev = self.selectedDevice(c)
         dev.write("AM S5 S4")
+        yield None
+
+    @setting(222)
+    def shutoff_AM(self, c):
+        dev = self.selectedDevice(c)
+        dev.write("AM S4")
+        yield None
+
+    @setting(223)
+    def shutoff_FM(self, c):
+        dev = self.selectedDevice(c)
+        dev.write("FM 4")
+        yield None
+
+    @setting(224, value='b')
+    def RF_state(self, c, value):
+        """Turns the RF state on or off.
+        """
+        dev = self.selectedDevice(c)
+        if value:
+            dev.write("R3")
+        elif not value:
+            dev.write("R2")
+        yield None
+
+    @setting(225, value='b')
+    def standby_state(self, c, value):
+        """Changes the device's standby state.
+        .standby_state(True) puts the device on standby.
+        .standby_state(False) wakes the deice from standby.
+        """
+        dev = self.selectedDevice(c)
+        if value:
+            dev.write("R0")
+        elif not value:
+            dev.write("R1")
         yield None
 
 __server__ = HP8657B_Server()
