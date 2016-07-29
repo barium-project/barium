@@ -266,7 +266,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
         elif value==0:
             yield dev.write('BWTH?')
             bit = yield dev.read()            #Reads in bit
-            message = inverted_dictionary[int(bit)] #Uses dictionary to convert bit to width value
+            message = str(inverted_dictionary[int(bit)]) #Uses dictionary to convert bit to width value
             self.bwsignal(int(bit), notified)
             returnValue(message)
         elif value in supported_arguments:
