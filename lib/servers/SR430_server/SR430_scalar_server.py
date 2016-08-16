@@ -107,12 +107,11 @@ class SR430_Scalar_Server(GPIBManagedServer):
         sacrificing update rate.  The server may still run even if there are dev.read() conflicts, but if it
         becomes unusable, it will need to be restarted.
         '''
-        reactor.callLater(1, lambda c=c:self.update_settings(c))
+        reactor.callLater(3, lambda c=c:self.update_settings(c))
         if self.updating == True:
             notified = self.listeners.copy()
             if self.scalar_state == 'cleared':
                 yield self.bins_per_record(c,0)
-                print 'bpr update'
                 yield self.bin_width(c,0)
                 yield self.records_per_scan(c)
             elif self.scalar_state == 'scanning':
@@ -120,6 +119,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
                 self.recordsignal(record)
             yield self.discriminator_level(c)
             self.panelsignal(self.scalar_state, notified)
+            print "Scalar Server Updating Clients..."
         returnValue('Nothing')
 
     @setting(10, 'IDN', returns = 's')
@@ -236,7 +236,6 @@ class SR430_Scalar_Server(GPIBManagedServer):
             returnValue(message)
         elif value in supported_arguments:
             yield dev.write('BREC '+str(argument_dictionary[value]))  #Uses dictionary to look up the input value's corresponding bit
-            print 'server bpr called'
             returnValue('Success')
         else:
             message = 'Unsupported argument. Supported arguments: '+str(supported_arguments)
@@ -266,7 +265,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
         elif value==0:
             yield dev.write('BWTH?')
             bit = yield dev.read()            #Reads in bit
-            message = inverted_dictionary[int(bit)] #Uses dictionary to convert bit to width value
+            message = str(inverted_dictionary[int(bit)]) #Uses dictionary to convert bit to width value
             self.bwsignal(int(bit), notified)
             returnValue(message)
         elif value in supported_arguments:
