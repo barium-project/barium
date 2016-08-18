@@ -76,12 +76,12 @@ class TrapServer( SerialDeviceServer ):
         self.max_amplitude = 1233. #V
         self.max_phase = 360. # degrees
         self.max_hv = 1600. # V
-        self.max_dc = 54. # V
+        self.max_dc = 52.9 # V
         self.frequency_steps = 2**32-1
         self.amplitude_steps = 2**10-1
         self.phase_steps = 2**14-1
-        self.dc_steps = 2*12-1
-        self.hv_steps = 2*12-1
+        self.dc_steps = 2**12-1
+        self.hv_steps = 2**12-1
 
     @setting(1, returns = 's')
     def command_list(self, c):
@@ -112,7 +112,7 @@ class TrapServer( SerialDeviceServer ):
         hex_num = "{0:0{1}x}".format(step,8)
         yield self.ser.write('fx ' + str(channel) + ' ' + hex_num +' \n')
 
-    @setting(4,'set_amplitude',amplitude = 'w', channel = 'w')
+    @setting(4,'set_amplitude',amplitude = 'v[]', channel = 'w')
     def set_amplitude(self, c, amplitude, channel):
         '''Set the amplitude of a channel in v using 2 byte hexidecimal rep. 10 LSBs'''
         if amplitude > self.max_amplitude:
@@ -122,7 +122,7 @@ class TrapServer( SerialDeviceServer ):
         hex_num = "{0:0{1}x}".format(step,4)
         yield self.ser.write('ax ' + str(channel) + ' ' + hex_num +' \n')
 
-    @setting(5,'set_phase', phase = 'w', channel = 'w')
+    @setting(5,'set_phase', phase = 'v[]', channel = 'w')
     def set_phase(self, c, phase, channel):
         '''Set the phase of a channel in degrees using 2 byte hexidecimal rep. 14 LSBs'''
         if phase > self.max_phase:
@@ -132,7 +132,7 @@ class TrapServer( SerialDeviceServer ):
         hex_num = "{0:0{1}x}".format(step,4)
         yield self.ser.write('px ' + str(channel) + ' ' + hex_num +' \n')
 
-    @setting(6,'set_dc', dc = 'w', channel = 'w')
+    @setting(6,'set_dc', dc = 'v[]', channel = 'w')
     def set_dc(self, c, dc, channel):
         '''Set the dc of a channel in degrees using 2 byte hexidecimal rep. 12 LSBs
            Range 0-54V'''
@@ -145,7 +145,7 @@ class TrapServer( SerialDeviceServer ):
         print hex_num
         yield self.ser.write('dcx ' + str(channel) + ' ' + hex_num + ' \n')
 
-    @setting(7,'set_dc_rod', dc = 'w', channel = 'w')
+    @setting(7,'set_dc_rod', dc = 'v[]', channel = 'w')
     def set_dc_rod(self, c, dc, channel):
         '''Set the dc rod of a channel in volts using 2 byte hexidecimal rep. 12 LSBs
            Amplifier circuit puts out half the value of the DC box. Rod voltage 0-27V'''
@@ -156,7 +156,7 @@ class TrapServer( SerialDeviceServer ):
         hex_num = "{0:0{1}x}".format(step,4)
         yield self.ser.write('dcx ' + str(channel) + ' ' + hex_num +' \n')
 
-    @setting(8,'set_hv', hv = 'w', channel = 'w')
+    @setting(8,'set_hv', hv = 'v[]', channel = 'w')
     def set_hv(self, c, hv, channel):
         '''Set the  hv dc of a channel in volts using 2 byte hexidecimal rep.
            12 LSBs'''
