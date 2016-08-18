@@ -1,0 +1,45 @@
+description of commands to trap electronics
+===========================================
+
+version: 2016-05-06
+
+arguments: 'n': unsigned int, 'f': double, 'x': single-byte hex value, 'xx': n-byte hex value
+(hex value of each byte represented by *exactly* 2 hex digits [0-9a-f] without leading '0x')
+
+WARNING: commands beginning with underscore '_' can result in hardware damage if used incorrectly!
+
+command         arguments              description
+=======         =========              ===========
+i               (none)                 trigger I/O_UPDATE (= activate changes to DDS values)
+f               'n' 'f'                set frequency of channel 'n' ('f' in Hz)
+p               'n' 'f'                set phase offset of channel 'n' ('f' in degrees)
+a               'n' 'f'                set amplitude of channel 'n' ('f' in 0..1)
+fx              'n' 'xx'               set frequency of channel 'n' ('xx': 4-byte hex word (32 LSBs))
+px              'n' 'xx'               set phase offset of channel 'n' ('xx': 2-byte hex word (14 LSBs))
+ax              'n' 'xx'               set amplitude of channel 'n' ('xx': 2-byte hex word (10 LSBs))
+fg              'n'                    get frequency of channel 'n' (as 4-byte hex word (32 LSBs))
+pg              'n'                    get phase offset of channel 'n' (as 2-byte hex word (14 LSBs))
+ag              'n'                    get amplitude of channel 'n' (as 2-byte hex word (10 LSBs))
+x               (none)                 reset and initialize DDS chips
+c               (none)                 clear phase accumulators (e.g., in case of sync. error)
+ac              'n1' 'n2'              auto-clear phase accumulators of chip 'n1' ('n2': 0 = off, 1 = on)
+s               (none)                 get synchronization status (0: ok, error else)
+o               'n'                    turn all DDS outputs on/off ('n': 0 = off, 1 = on)
+hvc             (none)                 clear HV values
+hvi             (none)                 activate all changes to HV values
+hvx             'n' 'xx'               set HV value of channel 'n' ('xx': 2-byte hex word (12 LSBs))
+hv              'n' 'f'                set HV value of channel 'n' ('f' in 0..1)
+hvg             'n'                    get HV value of channel 'n'
+hvo             'n'                    turn all HV outputs on/off ('n': 0 = off, 1 = on)
+dcc             (none)                 clear DC values
+dci             (none)                 activate all changes to DC values
+dcx             'n' 'xx'               set DC value of channel 'n' ('xx': 2-byte hex word (12 LSBs))
+dc              'n' 'f'                set DC value of channel 'n' ('f' in 0..1)
+dcg             'n'                    get DC value of channel 'n'
+dco             'n'                    turn all DC outputs on/off ('n': 0 = off, 1 = on)
+e               'n'                    remote echo ('n': 0 = off, 1 = on)
+y               (none)                 reset microcontroller parameters (set by commands: o, e, t, b)
+h               (none)                 trigger HV pulsing sequence
+l               (none)                 trigger RF trap loading sequence incl. ablation
+t               'n1' 'n2'              set loading timings ('n1': Q-switch wait; 'n2': DDS-on wait; in us)
+b               'n'                    battery charger ('n': 0 = off, 1 = on)
