@@ -290,8 +290,8 @@ class TrapServer( SerialDeviceServer ):
         dc = dc_steps*self.max_dc/self.dc_steps
         returnValue(dc)
 
-    @setting(54,'get_rod_dc', channel = 'w')
-    def get_rod_dc(self, c, channel):
+    @setting(54,'get_dc_rod', channel = 'w')
+    def get_dc_rod(self, c, channel):
         '''Get the dc value of a given rod'''
         yield self.ser.write('dcg ' + str(channel) +' \n')
         hex_string = yield self.ser.read_line()
