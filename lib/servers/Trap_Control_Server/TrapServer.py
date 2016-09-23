@@ -324,8 +324,8 @@ class TrapServer( SerialDeviceServer ):
         string = yield self.ser.read_line()
         returnValue(string)
 
-    @setting(23,'get_rf_map_state', state = 'b')
-    def get_rf_map_state(self, c):
+    @setting(57,'get_rf_map_state', state = 'b')
+    def get_rf_map_state(self, c, state):
         state = self.use_RFMap
         returnValue(state)
 
