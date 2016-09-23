@@ -1,11 +1,12 @@
+from barium.lib.clients.gui.TrapControl_gui import QCustomTrapGui
 from common.lib.clients.qtui.q_custom_text_changing_button import \
     TextChangingButton
 from twisted.internet.defer import inlineCallbacks, returnValue
 from PyQt4 import QtGui
-try:
-    from config.TrapControl_config import TrapControl_config
-except:
-    from common.lib.config.TrapControl_config import TrapControl_config
+#try:
+from config.TrapControl_config import TrapControl_config
+#except:
+#    from barium.lib.config.TrapControl_config import TrapControl_config
 
 import socket
 import os
@@ -19,17 +20,14 @@ SIGNALID6 = 102588
 SIGNALID7 = 148323
 SIGNALID8 = 238883
 
-#this is the signal for the updated frequencys
 
-class wavemeterclient(QtGui.QWidget):
+class TrapControlClient(QtGui.QWidget):
 
     def __init__(self, reactor, parent=None):
         """initializels the GUI creates the reactor
-            and empty dictionary for channel widgets to
-            be stored for iteration. also grabs chan info
-            from multiplexer_config
+
         """
-        super(wavemeterclient, self).__init__()
+        super(TrapControlClient, self).__init__()
         self.password = os.environ['LABRADPASSWORD']
         self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         self.reactor = reactor
@@ -49,37 +47,17 @@ class wavemeterclient(QtGui.QWidget):
 
     @inlineCallbacks
     def connect(self):
-        """Creates an Asynchronous connection to the wavemeter computer and
+        """Creates an Asynchronous connection to the trap control computer and
         connects incoming signals to relavent functions
 
         """
-        self.wavemeterIP = TrapControl_config.ip
+        self.serverIP = TrapControl_config.ip
         from labrad.wrappers import connectAsync
-        self.cxn = yield connectAsync(self.wavemeterIP,
+        self.cxn = yield connectAsync(self.serverIP,
                                       name=self.name,
                                       password=self.password)
 
         self.server = yield self.cxn.trap_server
-        
-        
-        yield self.server.signal__frequency_changed(SIGNALID1)
-        yield self.server.signal__selected_channels_changed(SIGNALID2)
-        yield self.server.signal__update_exp(SIGNALID3)
-        yield self.server.signal__lock_changed(SIGNALID4)
-        yield self.server.signal__output_changed(SIGNALID5)
-        yield self.server.signal__pidvoltage_changed(SIGNALID6)
-        yield self.server.signal__channel_lock_changed(SIGNALID7)
-        yield self.server.signal__amplitude_changed(SIGNALID8)
-
-        yield self.server.addListener(listener = self.updateFrequency, source = None, ID = SIGNALID1)
-        yield self.server.addListener(listener = self.toggleMeas, source = None, ID = SIGNALID2)
-        yield self.server.addListener(listener = self.updateexp, source = None, ID = SIGNALID3)
-        yield self.server.addListener(listener = self.toggleLock, source = None, ID = SIGNALID4)
-        yield self.server.addListener(listener = self.updateWLMOutput, source = None, ID = SIGNALID5)
-        yield self.server.addListener(listener = self.updatePIDvoltage, source = None, ID = SIGNALID6)
-        yield self.server.addListener(listener = self.toggleChannelLock, source = None, ID = SIGNALID7)
-        yield self.server.addListener(listener = self.updateAmplitude, source = None, ID = SIGNALID8)
-
         self.initializeGUI()
 
     @inlineCallbacks
@@ -87,249 +65,213 @@ class wavemeterclient(QtGui.QWidget):
 
         layout = QtGui.QGridLayout()
 
+        # Define dic for storting into
+        self.dc = {}
+        self.endCap = {}
+
+        # Get config information
+        self.init_params = TrapControl_config.params
+
+        # Load RF Map
+        self.rf_map = np.loadtxt('rf_map.txt')
+
+        # Get channel numbers for each electrode
+        self.rods = TrapControl_config.rods
+        self.endCaps = TrapControl_config.endCaps
+        self.eLens = TrapControl_config.eLens
         self.setWindowTitle('Trap Control')
-        
+
+        # Create widgets and lay them out.
+        # Create general lock button to disable all buttons
         self.lockSwitch = TextChangingButton(('Locked','Unlocked'))
         # Start Unlocked
         self.lockSwitch.setChecked(False)
-
         self.lockSwitch.toggled.connect(self.setLock)
-
-
         subLayout.addWidget(self.lockSwitch, 0, 2)
 
+        # Create a button to initialize trap params
+        self.init_trap = QtGui.QPushButton('Set Default Values')
+        self.init_trap.setMaximumHeight(30)
+        self.init_trap.setFont(QtGui.QFont(shell_font, pointSize=12))
+        self.init_trap.clicked.connect(lambda : self.init_state())
+        subLayout.addWidget(self.init_trap, 0, 0)
+        # initialize main Gui
+        self.trap = QCustomTrapGui()
 
-        for chan in self.chaninfo:
-            wmChannel = self.chaninfo[chan][0]
-            hint = self.chaninfo[chan][1]
-            position = self.chaninfo[chan][2]
-            stretched = self.chaninfo[chan][3]
-            displayPID = self.chaninfo[chan][4]
-            dacPort = self.chaninfo[chan][5]
-            widget = QCustomWavemeterChannel(chan, wmChannel, dacPort, hint, stretched, displayPID)
-
-            if displayPID:
-                try:
-                    rails = self.chaninfo[chan][6]
-                    widget.PIDindicator.set_rails(rails)
-                except:
-                    rails = [-10.0,10.0]
-                    widget.PIDindicator.set_rails(rails)
-            import RGBconverter as RGB
-            RGB = RGB.RGBconverter()
-            color = int(2.998e8/(float(hint)*1e3))
-            color = RGB.wav2RGB(color)
-            color = tuple(color)
-
-            if dacPort != 0:
-                self.wmChannels[dacPort] = wmChannel
-                initcourse = yield self.getPIDCourse(dacPort, hint)
-                widget.spinFreq.setValue(initcourse)
-                widget.spinFreq.valueChanged.connect(lambda freq = widget.spinFreq.value(), dacPort = dacPort : self.freqChanged(freq, dacPort))
-                widget.setPID.clicked.connect(lambda state = widget.setPID.isDown(), chan = chan, dacPort = dacPort  : self.InitializePIDGUI(dacPort, chan))
-                initLock = yield self.server.get_channel_lock(dacPort, wmChannel)
-                widget.lockChannel.setChecked(bool(initLock))
-                widget.lockChannel.toggled.connect(lambda state = widget.lockChannel.isDown(), dacPort = dacPort  : self.lockSingleChannel(state, dacPort))
-            else:
-                widget.spinFreq.setValue(float(hint))
-                widget.lockChannel.toggled.connect(lambda state = widget.lockChannel.isDown(), wmChannel = wmChannel  : self.setButtonOff(wmChannel))
-
-            widget.currentfrequency.setStyleSheet('color: rgb' + str(color))
-            widget.spinExp.valueChanged.connect(lambda exp = widget.spinExp.value(), wmChannel = wmChannel : self.expChanged(exp, wmChannel))
-            initvalue = yield self.server.get_exposure(wmChannel)
-            widget.spinExp.setValue(initvalue)
-            initmeas = yield self.server.get_switcher_signal_state(wmChannel)
-            initmeas = initmeas
-            widget.measSwitch.setChecked(bool(initmeas))
-            widget.measSwitch.toggled.connect(lambda state = widget.measSwitch.isDown(), wmChannel = wmChannel  : self.changeState(state, wmChannel))
-
-            self.d[wmChannel] = widget
-            subLayout.addWidget(self.d[wmChannel], position[1], position[0], 1, 3)
+        # Get the current state of the trap and set the gui
+        self.set_current_state()
+        subLayout.addWidget(self.trap, 1, 1)
 
         self.setLayout(layout)
 
 
     @inlineCallbacks
-    def InitializePIDGUI(self,dacPort,chan):
-        self.pid = QCustomPID(dacPort)
-        self.pid.setWindowTitle(chan + ' PID settings')
-        self.pid.move(self.pos())
-        self.index = {1:0,-1:1}
-
-        pInit = yield self.server.get_pid_p(dacPort)
-        iInit = yield self.server.get_pid_i(dacPort)
-        dInit = yield self.server.get_pid_d(dacPort)
-        dtInit = yield self.server.get_pid_dt(dacPort)
-        constInit = yield self.server.get_const_dt(dacPort)
-        sensInit = yield self.server.get_pid_sensitivity(dacPort)
-        polInit = yield self.server.get_pid_polarity(dacPort)
-
-
-        self.pid.spinP.setValue(pInit)
-        self.pid.spinI.setValue(iInit)
-        self.pid.spinD.setValue(dInit)
-        self.pid.spinDt.setValue(dtInit)
-        self.pid.useDTBox.setCheckState(bool(constInit))
-        self.pid.spinFactor.setValue(sensInit[0])
-        self.pid.spinExp.setValue(sensInit[1])
-        self.pid.polarityBox.setCurrentIndex(self.index[polInit])
-
-        self.pid.spinP.valueChanged.connect(lambda p = self.pid.spinP.value(), dacPort = dacPort : self.changeP(p, dacPort))
-        self.pid.spinI.valueChanged.connect(lambda i = self.pid.spinI.value(), dacPort = dacPort : self.changeI(i, dacPort))
-        self.pid.spinD.valueChanged.connect(lambda d = self.pid.spinD.value(), dacPort = dacPort : self.changeD(d, dacPort))
-        self.pid.spinDt.valueChanged.connect(lambda dt = self.pid.spinDt.value(), dacPort = dacPort : self.changeDt(dt, dacPort))
-        self.pid.useDTBox.stateChanged.connect(lambda state = self.pid.useDTBox.isChecked(), dacPort = dacPort : self.constDt(state, dacPort))
-        self.pid.spinFactor.valueChanged.connect(lambda factor = self.pid.spinFactor.value(), dacPort = dacPort : self.changeFactor(factor, dacPort))
-        self.pid.spinExp.valueChanged.connect(lambda exponent = self.pid.spinExp.value(), dacPort = dacPort : self.changeExponent(exponent, dacPort))
-        self.pid.polarityBox.currentIndexChanged.connect(lambda index = self.pid.polarityBox.currentIndex(), dacPort = dacPort : self.changePolarity(index, dacPort))
-
-        self.pid.show()
+    def freqChanged(self, freq, channel):
+        yield self.server.set_frequency(freq, channel)
+        self.trap.update_rf.setStyleSheet("background-color: red")
 
     @inlineCallbacks
-    def expChanged(self, exp, chan):
-        #these are switched, dont know why
-        exp = int(exp)
-        yield self.server.set_exposure_time(chan,exp)
-
-
-    def updateFrequency(self , c , signal):
-        chan = signal[0]
-        if chan in self.d :
-            freq = signal[1]
-
-            if not self.d[chan].measSwitch.isChecked():
-                self.d[chan].currentfrequency.setText('Not Measured')
-            elif freq == -3.0:
-                self.d[chan].currentfrequency.setText('Under Exposed')
-            elif freq == -4.0:
-                self.d[chan].currentfrequency.setText('Over Exposed')
-            else:
-                self.d[chan].currentfrequency.setText(str(freq)[0:10])
-
-    def updatePIDvoltage(self, c, signal):
-        dacPort = signal[0]
-        value = signal[1]
-        if dacPort in self.wmChannels:
-            try:
-                self.d[self.wmChannels[dacPort]].PIDvoltage.setText('DAC Voltage (mV)  '+"{:.1f}".format(value))
-                self.d[self.wmChannels[dacPort]].PIDindicator.update_slider(value/1000.0)
-            except:
-                pass
-
-    def toggleMeas(self, c, signal):
-        chan = signal[0]
-        value = signal[1]
-        if chan in self.d :
-            self.d[chan].measSwitch.setChecked(value)
-
-    def toggleLock(self, c, signal):
-        self.lockSwitch.setChecked(signal)
-
-    def toggleChannelLock(self, c, signal):
-        wmChannel = signal[1]
-        state = signal[2]
-        if wmChannel in self.d:
-            self.d[wmChannel].lockChannel.setChecked(bool(state))
-
-    def updateexp(self,c, signal):
-        chan = signal[0]
-        value = signal[1]
-        if chan in self.d :
-            self.d[chan].spinExp.setValue(value)
-
-    def updateWLMOutput(self, c, signal):
-        self.startSwitch.setChecked(signal)
-
-    def updateAmplitude(self, c, signal):
-        wmChannel = signal[0]
-        value = signal[1]
-        if wmChannel in self.d:
-            #self.d[wmChannel].interfAmp.setText('Interferometer Amp\n' + str(value))
-            self.d[wmChannel].powermeter.setValue(value)#('Interferometer Amp\n' + str(value))
-
-    def setButtonOff(self,wmChannel):
-        self.d[wmChannel].lockChannel.setChecked(False)
+    def phaseChanged(self, phase, channel):
+        yield self.server.set_phase(phase, channel)
+        self.trap.update_rf.setStyleSheet("background-color: red")
 
     @inlineCallbacks
-    def changeState(self, state, chan):
-        yield self.server.set_switcher_signal_state(chan, state)
+    def ampChanged(self, amp, channel):
+        yield self.server.set_amplitude(amp, channel)
+        self.trap.update_rf.setStyleSheet("background-color: red")
 
     @inlineCallbacks
-    def lockSingleChannel(self, state, dacPort):
-        wmChannel = self.wmChannels[dacPort]
-        yield self.server.set_channel_lock(dacPort, wmChannel, state)
+    def setAmpRFChanged(self, amp):
+        index = np.where(self.rf_map[:,0] == amp)
+        index = index[0][0]
+        yield self.server.set_amplitude(amp,2)
+        yield self.server.set_amplitude(self.rf_map[index,1],3)
+        yield self.server.set_phase(self.rf_map[index,2],3)
+        self.trap.update_rf.setStyleSheet("background-color: red")
 
     @inlineCallbacks
-    def freqChanged(self,freq, dacPort):
-        yield self.server.set_pid_course(dacPort, freq)
+    def dcChanged(self, dc, channel):
+        self.dc[str(len(self.dc +1))] = [dc, channel]
+        self.trap.update_dc.setStyleSheet("background-color: red")
 
     @inlineCallbacks
-    def setLock(self, state):
-        yield self.server.set_lock_state(state)
+    def hvChanged(self, hv, channel):
+        yield self.server.set_hv(hv, channel)
 
     @inlineCallbacks
-    def setOutput(self, state):
-        yield self.server.set_wlm_output(state)
+    def endCapChanged(self, endCap, channel):
+        self.endCap[str(len(self.endCap +1))] = [endCap, channel]
+        self.trap.update_rf.setStyleSheet("background-color: red")
 
     @inlineCallbacks
-    def getPIDCourse(self, dacPort, hint):
-        course = yield self.server.get_pid_course(dacPort)
-        try:
-            course = float(course)
-        except:
-            try:
-                course = float(hint)
-            except:
-                course = 600
-        returnValue(course)
+    def update_rf(self):
+        yield self.server.update_rf()
+        self.trap.update_rf.setStyleSheet("background-color: green")
 
     @inlineCallbacks
-    def changeP(self, p, dacPort):
-        yield self.server.set_pid_p(dacPort,p)
+    def update_dc(self):
+        for value in self.dc:
+               yield self.server.set_dc_rod(self.dc[item][0], self.dc[item][1])
+        for value in self.endCap:
+               yield self.server.set_dc(self.endCap[item][0], self.endCap[item][1])
+        self.trap.update_rf.setStyleSheet("background-color: green")
 
     @inlineCallbacks
-    def changeI(self, i, dacPort):
-        yield self.server.set_pid_i(dacPort,i)
+    def rfMapChanged(self, state):
+        if state == True:
+            self.trap.spinAmp1.setEnabled(False)
+            self.trap.spinAmp3.valueChanged.connect(lambda amp = self.trap.spinAmp3.value() : self.setAmpRFMap(amp))
 
-    @inlineCallbacks
-    def changeD(self, d, dacPort):
-        yield self.server.set_pid_d(dacPort,d)
-
-    @inlineCallbacks
-    def changeDt(self, dt, dacPort):
-        yield self.server.set_pid_dt(dacPort,dt)
-
-    @inlineCallbacks
-    def constDt(self, state, dacPort):
-        if state == 0:
-            yield self.server.set_const_dt(dacPort,False)
         else:
-            yield self.server.set_const_dt(dacPort,True)
-
-    @inlineCallbacks
-    def changeFactor(self, factor, dacPort):
-        yield self.server.set_pid_sensitivity(dacPort, factor,  int(self.pid.spinExp.value()))
-
-    @inlineCallbacks
-    def changeExponent(self, exponent, dacPort):
-        yield self.server.set_pid_sensitivity(dacPort, self.pid.spinFactor.value(), int(exponent))
-
-    @inlineCallbacks
-    def changePolarity(self, index, dacPort):
-        if index == 0:
-            yield self.server.set_pid_polarity(dacPort,1)
-        else:
-            yield self.server.set_pid_polarity(dacPort,-1)
+            self.trap.spinAmp1.setEnabled(True)
+            self.trap.spinAmp1.valueChanged.connect(lambda amp = self.trap.spinAmp1.value(), channel = self.rods['1'] : self.ampChanged(amp, channel))
 
     def closeEvent(self, x):
         self.reactor.stop()
 
+    @inlineCallbacks
+    def set_current_state(self):
+
+        self.trap.spinFreq1.setValue(self.server.get_frequency(self.rods['1']))
+        self.trap.spinFreq1.valueChanged.connect(lambda freq = self.trap.spinFreq1.value(), channel = self.rods['1'] : self.freqChanged(freq, channel))
+        self.trap.spinFreq2.setValue(self.server.get_frequency(self.rods['2']))
+        self.trap.spinFreq2.valueChanged.connect(lambda freq = self.trap.spinFreq2.value(), channel = self.rods['2'] : self.freqChanged(freq, channel))
+        self.trap.spinFreq3.setValue(self.server.get_frequency(self.rods['3']))
+        self.trap.spinFreq3.valueChanged.connect(lambda freq = self.trap.spinFreq3.value(), channel = self.rods['3'] : self.freqChanged(freq, channel))
+        self.trap.spinFreq4.setValue(self.server.get_frequency(self.rods['4']))
+        self.trap.spinFreq4.valueChanged.connect(lambda freq = self.trap.spinFreq4.value(), channel = self.rods['4'] : self.freqChanged(freq, channel))
+
+        self.trap.spinPhase1.setValue(self.server.get_phase(self.rods['1']))
+        self.trap.spinPhase1.valueChanged.connect(lambda phase = self.trap.spinPhase1.value(), channel = self.rods['1'] : self.phaseChanged(phase, channel))
+        self.trap.spinPhase2.setValue(self.server.get_phase(self.rods['2']))
+        self.trap.spinPhase2.valueChanged.connect(lambda phase = self.trap.spinPhase2.value(), channel = self.rods['2'] : self.phaseChanged(phase, channel))
+        self.trap.spinPhase3.setValue(self.server.get_phase(self.rods['3']))
+        self.trap.spinPhase3.valueChanged.connect(lambda phase = self.trap.spinPhase3.value(), channel = self.rods['3'] : self.phaseChanged(phase, channel))
+        self.trap.spinPhase4.setValue(self.server.get_phase(self.rods['4']))
+        self.trap.spinPhase4.valueChanged.connect(lambda phase = self.trap.spinPhase4.value(), channel = self.rods['4'] : self.phaseChanged(phase, channel))
+
+        self.trap.spinAmp1.setValue(self.server.get_amplitude(self.rods['1']))
+        self.trap.spinAmp1.valueChanged.connect(lambda amp = self.trap.spinAmp1.value(), channel = self.rods['1'] : self.ampChanged(amp, channel))
+        self.trap.spinAmp2.setValue(self.server.get_amplitude(self.rods['2']))
+        self.trap.spinAmp2.valueChanged.connect(lambda amp = self.trap.spinAmp2.value(), channel = self.rods['2'] : self.ampChanged(amp, channel))
+        self.trap.spinAmp3.setValue(self.server.get_amplitude(self.rods['3']))
+        self.trap.spinAmp3.valueChanged.connect(lambda amp = self.trap.spinAmp3.value(), channel = self.rods['3'] : self.ampChanged(amp, channel))
+        self.trap.spinAmp4.setValue(self.server.get_amplitude(self.rods['4']))
+        self.trap.spinAmp4.valueChanged.connect(lambda amp = self.trap.spinAmp4.value(), channel = self.rods['4'] : self.ampChanged(amp, channel))
+
+        self.trap.spinDC1.setValue(self.server.get_dc_rod(self.rods['1']))
+        self.trap.spinDC1.valueChanged.connect(lambda dc = self.trap.spinDC1.value(), channel = self.rods['1'] : self.dcChanged(dc, channel))
+        self.trap.spinDC2.setValue(self.server.get_dc_rod(self.rods['2']))
+        self.trap.spinDC2.valueChanged.connect(lambda dc = self.trap.spinDC2.value(), channel = self.rods['2'] : self.dcChanged(dc, channel))
+        self.trap.spinDC3.setValue(self.server.get_dc_rod(self.rods['3']))
+        self.trap.spinDC3.valueChanged.connect(lambda dc = self.trap.spinDC3.value(), channel = self.rods['3'] : self.dcChanged(dc, channel))
+        self.trap.spinDC4.setValue(self.server.get_dc_rod(self.rods['4']))
+        self.trap.spinDC4.valueChanged.connect(lambda dc = self.trap.spinDC4.value(), channel = self.rods['4'] : self.dcChanged(dc, channel))
+
+        self.trap.spinHV1.setValue(self.server.get_hv(self.rods['1']))
+        self.trap.spinHV1.valueChanged.connect(lambda hv = self.trap.spinHV1.value(), channel = self.rods['1'] : self.hvChanged(hv, channel))
+        self.trap.spinHV2.setValue(self.server.get_hv(self.rods['2']))
+        self.trap.spinHV2.valueChanged.connect(lambda hv = self.trap.spinHV2.value(), channel = self.rods['2'] : self.hvChanged(hv, channel))
+        self.trap.spinHV3.setValue(self.server.get_hv(self.rods['3']))
+        self.trap.spinHV3.valueChanged.connect(lambda hv = self.trap.spinHV3.value(), channel = self.rods['3'] : self.hvChanged(hv, channel))
+        self.trap.spinHV4.setValue(self.server.get_hv(self.rods['4']))
+        self.trap.spinHV4.valueChanged.connect(lambda hv = self.trap.spinHV4.value(), channel = self.rods['4'] : self.hvChanged(hv, channel))
+
+        self.trap.spinEndCap1.setValue(self.server.get_dc(self.endCaps['1']))
+        self.trap.spinEndCap1.valueChanged.connect(lambda endCap = self.trap.spinEndCap1.value(), channel = self.endCaps['1'] : self.endCapChanged(endCap, channel))
+        self.trap.spinEndCap2.setValue(self.server.get_dc(self.endCaps['2']))
+        self.trap.spinEndCap2.valueChanged.connect(lambda endCap = self.trap.spinEndCap2.value(), channel = self.endCaps['2'] : self.endCapChanged(endCap, channel))
+
+        self.trap.useRFMap.setCheckState(self.server.get_rf_map_state())
+        self.trap.useRFMap.stateChanged.connect(lambda state = self.trap.useRFMap.isChecked() : self.rfMapChanged(state))
+
+        self.trap.update_rf.clicked.connect(lambda : self.update_rf())
+        self.trap.update_dc.clicked.connect(lambda : self.update_dc())
+
+    @inlineCallbacks
+    def init_state(self):
+
+        self.trap.spinFreq1.setValue(self.init_params['Frequency'][0])
+        self.trap.spinFreq2.setValue(self.init_params['Frequency'][1])
+        self.trap.spinFreq3.setValue(self.init_params['Frequency'][2])
+        self.trap.spinFreq4.setValue(self.init_params['Frequency'][3])
+
+        self.trap.spinPhase1.setValue(self.init_params['Phase'][0])
+        self.trap.spinPhase2.setValue(self.init_params['Phase'][1])
+        self.trap.spinPhase3.setValue(self.init_params['Phase'][2])
+        self.trap.spinPhase4.setValue(self.init_params['Phase'][3])
+
+        self.trap.spinAmp1.setValue(self.init_params['Voltage'][0])
+        self.trap.spinAmp2.setValue(self.init_params['Voltage'][1])
+        self.trap.spinAmp3.setValue(self.init_params['Voltage'][2])
+        self.trap.spinAmp4.setValue(self.init_params['Voltage'][3])
+
+        self.trap.spinDC1.setValue(self.init_params['DC'][0])
+        self.trap.spinDC2.setValue(self.init_params['DC'][1])
+        self.trap.spinDC3.setValue(self.init_params['DC'][2])
+        self.trap.spinDC4.setValue(self.init_params['DC'][3])
+
+        self.trap.spinHV1.setValue(self.init_params['HV'][0])
+        self.trap.spinHV2.setValue(self.init_params['HV'][1])
+        self.trap.spinHV3.setValue(self.init_params['HV'][2])
+        self.trap.spinHV4.setValue(self.init_params['HV'][3])
+
+        self.trap.spinEndCap1.setValue(self.init_params['endCap'][0])
+        self.trap.spinEndCap2.setValue(self.init_params['endCap'][1])
+
+        self.trap.spinEndCap1.setValue(self.init_params['eLens'][0])
+        self.trap.spinEndCap2.setValue(self.init_params['eLens'][1])
+
+        self.trap.useRFMap.setCheckState(False)
+
+        self.server.update_rf()
+        self.server.update_dc()
 
 if __name__ == "__main__":
     a = QtGui.QApplication([])
     import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
-    wavemeterWidget = wavemeterclient(reactor)
-    wavemeterWidget.show()
+    TrapWidget = TrapControlClient(reactor)
+    TrapWidget.show()
     reactor.run()
