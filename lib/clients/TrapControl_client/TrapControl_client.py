@@ -10,6 +10,7 @@ from config.TrapControl_config import TrapControl_config
 
 import socket
 import os
+import numpy as np
 
 SIGNALID1 = 445566
 SIGNALID2 = 143533
@@ -63,8 +64,10 @@ class TrapControlClient(QtGui.QWidget):
     @inlineCallbacks
     def initializeGUI(self):
 
-        layout = QtGui.QGridLayout()
-
+        self.layout = QtGui.QGridLayout()
+        self.qBox = QtGui.QGroupBox('Trap Settings')
+        self.subLayout = QtGui.QGridLayout()
+        self.qBox.setLayout(self.subLayout)
         # Define dic for storting into
         self.dc = {}
         self.endCap = {}
@@ -86,21 +89,21 @@ class TrapControlClient(QtGui.QWidget):
         self.lockSwitch = TextChangingButton(('Locked','Unlocked'))
         # Start Unlocked
         self.lockSwitch.setChecked(False)
-        self.lockSwitch.toggled.connect(self.setLock)
-        subLayout.addWidget(self.lockSwitch, 0, 2)
+        #self.lockSwitch.toggled.connect(self.setLock)
+        self.subLayout.addWidget(self.lockSwitch, 0, 2)
 
         # Create a button to initialize trap params
         self.init_trap = QtGui.QPushButton('Set Default Values')
         self.init_trap.setMaximumHeight(30)
-        self.init_trap.setFont(QtGui.QFont(shell_font, pointSize=12))
+        self.init_trap.setFont(QtGui.QFont('MS Shell Dlg 2', pointSize=12))
         self.init_trap.clicked.connect(lambda : self.init_state())
-        subLayout.addWidget(self.init_trap, 0, 0)
+        self.subLayout.addWidget(self.init_trap, 0, 0)
         # initialize main Gui
         self.trap = QCustomTrapGui()
 
         # Get the current state of the trap and set the gui
         self.set_current_state()
-        subLayout.addWidget(self.trap, 1, 1)
+        self.subLayout.addWidget(self.trap, 1, 1)
 
         self.setLayout(layout)
 
@@ -171,58 +174,80 @@ class TrapControlClient(QtGui.QWidget):
 
     @inlineCallbacks
     def set_current_state(self):
-
-        self.trap.spinFreq1.setValue(self.server.get_frequency(self.rods['1']))
+        init_freq1 = yield self.server.get_frequency(self.rods['1'])
+        self.trap.spinFreq1.setValue(init_freq1)
         self.trap.spinFreq1.valueChanged.connect(lambda freq = self.trap.spinFreq1.value(), channel = self.rods['1'] : self.freqChanged(freq, channel))
-        self.trap.spinFreq2.setValue(self.server.get_frequency(self.rods['2']))
+        init_freq2 = yield self.server.get_frequency(self.rods['2'])
+        self.trap.spinFreq2.setValue(init_freq2)
         self.trap.spinFreq2.valueChanged.connect(lambda freq = self.trap.spinFreq2.value(), channel = self.rods['2'] : self.freqChanged(freq, channel))
-        self.trap.spinFreq3.setValue(self.server.get_frequency(self.rods['3']))
+        init_freq3 = yield self.server.get_frequency(self.rods['3'])
+        self.trap.spinFreq3.setValue(init_freq3)
         self.trap.spinFreq3.valueChanged.connect(lambda freq = self.trap.spinFreq3.value(), channel = self.rods['3'] : self.freqChanged(freq, channel))
-        self.trap.spinFreq4.setValue(self.server.get_frequency(self.rods['4']))
+        init_freq4 = yield self.server.get_frequency(self.rods['4'])
+        self.trap.spinFreq4.setValue(init_freq4)
         self.trap.spinFreq4.valueChanged.connect(lambda freq = self.trap.spinFreq4.value(), channel = self.rods['4'] : self.freqChanged(freq, channel))
 
-        self.trap.spinPhase1.setValue(self.server.get_phase(self.rods['1']))
+        init_phase1 = yield self.server.get_phase(self.rods['1'])
+        self.trap.spinPhase1.setValue(init_phase1)
         self.trap.spinPhase1.valueChanged.connect(lambda phase = self.trap.spinPhase1.value(), channel = self.rods['1'] : self.phaseChanged(phase, channel))
-        self.trap.spinPhase2.setValue(self.server.get_phase(self.rods['2']))
+        init_phase2 = yield self.server.get_phase(self.rods['2'])
+        self.trap.spinPhase2.setValue(init_phase2)
         self.trap.spinPhase2.valueChanged.connect(lambda phase = self.trap.spinPhase2.value(), channel = self.rods['2'] : self.phaseChanged(phase, channel))
-        self.trap.spinPhase3.setValue(self.server.get_phase(self.rods['3']))
+        init_phase3 = yield self.server.get_phase(self.rods['3'])
+        self.trap.spinPhase3.setValue(init_phase3)
         self.trap.spinPhase3.valueChanged.connect(lambda phase = self.trap.spinPhase3.value(), channel = self.rods['3'] : self.phaseChanged(phase, channel))
-        self.trap.spinPhase4.setValue(self.server.get_phase(self.rods['4']))
+        init_phase4 = yield self.server.get_phase(self.rods['4'])
+        self.trap.spinPhase4.setValue(init_phase4)
         self.trap.spinPhase4.valueChanged.connect(lambda phase = self.trap.spinPhase4.value(), channel = self.rods['4'] : self.phaseChanged(phase, channel))
 
-        self.trap.spinAmp1.setValue(self.server.get_amplitude(self.rods['1']))
+        init_amp1 = yield self.server.get_amplitude(self.rods['1'])
+        self.trap.spinAmp1.setValue(init_amp1)
         self.trap.spinAmp1.valueChanged.connect(lambda amp = self.trap.spinAmp1.value(), channel = self.rods['1'] : self.ampChanged(amp, channel))
-        self.trap.spinAmp2.setValue(self.server.get_amplitude(self.rods['2']))
+        init_amp2 = yield self.server.get_amplitude(self.rods['2'])
+        self.trap.spinAmp2.setValue(init_amp2)
         self.trap.spinAmp2.valueChanged.connect(lambda amp = self.trap.spinAmp2.value(), channel = self.rods['2'] : self.ampChanged(amp, channel))
-        self.trap.spinAmp3.setValue(self.server.get_amplitude(self.rods['3']))
+        init_amp3 = yield self.server.get_amplitude(self.rods['3'])
+        self.trap.spinAmp3.setValue(init_amp3)
         self.trap.spinAmp3.valueChanged.connect(lambda amp = self.trap.spinAmp3.value(), channel = self.rods['3'] : self.ampChanged(amp, channel))
-        self.trap.spinAmp4.setValue(self.server.get_amplitude(self.rods['4']))
+        init_amp4 = yield self.server.get_amplitude(self.rods['4'])
+        self.trap.spinAmp4.setValue(init_amp4)
         self.trap.spinAmp4.valueChanged.connect(lambda amp = self.trap.spinAmp4.value(), channel = self.rods['4'] : self.ampChanged(amp, channel))
 
-        self.trap.spinDC1.setValue(self.server.get_dc_rod(self.rods['1']))
+        init_dc1 = yield self.server.get_dc_rod(self.rods['1'])
+        self.trap.spinDC1.setValue(init_dc1)
         self.trap.spinDC1.valueChanged.connect(lambda dc = self.trap.spinDC1.value(), channel = self.rods['1'] : self.dcChanged(dc, channel))
-        self.trap.spinDC2.setValue(self.server.get_dc_rod(self.rods['2']))
+        init_dc2 = yield self.server.get_dc_rod(self.rods['2'])
+        self.trap.spinDC2.setValue(init_dc2)
         self.trap.spinDC2.valueChanged.connect(lambda dc = self.trap.spinDC2.value(), channel = self.rods['2'] : self.dcChanged(dc, channel))
-        self.trap.spinDC3.setValue(self.server.get_dc_rod(self.rods['3']))
+        init_dc3 = yield self.server.get_dc_rod(self.rods['3'])
+        self.trap.spinDC3.setValue(init_dc3)
         self.trap.spinDC3.valueChanged.connect(lambda dc = self.trap.spinDC3.value(), channel = self.rods['3'] : self.dcChanged(dc, channel))
-        self.trap.spinDC4.setValue(self.server.get_dc_rod(self.rods['4']))
+        init_dc4 = yield self.server.get_dc_rod(self.rods['4'])
+        self.trap.spinDC4.setValue(init_dc4)
         self.trap.spinDC4.valueChanged.connect(lambda dc = self.trap.spinDC4.value(), channel = self.rods['4'] : self.dcChanged(dc, channel))
 
-        self.trap.spinHV1.setValue(self.server.get_hv(self.rods['1']))
+        init_hv1 = yield self.server.get_hv(self.rods['1'])
+        self.trap.spinHV1.setValue(init_hv1)
         self.trap.spinHV1.valueChanged.connect(lambda hv = self.trap.spinHV1.value(), channel = self.rods['1'] : self.hvChanged(hv, channel))
-        self.trap.spinHV2.setValue(self.server.get_hv(self.rods['2']))
+        init_hv2 = yield self.server.get_hv(self.rods['2'])
+        self.trap.spinHV2.setValue(init_hv2)
         self.trap.spinHV2.valueChanged.connect(lambda hv = self.trap.spinHV2.value(), channel = self.rods['2'] : self.hvChanged(hv, channel))
-        self.trap.spinHV3.setValue(self.server.get_hv(self.rods['3']))
+        init_hv3 = yield self.server.get_hv(self.rods['3'])
+        self.trap.spinHV3.setValue(init_hv3)
         self.trap.spinHV3.valueChanged.connect(lambda hv = self.trap.spinHV3.value(), channel = self.rods['3'] : self.hvChanged(hv, channel))
-        self.trap.spinHV4.setValue(self.server.get_hv(self.rods['4']))
+        init_hv4 = yield self.server.get_hv(self.rods['4'])
+        self.trap.spinHV4.setValue(init_hv4)
         self.trap.spinHV4.valueChanged.connect(lambda hv = self.trap.spinHV4.value(), channel = self.rods['4'] : self.hvChanged(hv, channel))
 
-        self.trap.spinEndCap1.setValue(self.server.get_dc(self.endCaps['1']))
+        init_ec1 = yield self.server.get_dc(self.endCaps['1'])
+        self.trap.spinEndCap1.setValue(init_ec1)
         self.trap.spinEndCap1.valueChanged.connect(lambda endCap = self.trap.spinEndCap1.value(), channel = self.endCaps['1'] : self.endCapChanged(endCap, channel))
-        self.trap.spinEndCap2.setValue(self.server.get_dc(self.endCaps['2']))
+        init_ec2 = yield self.server.get_dc(self.endCaps['2'])
+        self.trap.spinEndCap2.setValue(init_ec2)
         self.trap.spinEndCap2.valueChanged.connect(lambda endCap = self.trap.spinEndCap2.value(), channel = self.endCaps['2'] : self.endCapChanged(endCap, channel))
 
-        self.trap.useRFMap.setCheckState(self.server.get_rf_map_state())
+        init_rf = yield self.server.get_rf_map_state()
+        self.trap.useRFMap.setCheckState(init_rf)
         self.trap.useRFMap.stateChanged.connect(lambda state = self.trap.useRFMap.isChecked() : self.rfMapChanged(state))
 
         self.trap.update_rf.clicked.connect(lambda : self.update_rf())

@@ -298,12 +298,13 @@ class TrapServer( SerialDeviceServer ):
         dc = dc_steps*self.max_dc/self.dc_steps
         returnValue(dc)
 
-    @setting(54,'get_rod_dc', channel = 'w')
+
+    @setting(54,'get_dc_rod', channel = 'w')
     def get_dc_rod(self, c, channel):
         '''Get the dc value of a given rod'''
         yield self.ser.write('dcg ' + str(channel) +' \n')
         hex_string = yield self.ser.read_line()
-        hex_string = hex_string.replace(' ','')
+        hex_string = hex_string.place(' ','')
         dc_rod_steps = int(hex_string,16)
         dc_rod = dc_rod_steps*self.max_dc/self.dc_steps/2
         returnValue(dc_rod)
@@ -323,8 +324,8 @@ class TrapServer( SerialDeviceServer ):
         string = yield self.ser.read_line()
         returnValue(string)
 
-    @setting(23,'get_rf_map_state', state = 'b')
-    def get_rf_map_state(self, c):
+    @setting(57,'get_rf_map_state', state = 'b')
+    def get_rf_map_state(self, c, state):
         state = self.use_RFMap
         returnValue(state)
 
