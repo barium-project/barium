@@ -83,6 +83,10 @@ class TrapServer( SerialDeviceServer ):
         self.dc_steps = 2**12-1
         self.hv_steps = 2**12-1
 
+        # Set the state of the rf map
+        self.use_RFMap = False
+
+
     @setting(1, returns = 's')
     def command_list(self, c):
         ''' Returns a string with the list of commands.
@@ -247,6 +251,10 @@ class TrapServer( SerialDeviceServer ):
         '''Resets the DDS chips and sets all values to zero'''
         yield self.ser.write('x \n')
 
+    @setting(23,'set_rf_map_state', state = 'b')
+    def set_rf_map_state(self,c, state):
+        self.use_RFMap = state
+
 
 # Define all get functions
 
@@ -290,12 +298,13 @@ class TrapServer( SerialDeviceServer ):
         dc = dc_steps*self.max_dc/self.dc_steps
         returnValue(dc)
 
+
     @setting(54,'get_dc_rod', channel = 'w')
     def get_dc_rod(self, c, channel):
         '''Get the dc value of a given rod'''
         yield self.ser.write('dcg ' + str(channel) +' \n')
         hex_string = yield self.ser.read_line()
-        hex_string = hex_string.replace(' ','')
+        hex_string = hex_string.place(' ','')
         dc_rod_steps = int(hex_string,16)
         dc_rod = dc_rod_steps*self.max_dc/self.dc_steps/2
         returnValue(dc_rod)
@@ -314,6 +323,11 @@ class TrapServer( SerialDeviceServer ):
         '''Reads the buffer if you want to check for errors'''
         string = yield self.ser.read_line()
         returnValue(string)
+
+    @setting(23,'get_rf_map_state', state = 'b')
+    def get_rf_map_state(self, c):
+        state = self.use_RFMap
+        returnValue(state)
 
 
 if __name__ == "__main__":
