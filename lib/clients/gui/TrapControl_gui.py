@@ -73,9 +73,11 @@ class QCustomTrapGui(QtGui.QFrame):
 
         self.update_rf = QtGui.QPushButton('Update RF')
         self.update_rf.setMaximumHeight(30)
+        self.update_rf.setMinimumHeight(30)
         self.update_rf.setFont(QtGui.QFont(shell_font, pointSize=10))
 
         self.update_dc = QtGui.QPushButton('Update DC')
+        self.update_rf.setMinimumHeight(30)
         self.update_dc.setMaximumHeight(30)
         self.update_dc.setFont(QtGui.QFont(shell_font, pointSize=10))
 
@@ -243,6 +245,10 @@ class QCustomTrapGui(QtGui.QFrame):
         self.spinEndCap2.setRange(0, 53)
         self.spinEndCap2.setKeyboardTracking(False)
 
+        # Use rf map switch
+        self.useRFMap = QtGui.QCheckBox('Use RF Map')
+        self.useRFMap.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=16))
+
         #layout 1 row at a time
 
         layout.addWidget(freqName,             0, 1)
@@ -280,6 +286,7 @@ class QCustomTrapGui(QtGui.QFrame):
         layout.addWidget(self.spinHV4,         4, 5)
 
         layout.addWidget(endCap1Name,          5, 0)
+        layout.addWidget(self.useRFMap,        5, 3)
         layout.addWidget(self.spinEndCap1,     5, 4)
 
         layout.addWidget(endCap2Name,          6, 0)
