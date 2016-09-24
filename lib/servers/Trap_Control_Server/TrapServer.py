@@ -86,6 +86,9 @@ class TrapServer( SerialDeviceServer ):
         # Set the state of the rf map
         self.use_RFMap = False
 
+        # Set the state of RF
+        self.enable_RF = True
+
 
     @setting(1, returns = 's')
     def command_list(self, c):
@@ -175,8 +178,10 @@ class TrapServer( SerialDeviceServer ):
     def set_rf_state(self, c, state):
         '''Turns on or off all rf outputs'''
         if state == True:
+            self.enable_RF = True
             yield self.ser.write('o 1 \n')
         elif state== False:
+            self.enable_RF = False
             yield self.ser.write('o 0 \n')
 
     @setting(11,'update_dc')
@@ -328,6 +333,9 @@ class TrapServer( SerialDeviceServer ):
     def get_rf_map_state(self,c):
         return(self.use_RFMap)
 
+    @setting(58,'get_rf_state', returns = 'b')
+    def get_rf_state(self,c):
+        return(self.enable_RF)
 
 if __name__ == "__main__":
     from labrad import util

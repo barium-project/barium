@@ -74,12 +74,20 @@ class QCustomTrapGui(QtGui.QFrame):
         self.update_rf = QtGui.QPushButton('Update RF')
         self.update_rf.setMaximumHeight(30)
         self.update_rf.setMinimumHeight(30)
-        self.update_rf.setFont(QtGui.QFont(shell_font, pointSize=10))
+        self.update_rf.setFont(QtGui.QFont(shell_font, pointSize=14))
+        self.update_rf.setStyleSheet("background-color: green")
 
         self.update_dc = QtGui.QPushButton('Update DC')
-        self.update_rf.setMinimumHeight(30)
+        self.update_dc.setMinimumHeight(30)
         self.update_dc.setMaximumHeight(30)
-        self.update_dc.setFont(QtGui.QFont(shell_font, pointSize=10))
+        self.update_dc.setFont(QtGui.QFont(shell_font, pointSize=14))
+        self.update_dc.setStyleSheet("background-color: green")
+
+        self.clearPhase = QtGui.QPushButton('Clear Phase Accum')
+        self.clearPhase.setMinimumHeight(30)
+        self.clearPhase.setMaximumHeight(30)
+        self.clearPhase.setFont(QtGui.QFont(shell_font, pointSize=14))
+        self.clearPhase.setStyleSheet("background-color: blue")
 
         #self.update_dc.setMinimumWidth(180)
 
@@ -249,6 +257,10 @@ class QCustomTrapGui(QtGui.QFrame):
         self.useRFMap = QtGui.QCheckBox('Use RF Map')
         self.useRFMap.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=16))
 
+        # Enable RF
+        self.enableRF = QtGui.QCheckBox('Enable RF')
+        self.enableRF.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=16))
+
         #layout 1 row at a time
 
         layout.addWidget(freqName,             0, 1)
@@ -290,10 +302,12 @@ class QCustomTrapGui(QtGui.QFrame):
         layout.addWidget(self.spinEndCap1,     5, 4)
 
         layout.addWidget(endCap2Name,          6, 0)
+        layout.addWidget(self.enableRF,        6, 3)
         layout.addWidget(self.spinEndCap2,     6, 4)
 
-        layout.addWidget(self.update_rf,       7, 1, 1, 2)
-        layout.addWidget(self.update_dc,       7, 3, 1, 2)
+        layout.addWidget(self.update_rf,       7, 1, 1, 1)
+        layout.addWidget(self.update_dc,       7, 2, 1, 1)
+        layout.addWidget(self.clearPhase,      7, 3, 1, 1)
 
         layout.minimumSize()
 
