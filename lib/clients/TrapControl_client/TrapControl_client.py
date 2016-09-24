@@ -68,6 +68,7 @@ class TrapControlClient(QtGui.QWidget):
         self.qBox = QtGui.QGroupBox('Trap Settings')
         self.subLayout = QtGui.QGridLayout()
         self.qBox.setLayout(self.subLayout)
+        self.layout.addWidget(self.qBox, 0, 0)
         # Define dic for storting into
         self.dc = {}
         self.endCap = {}
@@ -101,79 +102,6 @@ class TrapControlClient(QtGui.QWidget):
         # initialize main Gui
         self.trap = QCustomTrapGui()
 
-        # Get the current state of the trap and set the gui
-        self.set_current_state()
-        self.subLayout.addWidget(self.trap, 1, 1)
-
-        self.setLayout(layout)
-
-
-    @inlineCallbacks
-    def freqChanged(self, freq, channel):
-        yield self.server.set_frequency(freq, channel)
-        self.trap.update_rf.setStyleSheet("background-color: red")
-
-    @inlineCallbacks
-    def phaseChanged(self, phase, channel):
-        yield self.server.set_phase(phase, channel)
-        self.trap.update_rf.setStyleSheet("background-color: red")
-
-    @inlineCallbacks
-    def ampChanged(self, amp, channel):
-        yield self.server.set_amplitude(amp, channel)
-        self.trap.update_rf.setStyleSheet("background-color: red")
-
-    @inlineCallbacks
-    def setAmpRFChanged(self, amp):
-        index = np.where(self.rf_map[:,0] == amp)
-        index = index[0][0]
-        yield self.server.set_amplitude(amp,2)
-        yield self.server.set_amplitude(self.rf_map[index,1],3)
-        yield self.server.set_phase(self.rf_map[index,2],3)
-        self.trap.update_rf.setStyleSheet("background-color: red")
-
-    @inlineCallbacks
-    def dcChanged(self, dc, channel):
-        self.dc[str(len(self.dc +1))] = [dc, channel]
-        self.trap.update_dc.setStyleSheet("background-color: red")
-
-    @inlineCallbacks
-    def hvChanged(self, hv, channel):
-        yield self.server.set_hv(hv, channel)
-
-    @inlineCallbacks
-    def endCapChanged(self, endCap, channel):
-        self.endCap[str(len(self.endCap +1))] = [endCap, channel]
-        self.trap.update_rf.setStyleSheet("background-color: red")
-
-    @inlineCallbacks
-    def update_rf(self):
-        yield self.server.update_rf()
-        self.trap.update_rf.setStyleSheet("background-color: green")
-
-    @inlineCallbacks
-    def update_dc(self):
-        for value in self.dc:
-               yield self.server.set_dc_rod(self.dc[item][0], self.dc[item][1])
-        for value in self.endCap:
-               yield self.server.set_dc(self.endCap[item][0], self.endCap[item][1])
-        self.trap.update_rf.setStyleSheet("background-color: green")
-
-    @inlineCallbacks
-    def rfMapChanged(self, state):
-        if state == True:
-            self.trap.spinAmp1.setEnabled(False)
-            self.trap.spinAmp3.valueChanged.connect(lambda amp = self.trap.spinAmp3.value() : self.setAmpRFMap(amp))
-
-        else:
-            self.trap.spinAmp1.setEnabled(True)
-            self.trap.spinAmp1.valueChanged.connect(lambda amp = self.trap.spinAmp1.value(), channel = self.rods['1'] : self.ampChanged(amp, channel))
-
-    def closeEvent(self, x):
-        self.reactor.stop()
-
-    @inlineCallbacks
-    def set_current_state(self):
         init_freq1 = yield self.server.get_frequency(self.rods['1'])
         self.trap.spinFreq1.setValue(init_freq1)
         self.trap.spinFreq1.valueChanged.connect(lambda freq = self.trap.spinFreq1.value(), channel = self.rods['1'] : self.freqChanged(freq, channel))
@@ -246,12 +174,86 @@ class TrapControlClient(QtGui.QWidget):
         self.trap.spinEndCap2.setValue(init_ec2)
         self.trap.spinEndCap2.valueChanged.connect(lambda endCap = self.trap.spinEndCap2.value(), channel = self.endCaps['2'] : self.endCapChanged(endCap, channel))
 
+
         init_rf = yield self.server.get_rf_map_state()
+
         self.trap.useRFMap.setCheckState(init_rf)
         self.trap.useRFMap.stateChanged.connect(lambda state = self.trap.useRFMap.isChecked() : self.rfMapChanged(state))
 
         self.trap.update_rf.clicked.connect(lambda : self.update_rf())
         self.trap.update_dc.clicked.connect(lambda : self.update_dc())
+
+        # Get the current state of the trap and set the gui
+        #self.set_current_state()
+        self.subLayout.addWidget(self.trap, 1, 1)
+
+        self.setLayout(self.layout)
+
+
+    @inlineCallbacks
+    def freqChanged(self, freq, channel):
+        yield self.server.set_frequency(freq, channel)
+        self.trap.update_rf.setStyleSheet("background-color: red")
+
+    @inlineCallbacks
+    def phaseChanged(self, phase, channel):
+        yield self.server.set_phase(phase, channel)
+        self.trap.update_rf.setStyleSheet("background-color: red")
+
+    @inlineCallbacks
+    def ampChanged(self, amp, channel):
+        yield self.server.set_amplitude(amp, channel)
+        self.trap.update_rf.setStyleSheet("background-color: red")
+
+    @inlineCallbacks
+    def setAmpRFChanged(self, amp):
+        index = np.where(self.rf_map[:,0] == amp)
+        index = index[0][0]
+        yield self.server.set_amplitude(amp,2)
+        yield self.server.set_amplitude(self.rf_map[index,1],3)
+        yield self.server.set_phase(self.rf_map[index,2],3)
+        self.trap.update_rf.setStyleSheet("background-color: red")
+
+    @inlineCallbacks
+    def dcChanged(self, dc, channel):
+        self.dc[str(len(self.dc) +1)] = [dc, channel]
+        self.trap.update_dc.setStyleSheet("background-color: red")
+
+    @inlineCallbacks
+    def hvChanged(self, hv, channel):
+        yield self.server.set_hv(hv, channel)
+
+    @inlineCallbacks
+    def endCapChanged(self, endCap, channel):
+        self.endCap[str(len(self.endCap) +1)] = [endCap, channel]
+        self.trap.update_rf.setStyleSheet("background-color: red")
+
+    @inlineCallbacks
+    def update_rf(self):
+        yield self.server.update_rf()
+        self.trap.update_rf.setStyleSheet("background-color: green")
+
+    @inlineCallbacks
+    def update_dc(self):
+        for value in self.dc:
+               yield self.server.set_dc_rod(self.dc[item][0], self.dc[item][1])
+        for value in self.endCap:
+               yield self.server.set_dc(self.endCap[item][0], self.endCap[item][1])
+        self.trap.update_rf.setStyleSheet("background-color: green")
+
+    @inlineCallbacks
+    def rfMapChanged(self, state):
+        if state == True:
+            self.trap.spinAmp1.setEnabled(False)
+            self.trap.spinAmp3.valueChanged.connect(lambda amp = self.trap.spinAmp3.value() : self.setAmpRFMap(amp))
+
+        else:
+            self.trap.spinAmp1.setEnabled(True)
+            self.trap.spinAmp1.valueChanged.connect(lambda amp = self.trap.spinAmp1.value(), channel = self.rods['1'] : self.ampChanged(amp, channel))
+
+    def closeEvent(self, x):
+        self.reactor.stop()
+
 
     @inlineCallbacks
     def init_state(self):

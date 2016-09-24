@@ -104,7 +104,7 @@ class TrapServer( SerialDeviceServer ):
         yield self.ser.write('i \n')
 
 
-    @setting(3,'set_frequency',frequency = ['w: frequency [Hz]'], channel = ['w: channel number']
+    @setting(3,'set_frequency',frequency = ['v[]: frequency [Hz]'], channel = ['w: channel number']
              , returns = [''])
     def set_frequency(self, c, frequency, channel):
         '''Set the frequency of a channel in Hz using 4 byte hexidecimal rep.
@@ -304,7 +304,7 @@ class TrapServer( SerialDeviceServer ):
         '''Get the dc value of a given rod'''
         yield self.ser.write('dcg ' + str(channel) +' \n')
         hex_string = yield self.ser.read_line()
-        hex_string = hex_string.place(' ','')
+        hex_string = hex_string.replace(' ','')
         dc_rod_steps = int(hex_string,16)
         dc_rod = dc_rod_steps*self.max_dc/self.dc_steps/2
         returnValue(dc_rod)
@@ -324,10 +324,9 @@ class TrapServer( SerialDeviceServer ):
         string = yield self.ser.read_line()
         returnValue(string)
 
-    @setting(57,'get_rf_map_state', state = 'b')
-    def get_rf_map_state(self, c, state):
-        state = self.use_RFMap
-        returnValue(state)
+    @setting(57,'get_rf_map_state', returns = 'b')
+    def get_rf_map_state(self,c):
+        return(self.use_RFMap)
 
 
 if __name__ == "__main__":
