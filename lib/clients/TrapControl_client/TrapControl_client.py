@@ -34,7 +34,7 @@ class TrapControlClient(QtGui.QWidget):
         self.reactor = reactor
         self.name = socket.gethostname() + ' Trap Control Client'
         self.connect()
-        self._check_window_size()
+        #self._check_window_size()
 
     def _check_window_size(self):
         """Checks screen size to make sure window fits in the screen. """
@@ -89,9 +89,9 @@ class TrapControlClient(QtGui.QWidget):
         # Create general lock button to disable all buttons
         self.lockSwitch = TextChangingButton(('Locked','Unlocked'))
         # Start Unlocked
-        self.lockSwitch.setChecked(False)
-        #self.lockSwitch.toggled.connect(self.setLock)
+        self.lockSwitch.toggled.connect(self.set_lock)
         self.subLayout.addWidget(self.lockSwitch, 0, 4)
+        #self.lockSwitch.setChecked(False)
 
         # Create a button to initialize trap params
         self.init_trap = QtGui.QPushButton('Set Default Values')
@@ -186,6 +186,7 @@ class TrapControlClient(QtGui.QWidget):
 
         self.trap.update_rf.clicked.connect(lambda : self.update_rf())
         self.trap.update_dc.clicked.connect(lambda : self.update_dc())
+        self.trap.clearPhase.clicked.connect(lambda : self.clear_phase())
 
         # Get the current state of the trap and set the gui
         #self.set_current_state()
@@ -209,15 +210,13 @@ class TrapControlClient(QtGui.QWidget):
         yield self.server.set_amplitude(amp, channel)
         self.trap.update_rf.setStyleSheet("background-color: red")
 
-    @inlineCallbacks
     def setAmpRFMap(self, amp):
         index = np.where(self.rf_map[:,0] == amp)
         index = index[0][0]
-        yield self.server.set_amplitude(amp,2)
-        yield self.server.set_amplitude(self.rf_map[index,1],3)
-        yield self.server.set_phase(self.rf_map[index,2],3)
+        self.trap.spinAmp3.setValue(self.rf_map[index,0])
+        self.trap.spinPhase1.setValue(self.rf_map[index,2])
+        self.trap.spinAmp1.setValue(self.rf_map[index,1])
         self.trap.update_rf.setStyleSheet("background-color: red")
-
 
     def dcChanged(self, dc, channel):
         self.dc[str(len(self.dc) +1)] = [dc, channel]
@@ -248,13 +247,19 @@ class TrapControlClient(QtGui.QWidget):
             self.trap.update_dc.setStyleSheet("background-color: green")
         self.endCap = {}
 
+    @inlineCallbacks
+    def clear_phase(self):
+        yield self.server.clear_phase_accumulator()
+
     def rfMapChanged(self, state):
         if state >= 1:
             self.trap.spinAmp1.setEnabled(False)
+            self.trap.spinPhase1.setEnabled(False)
             self.trap.spinAmp3.valueChanged.connect(lambda amp = self.trap.spinAmp3.value() : self.setAmpRFMap(amp))
 
         elif state == 0:
             self.trap.spinAmp1.setEnabled(True)
+            self.trap.spinPhase1.setEnabled(True)
             self.trap.spinAmp1.valueChanged.connect(lambda amp = self.trap.spinAmp1.value(), channel = self.rods['1'] : self.ampChanged(amp, channel))
 
     @inlineCallbacks
@@ -263,6 +268,9 @@ class TrapControlClient(QtGui.QWidget):
             yield self.server.set_rf_state(True)
         else:
             yield self.server.set_rf_state(False)
+
+    def set_lock(self, state):
+        self.trap.setEnabled(not state)
 
 
     def closeEvent(self, x):
