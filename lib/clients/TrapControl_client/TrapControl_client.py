@@ -91,7 +91,7 @@ class TrapControlClient(QtGui.QWidget):
         # Start Unlocked
         self.lockSwitch.setChecked(False)
         #self.lockSwitch.toggled.connect(self.setLock)
-        self.subLayout.addWidget(self.lockSwitch, 0, 2)
+        self.subLayout.addWidget(self.lockSwitch, 0, 4)
 
         # Create a button to initialize trap params
         self.init_trap = QtGui.QPushButton('Set Default Values')
@@ -99,6 +99,7 @@ class TrapControlClient(QtGui.QWidget):
         self.init_trap.setFont(QtGui.QFont('MS Shell Dlg 2', pointSize=12))
         self.init_trap.clicked.connect(lambda : self.init_state())
         self.subLayout.addWidget(self.init_trap, 0, 0)
+
         # initialize main Gui
         self.trap = QCustomTrapGui()
 
@@ -176,16 +177,19 @@ class TrapControlClient(QtGui.QWidget):
 
 
         init_rf = yield self.server.get_rf_map_state()
-
         self.trap.useRFMap.setCheckState(init_rf)
         self.trap.useRFMap.stateChanged.connect(lambda state = self.trap.useRFMap.isChecked() : self.rfMapChanged(state))
+
+        init_rf_en = yield self.server.get_rf_state()
+        self.trap.enableRF.setCheckState(init_rf_en)
+        self.trap.enableRF.stateChanged.connect(lambda state = self.trap.enableRF.isChecked() : self.enableRFChanged(state))
 
         self.trap.update_rf.clicked.connect(lambda : self.update_rf())
         self.trap.update_dc.clicked.connect(lambda : self.update_dc())
 
         # Get the current state of the trap and set the gui
         #self.set_current_state()
-        self.subLayout.addWidget(self.trap, 1, 1)
+        self.subLayout.addWidget(self.trap, 1, 0, 1, 5)
 
         self.setLayout(self.layout)
 
@@ -206,7 +210,7 @@ class TrapControlClient(QtGui.QWidget):
         self.trap.update_rf.setStyleSheet("background-color: red")
 
     @inlineCallbacks
-    def setAmpRFChanged(self, amp):
+    def setAmpRFMap(self, amp):
         index = np.where(self.rf_map[:,0] == amp)
         index = index[0][0]
         yield self.server.set_amplitude(amp,2)
@@ -214,7 +218,7 @@ class TrapControlClient(QtGui.QWidget):
         yield self.server.set_phase(self.rf_map[index,2],3)
         self.trap.update_rf.setStyleSheet("background-color: red")
 
-    @inlineCallbacks
+
     def dcChanged(self, dc, channel):
         self.dc[str(len(self.dc) +1)] = [dc, channel]
         self.trap.update_dc.setStyleSheet("background-color: red")
@@ -223,10 +227,10 @@ class TrapControlClient(QtGui.QWidget):
     def hvChanged(self, hv, channel):
         yield self.server.set_hv(hv, channel)
 
-    @inlineCallbacks
+
     def endCapChanged(self, endCap, channel):
         self.endCap[str(len(self.endCap) +1)] = [endCap, channel]
-        self.trap.update_rf.setStyleSheet("background-color: red")
+        self.trap.update_dc.setStyleSheet("background-color: red")
 
     @inlineCallbacks
     def update_rf(self):
@@ -235,27 +239,37 @@ class TrapControlClient(QtGui.QWidget):
 
     @inlineCallbacks
     def update_dc(self):
-        for value in self.dc:
-               yield self.server.set_dc_rod(self.dc[item][0], self.dc[item][1])
-        for value in self.endCap:
-               yield self.server.set_dc(self.endCap[item][0], self.endCap[item][1])
-        self.trap.update_rf.setStyleSheet("background-color: green")
+        for key in self.dc:
+            yield self.server.set_dc_rod(self.dc[key][0], self.dc[key][1])
+            self.trap.update_dc.setStyleSheet("background-color: green")
+        self.dc = {}
+        for key in self.endCap:
+            yield self.server.set_dc(self.endCap[key][0], self.endCap[key][1])
+            self.trap.update_dc.setStyleSheet("background-color: green")
+        self.endCap = {}
 
-    @inlineCallbacks
     def rfMapChanged(self, state):
-        if state == True:
+        if state >= 1:
             self.trap.spinAmp1.setEnabled(False)
             self.trap.spinAmp3.valueChanged.connect(lambda amp = self.trap.spinAmp3.value() : self.setAmpRFMap(amp))
 
-        else:
+        elif state == 0:
             self.trap.spinAmp1.setEnabled(True)
             self.trap.spinAmp1.valueChanged.connect(lambda amp = self.trap.spinAmp1.value(), channel = self.rods['1'] : self.ampChanged(amp, channel))
+
+    @inlineCallbacks
+    def enableRFChanged(self, state):
+        if state >= 1:
+            yield self.server.set_rf_state(True)
+        else:
+            yield self.server.set_rf_state(False)
+
 
     def closeEvent(self, x):
         self.reactor.stop()
 
 
-    @inlineCallbacks
+    #@inlineCallbacks
     def init_state(self):
 
         self.trap.spinFreq1.setValue(self.init_params['Frequency'][0])
@@ -286,13 +300,9 @@ class TrapControlClient(QtGui.QWidget):
         self.trap.spinEndCap1.setValue(self.init_params['endCap'][0])
         self.trap.spinEndCap2.setValue(self.init_params['endCap'][1])
 
-        self.trap.spinEndCap1.setValue(self.init_params['eLens'][0])
-        self.trap.spinEndCap2.setValue(self.init_params['eLens'][1])
 
         self.trap.useRFMap.setCheckState(False)
 
-        self.server.update_rf()
-        self.server.update_dc()
 
 if __name__ == "__main__":
     a = QtGui.QApplication([])
