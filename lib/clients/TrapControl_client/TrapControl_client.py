@@ -1,4 +1,6 @@
 from barium.lib.clients.gui.TrapControl_gui import QCustomTrapGui
+from barium.lib.clients.gui.Ablation_gui import QCustomAblationGui
+from barium.lib.clients.gui.HVPulse_gui import QCustomHVPulseGui
 from common.lib.clients.qtui.q_custom_text_changing_button import \
     TextChangingButton
 from twisted.internet.defer import inlineCallbacks, returnValue
@@ -49,7 +51,7 @@ class TrapControlClient(QtGui.QWidget):
     @inlineCallbacks
     def connect(self):
         """Creates an Asynchronous connection to the trap control computer and
-        connects incoming signals to relavent functions
+        connects incoming signals to relevant functions
 
         """
         self.serverIP = TrapControl_config.ip
@@ -170,10 +172,17 @@ class TrapControlClient(QtGui.QWidget):
 
         init_ec1 = yield self.server.get_dc(self.endCaps['1'])
         self.trap.spinEndCap1.setValue(init_ec1)
-        self.trap.spinEndCap1.valueChanged.connect(lambda endCap = self.trap.spinEndCap1.value(), channel = self.endCaps['1'] : self.endCapChanged(endCap, channel))
+        self.trap.spinEndCap1.valueChanged.connect(lambda voltage = self.trap.spinEndCap1.value(), channel = self.endCaps['1'] : self.endCapChanged(voltage, channel))
         init_ec2 = yield self.server.get_dc(self.endCaps['2'])
         self.trap.spinEndCap2.setValue(init_ec2)
-        self.trap.spinEndCap2.valueChanged.connect(lambda endCap = self.trap.spinEndCap2.value(), channel = self.endCaps['2'] : self.endCapChanged(endCap, channel))
+        self.trap.spinEndCap2.valueChanged.connect(lambda voltage = self.trap.spinEndCap2.value(), channel = self.endCaps['2'] : self.endCapChanged(voltage, channel))
+
+        init_eL1 = yield self.server.get_hv(self.eLens['1'])
+        self.trap.E1Spin.setValue(init_eL1)
+        self.trap.E1Spin.valueChanged.connect(lambda voltage = self.trap.E1Spin.value(), channel = self.eLens['1'] : self.hvChanged(voltage, channel))
+        init_eL2 = yield self.server.get_hv(self.eLens['2'])
+        self.trap.E2Spin.setValue(init_eL2)
+        self.trap.E2Spin.valueChanged.connect(lambda voltage = self.trap.E2Spin.value(), channel = self.eLens['2'] : self.hvChanged(voltage, channel))
 
 
         init_rf = yield self.server.get_rf_map_state()
@@ -191,6 +200,19 @@ class TrapControlClient(QtGui.QWidget):
         # Get the current state of the trap and set the gui
         #self.set_current_state()
         self.subLayout.addWidget(self.trap, 1, 0, 1, 5)
+
+        self.ablation = QCustomAblationGui()
+        self.ablation.loading_time_spin.valueChanged.connect(lambda time = self.ablation.loading_time_spin.value() : self.delayChanged(time))
+        self.ablation.loading_time_spin.setValue(self.init_params['Loading Time'])
+        self.ablation.trigger_loading.clicked.connect(lambda : self.triggerLoading())
+
+        self.subLayout.addWidget(self.ablation, 2, 0, 1, 2)
+
+        # HV Gui
+        self.hvGUI = QCustomHVPulseGui()
+        self.hvGUI.hv_pulse.clicked.connect(lambda : self.hv_pulse())
+
+        self.subLayout.addWidget(self.hvGUI, 2, 3, 1, 2)
 
         self.setLayout(self.layout)
 
@@ -210,6 +232,14 @@ class TrapControlClient(QtGui.QWidget):
         yield self.server.set_amplitude(amp, channel)
         self.trap.update_rf.setStyleSheet("background-color: red")
 
+    @inlineCallbacks
+    def delayChanged(self, time):
+        yield self.server.set_loading_time(172, int(time))
+
+    @inlineCallbacks
+    def triggerLoading(self):
+        yield self.server.trigger_loading()
+
     def setAmpRFMap(self, amp):
         index = np.where(self.rf_map[:,0] == amp)
         index = index[0][0]
@@ -226,6 +256,9 @@ class TrapControlClient(QtGui.QWidget):
     def hvChanged(self, hv, channel):
         yield self.server.set_hv(hv, channel)
 
+    @inlineCallbacks
+    def hv_pulse(self):
+        yield self.server.trigger_hv_pulse()
 
     def endCapChanged(self, endCap, channel):
         self.endCap[str(len(self.endCap) +1)] = [endCap, channel]
@@ -271,7 +304,7 @@ class TrapControlClient(QtGui.QWidget):
 
     def set_lock(self, state):
         self.trap.setEnabled(not state)
-
+        self.init_trap.setEnabled(not state)
 
     def closeEvent(self, x):
         self.reactor.stop()

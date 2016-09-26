@@ -71,6 +71,15 @@ class QCustomTrapGui(QtGui.QFrame):
         endCap2Name.setFont(QtGui.QFont(shell_font, pointSize=16))
         endCap2Name.setAlignment(QtCore.Qt.AlignCenter)
 
+        E1Name = QtGui.QLabel('Einzel Lens 1')
+        E1Name.setFont(QtGui.QFont(shell_font, pointSize=16))
+        E1Name.setAlignment(QtCore.Qt.AlignCenter)
+
+        E2Name = QtGui.QLabel('Einzel Lens 2')
+        E2Name.setFont(QtGui.QFont(shell_font, pointSize=16))
+        E2Name.setAlignment(QtCore.Qt.AlignCenter)
+
+
         self.update_rf = QtGui.QPushButton('Update RF')
         self.update_rf.setMaximumHeight(30)
         self.update_rf.setMinimumHeight(30)
@@ -253,6 +262,22 @@ class QCustomTrapGui(QtGui.QFrame):
         self.spinEndCap2.setRange(0, 53)
         self.spinEndCap2.setKeyboardTracking(False)
 
+        # Einzel lens
+        self.E1Spin = QtGui.QDoubleSpinBox()
+        self.E1Spin.setFont(QtGui.QFont(shell_font, pointSize=16))
+        self.E1Spin.setDecimals(0)
+        self.E1Spin.setSingleStep(1)
+        self.E1Spin.setRange(0, 1600)
+        self.E1Spin.setKeyboardTracking(False)
+
+        self.E2Spin = QtGui.QDoubleSpinBox()
+        self.E2Spin.setFont(QtGui.QFont(shell_font, pointSize=16))
+        self.E2Spin.setDecimals(0)
+        self.E2Spin.setSingleStep(1)
+        self.E2Spin.setRange(0, 1600)
+        self.E2Spin.setKeyboardTracking(False)
+
+
         # Use rf map switch
         self.useRFMap = QtGui.QCheckBox('Use RF Map')
         self.useRFMap.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=16))
@@ -305,9 +330,15 @@ class QCustomTrapGui(QtGui.QFrame):
         layout.addWidget(self.enableRF,        6, 3)
         layout.addWidget(self.spinEndCap2,     6, 4)
 
-        layout.addWidget(self.update_rf,       7, 1, 1, 1)
-        layout.addWidget(self.update_dc,       7, 2, 1, 1)
-        layout.addWidget(self.clearPhase,      7, 3, 1, 1)
+        layout.addWidget(E1Name,               7, 0)
+        layout.addWidget(self.E1Spin,          7, 5)
+
+        layout.addWidget(E2Name,               8, 0)
+        layout.addWidget(self.E2Spin,          8, 5)
+
+        layout.addWidget(self.clearPhase,      9, 2, 1, 1)
+        layout.addWidget(self.update_rf,       9, 3, 1, 1)
+        layout.addWidget(self.update_dc,       9, 4, 1, 1)
 
         layout.minimumSize()
 
