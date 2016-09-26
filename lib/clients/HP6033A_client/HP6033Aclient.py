@@ -48,7 +48,7 @@ class HP6033A_Client(HP6033A_UI):
             print 'Connected to HP6033A Server'
             self.device_id = device_id
             self.server.select_device(self.device_id)
-            
+
             yield self.server.signal__current_changed(self.CURRSIGNALID)
             yield self.server.signal__voltage_changed(self.VOLTSIGNALID)
             yield self.server.signal__get_measurements(self.MEASSIGNALID)
@@ -59,7 +59,7 @@ class HP6033A_Client(HP6033A_UI):
             yield self.server.addListener(listener = self.update_meas, source = None, ID = self.MEASSIGNALID)
             yield self.server.addListener(listener = self.update_outp, source = None, ID = self.OUTPSIGNALID)
             yield self.server.addListener(listener = self.update_pulm, source = None, ID = self.PULMSIGNALID)
-            
+
             self.signal_connect()
         except:
             print 'HP6033A Server Unavailable. Client is not connected.'
@@ -74,9 +74,9 @@ class HP6033A_Client(HP6033A_UI):
 
         self.safety_limits = HP6033A_Safety_UI()    #Safety Limits Window
         self.safety_limits.setupUi()
-        self.max_voltage = 20                       #Initialize Variables
+        self.max_voltage = 2                       #Initialize Variables
         self.min_voltage = 0
-        self.max_current = 30
+        self.max_current = 7
         self.min_current = 0
         self.safety_limits.ps_max_voltage_spinbox.valueChanged.connect(lambda :self.update_safety())
         self.safety_limits.ps_min_voltage_spinbox.valueChanged.connect(lambda :self.update_safety())
@@ -112,10 +112,8 @@ class HP6033A_Client(HP6033A_UI):
         self.min_voltage = self.safety_limits.ps_min_voltage_spinbox.value()
         self.max_current = self.safety_limits.ps_max_current_spinbox.value()
         self.min_current = self.safety_limits.ps_min_current_spinbox.value()
-        self.ps_voltage_spinbox.setMaximum(self.max_voltage)
-        self.ps_voltage_spinbox.setMinimum(self.min_voltage)
-        self.ps_voltage_spinbox.setMaximum(self.max_current)
-        self.ps_voltage_spinbox.setMinimum(self.min_current)
+        self.ps_voltage_spinbox.setRange(self.min_voltage,self.max_voltage)
+        self.ps_current_spinbox.setRange(self.min_current,self.max_current)
         yield None
     @inlineCallbacks
     def show_safety_limits(self):
@@ -172,13 +170,15 @@ class HP6033A_Client(HP6033A_UI):
     @inlineCallbacks
     def pulse_current(self):
         current = self.U(self.ps_pulse_current_spinbox.value(),'A')
+        voltage = self.U(self.ps_pulse_voltage_spinbox.value(),'V')
         time = self.U(self.ps_pulse_time_spinbox.value(), 's')
-        yield self.server.pulse_current(current, time)
+        yield self.server.pulse_current(current, voltage, time)
     @inlineCallbacks
     def pulse_voltage(self):
         voltage = self.U(self.ps_pulse_voltage_spinbox.value(),'V')
+        current = self.U(self.ps_pulse_current_spinbox.value(),'A')
         time = self.U(self.ps_pulse_time_spinbox.value(), 's')
-        yield self.server.pulse_current(current, time)
+        yield self.server.pulse_current(current, voltage, time)
 
     #Close event:
     @inlineCallbacks
