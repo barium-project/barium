@@ -1,6 +1,7 @@
 from barium.lib.clients.gui.TrapControl_gui import QCustomTrapGui
 from barium.lib.clients.gui.Ablation_gui import QCustomAblationGui
 from barium.lib.clients.gui.HVPulse_gui import QCustomHVPulseGui
+from barium.lib.clients.HP6033A_client.HP6033Aclient import HP6033A_Client
 from common.lib.clients.qtui.q_custom_text_changing_button import \
     TextChangingButton
 from twisted.internet.defer import inlineCallbacks, returnValue
@@ -92,7 +93,7 @@ class TrapControlClient(QtGui.QWidget):
         self.lockSwitch = TextChangingButton(('Locked','Unlocked'))
         # Start Unlocked
         self.lockSwitch.toggled.connect(self.set_lock)
-        self.subLayout.addWidget(self.lockSwitch, 0, 4)
+        self.subLayout.addWidget(self.lockSwitch, 0, 4, 1, 2)
         #self.lockSwitch.setChecked(False)
 
         # Create a button to initialize trap params
@@ -100,7 +101,7 @@ class TrapControlClient(QtGui.QWidget):
         self.init_trap.setMaximumHeight(30)
         self.init_trap.setFont(QtGui.QFont('MS Shell Dlg 2', pointSize=12))
         self.init_trap.clicked.connect(lambda : self.init_state())
-        self.subLayout.addWidget(self.init_trap, 0, 0)
+        self.subLayout.addWidget(self.init_trap, 0, 0, 1, 2)
 
         # initialize main Gui
         self.trap = QCustomTrapGui()
@@ -199,7 +200,7 @@ class TrapControlClient(QtGui.QWidget):
 
         # Get the current state of the trap and set the gui
         #self.set_current_state()
-        self.subLayout.addWidget(self.trap, 1, 0, 1, 5)
+        self.subLayout.addWidget(self.trap, 1, 0, 1, 6)
 
         self.ablation = QCustomAblationGui()
         self.ablation.loading_time_spin.valueChanged.connect(lambda time = self.ablation.loading_time_spin.value() : self.delayChanged(time))
@@ -212,7 +213,12 @@ class TrapControlClient(QtGui.QWidget):
         self.hvGUI = QCustomHVPulseGui()
         self.hvGUI.hv_pulse.clicked.connect(lambda : self.hv_pulse())
 
-        self.subLayout.addWidget(self.hvGUI, 2, 3, 1, 2)
+        self.subLayout.addWidget(self.hvGUI, 2, 5, 1, 1)
+
+        # Add current controler
+        self.HP = HP6033A_Client(reactor)
+
+        self.subLayout.addWidget(self.HP, 2, 2, 1, 3)
 
         self.setLayout(self.layout)
 
