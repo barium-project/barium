@@ -153,44 +153,44 @@ class HP6033A_Server(GPIBManagedServer):
             yield self.set_voltage(U(0,'V'))
             yield self.set_current(U(0,'A'))
         self.pulmsignal(value, notified)
-            
 
-    @setting(101, 'Pulse Voltage', value = 'v[V]', duration = 'v[s]', returns='s')
-    def pulse_voltage(self, c, value, duration):
+
+    @setting(101, 'Pulse Voltage', voltage = 'v[V]', current = 'v[A]', duration = 'v[s]', returns='s')
+    def pulse_voltage(self, c, voltage, current, duration):
         '''
         Instructs the power supply to output a square pulse at a desired voltage [Volts] for a desired duration [seconds].
 
          Be sure to first initialize the voltage to 0 V.
         '''
         dev = self.selectedDevice(c)
-        if value['V'] > 20 or value['V'] < 0:
-            message = "Input voltage, "+str(value['V'])+" V, out of range.  (Range: 0-20 V)"
+        if voltage['V'] > 20 or voltage['V'] < 0:
+            message = "Input voltage, "+str(voltage['V'])+" V, out of range.  (Range: 0-20 V)"
             returnValue(message)
         else:
-            yield dev.write('CURR '+30+' A')
-            yield dev.write('VOLT '+str(value['V'])+' V')    #sets the voltage to value
-            print "Pulsing "+str(value['V'])+" V over "+str(duration['s'])+" s..."
+            yield dev.write('CURR ' + str(current['A']) + ' A')
+            yield dev.write('VOLT ' + str(voltage['V']) + ' V')    #sets the voltage to value
+            print "Pulsing " + str(voltage['V']) + " V over " + str(duration['s']) + " s..."
             sleep(duration['s'])                   #waits for the duration
             yield dev.write('VOLT 0 V')                 #sets the voltage back to 0
             print "Finished pulsing."
             error = 'none'#yield self.error(c) #Calls the .error() method to read the error message register
             returnValue(error)          #Returns the message to the user. '+0, "No error"' means no error.
 
-    @setting(102, 'Pulse Current', value = 'v[A]', duration = 'v[s]', returns='s')
-    def pulse_current(self, c, value, duration):
+    @setting(102, 'Pulse Current', current = 'v[A]', voltage = 'v[V]', duration = 'v[s]', returns='s')
+    def pulse_current(self, c, current, voltage, duration):
         '''
         Instructs the power supply to output a square pulse at a desired current [Amps] for a desired duration [seconds].
 
          Be sure to first initialize the current to 0 A.
         '''
         dev = self.selectedDevice(c)
-        if value['A'] > 30 or value['A'] < 0:
-            message = "Input current, "+str(value['A'])+" A, out of range.  (Range: 0-30 A)"
+        if current['A'] > 30 or current['A'] < 0:
+            message = "Input current, "+str(current['A'])+" A, out of range.  (Range: 0-30 A)"
             returnValue(message)
         else:
-            yield dev.write('VOLT '+20+' V')
-            yield dev.write('CURR '+str(value['A'])+' A')
-            print "Pulsing "+str(value['A'])+" A over "+str(duration['s'])+" s..."
+            yield dev.write('VOLT ' + str(voltage['V']) + ' V')
+            yield dev.write('CURR ' + str(current['A']) + ' A')
+            print "Pulsing " + str(current['A']) + " A over " + str(duration['s']) + " s..."
             sleep(duration['s'])
             yield dev.write('CURR 0 A')
             print "Finished pulsing."
