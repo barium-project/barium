@@ -89,6 +89,9 @@ class TrapServer( SerialDeviceServer ):
         # Set the state of RF
         self.enable_RF = True
 
+        # Set the battery charging
+        self.bat_charging = False
+
 
     @setting(1, returns = 's')
     def command_list(self, c):
@@ -146,7 +149,6 @@ class TrapServer( SerialDeviceServer ):
         if dc > self.max_dc:
             returnValue('Voltage cannot exceed ' + str(self.max_dc))
         step = int((self.dc_steps)*dc/self.max_dc)
-        print step
         # Create a hex number without "0x" and pad with leading zeros if necessary
         hex_num = "{0:0{1}x}".format(step,4)
         print hex_num
@@ -247,8 +249,10 @@ class TrapServer( SerialDeviceServer ):
     def set_battery_charging(self, c, state):
         '''Turns on or off battery charging'''
         if state == True:
+            self.bat_charging = True
             yield self.ser.write('b 1 \n')
         if state == False:
+            self.bat_charging = False
             yield self.ser.write('b 0 \n')
 
     @setting(22,'reset_DDS')
@@ -336,6 +340,10 @@ class TrapServer( SerialDeviceServer ):
     @setting(58,'get_rf_state', returns = 'b')
     def get_rf_state(self,c):
         return(self.enable_RF)
+
+    @setting(59,'get_battery_charging', returns = 'b')
+    def get_battery_charging(self, c):
+        return(self.bat_charging)
 
 if __name__ == "__main__":
     from labrad import util

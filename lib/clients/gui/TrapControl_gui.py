@@ -286,6 +286,10 @@ class QCustomTrapGui(QtGui.QFrame):
         self.enableRF = QtGui.QCheckBox('Enable RF')
         self.enableRF.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=16))
 
+        # Battery
+        self.setCharging = QtGui.QCheckBox('Battery Charging')
+        self.setCharging.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=16))
+
         #layout 1 row at a time
 
         layout.addWidget(freqName,             0, 1)
@@ -331,6 +335,7 @@ class QCustomTrapGui(QtGui.QFrame):
         layout.addWidget(self.spinEndCap2,     6, 4)
 
         layout.addWidget(E1Name,               7, 0)
+        layout.addWidget(self.setCharging,     7, 3)
         layout.addWidget(self.E1Spin,          7, 5)
 
         layout.addWidget(E2Name,               8, 0)

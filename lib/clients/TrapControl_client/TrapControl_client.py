@@ -194,6 +194,11 @@ class TrapControlClient(QtGui.QWidget):
         self.trap.enableRF.setCheckState(init_rf_en)
         self.trap.enableRF.stateChanged.connect(lambda state = self.trap.enableRF.isChecked() : self.enableRFChanged(state))
 
+        init_bat = yield self.server.get_battery_charging()
+        self.trap.setCharging.setCheckState(init_bat)
+        self.trap.setCharging.stateChanged.connect(lambda state = self.trap.setCharging.isChecked() : self.chargingChanged(state))
+
+
         self.trap.update_rf.clicked.connect(lambda : self.update_rf())
         self.trap.update_dc.clicked.connect(lambda : self.update_dc())
         self.trap.clearPhase.clicked.connect(lambda : self.clear_phase())
@@ -244,6 +249,14 @@ class TrapControlClient(QtGui.QWidget):
         yield self.server.set_loading_time(172, int(time))
 
     @inlineCallbacks
+    def chargingChanged(self, state):
+        if state >= 1:
+            yield self.server.set_battery_charging(True)
+        else:
+            yield self.server.set_battery_charging(False)
+
+
+    @inlineCallbacks
     def triggerLoading(self):
         yield self.server.trigger_loading()
 
@@ -291,16 +304,19 @@ class TrapControlClient(QtGui.QWidget):
     def clear_phase(self):
         yield self.server.clear_phase_accumulator()
 
+    @inlineCallbacks
     def rfMapChanged(self, state):
         if state >= 1:
             self.trap.spinAmp1.setEnabled(False)
             self.trap.spinPhase1.setEnabled(False)
             self.trap.spinAmp3.valueChanged.connect(lambda amp = self.trap.spinAmp3.value() : self.setAmpRFMap(amp))
+            yield self.server.set_rf_map_state(True)
 
         elif state == 0:
             self.trap.spinAmp1.setEnabled(True)
             self.trap.spinPhase1.setEnabled(True)
             self.trap.spinAmp1.valueChanged.connect(lambda amp = self.trap.spinAmp1.value(), channel = self.rods['1'] : self.ampChanged(amp, channel))
+            yield self.server.set_rf_map_state(False)
 
     @inlineCallbacks
     def enableRFChanged(self, state):
