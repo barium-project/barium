@@ -260,10 +260,12 @@ class TrapControlClient(QtGui.QWidget):
     def triggerLoading(self):
         yield self.server.trigger_loading()
 
+    @inlineCallbacks
     def setAmpRFMap(self, amp):
         index = np.where(self.rf_map[:,0] == amp)
         index = index[0][0]
-        self.trap.spinAmp3.setValue(self.rf_map[index,0])
+        yield self.server.set_amplitude(self.rf_map[index,0],self.rods['3'])
+        #self.trap.spinAmp3.setValue(self.rf_map[index,0])
         self.trap.spinPhase1.setValue(self.rf_map[index,2])
         self.trap.spinAmp1.setValue(self.rf_map[index,1])
         self.trap.update_rf.setStyleSheet("background-color: red")
@@ -307,15 +309,19 @@ class TrapControlClient(QtGui.QWidget):
     @inlineCallbacks
     def rfMapChanged(self, state):
         if state >= 1:
+            print 'true'
             self.trap.spinAmp1.setEnabled(False)
             self.trap.spinPhase1.setEnabled(False)
+            self.trap.spinAmp3.valueChanged.disconnect()
             self.trap.spinAmp3.valueChanged.connect(lambda amp = self.trap.spinAmp3.value() : self.setAmpRFMap(amp))
             yield self.server.set_rf_map_state(True)
 
         elif state == 0:
+            print 'false'
             self.trap.spinAmp1.setEnabled(True)
             self.trap.spinPhase1.setEnabled(True)
-            self.trap.spinAmp1.valueChanged.connect(lambda amp = self.trap.spinAmp1.value(), channel = self.rods['1'] : self.ampChanged(amp, channel))
+            self.trap.spinAmp3.valueChanged.disconnect()
+            self.trap.spinAmp3.valueChanged.connect(lambda amp = self.trap.spinAmp3.value(), channel = self.rods['3'] : self.ampChanged(amp, channel))
             yield self.server.set_rf_map_state(False)
 
     @inlineCallbacks
