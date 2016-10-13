@@ -31,10 +31,10 @@ voltage_convergence = .001
 voltage_guess = 0
 
 
-start_phase = 5.2
+start_phase = 8.3
 phase_step = .1
 max_phase_itt = 25
-phase_convergence = .01
+phase_convergence = .001
 
 total_v_points = ((stop_voltage-start_voltage)/voltage_step) + 1
 print total_v_points
