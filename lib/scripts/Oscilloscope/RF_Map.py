@@ -27,17 +27,17 @@ start_voltage = 1001
 stop_voltage = 1233
 voltage_step = 1
 max_voltage_itt = 75
-voltage_convergence = .007
+voltage_convergence = .001
 voltage_guess = 0
 
 
-start_phase = 9.7
+start_phase = 5.2
 phase_step = .1
 max_phase_itt = 25
 phase_convergence = .01
 
 total_v_points = ((stop_voltage-start_voltage)/voltage_step) + 1
-
+print total_v_points
 
 rf_map = np.zeros((total_v_points,3))
 rf_map[:,0] = np.linspace(start_voltage,stop_voltage,total_v_points)
@@ -47,7 +47,7 @@ def sin_wave(x, A, phi, C):
 
 
 
-for i in range(total_v_points):
+for i in range(int(total_v_points)):
     # initialize settings for next voltage set point
     trap.set_amplitude(rf_map[i,0],2)
     trap.update_rf()
@@ -85,9 +85,9 @@ for i in range(total_v_points):
             # if did not converge then adjust voltages
             if abs(amplitude3-amplitude2)/abs(amplitude2) > voltage_convergence:
                 if amplitude3-amplitude2 > 0:
-                    voltage_guess = voltage_guess - 1.0
+                    voltage_guess = voltage_guess - 1
                 else:
-                    voltage_guess = voltage_guess + 1.0
+                    voltage_guess = voltage_guess + 1
                 print voltage_guess
                 if j == max_voltage_itt -1:
                     # If failed save current point
