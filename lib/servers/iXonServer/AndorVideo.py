@@ -15,8 +15,6 @@ class AndorVideo(QtGui.QWidget):
         self.live_update_loop = LoopingCall(self.live_update)
         self.connect_layout()
 
-
-
 #        emrange= yield self.server.getemrange(None)
 #        self.emccdSpinBox.setMinimum(emrange[0])
 #        self.emccdSpinBox.setMaximum(emrange[1])
@@ -190,7 +188,6 @@ class AndorVideo(QtGui.QWidget):
         data = yield self.server.getMostRecentImage(None)
         image_data = np.reshape(data, (self.pixels_y, self.pixels_x))
         self.img_view.setImage(image_data.transpose(), autoRange = False, autoLevels = False, pos = [self.startx, self.starty], scale = [self.binx,self.biny], autoHistogramRange = False)
-        self.new_image(image_data,notified)
 
     @inlineCallbacks
     def start_live_display(self):
