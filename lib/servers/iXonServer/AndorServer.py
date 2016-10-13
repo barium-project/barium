@@ -8,7 +8,7 @@ qt4reactor.install()
 from twisted.internet.defer import returnValue, DeferredLock, Deferred, inlineCallbacks
 from twisted.internet.threads import deferToThread
 from twisted.internet import reactor
-from labrad.server import LabradServer, setting, Signal
+from labrad.server import LabradServer, setting
 from AndorCamera import AndorCamera
 from labrad.units import WithUnit
 import numpy as np
@@ -31,14 +31,12 @@ timeout = 5
 ### END NODE INFO
 """
 
-NEWIMAGE = 133133
+
 
 class AndorServer(LabradServer):
     """ Contains methods that interact with the Andor CCD Cameras"""
 
     name = "Andor Server"
-    new_image = Signal(NEWIMAGE, 'signal: New Image', '(*2i)')
-
 
     def initServer(self):
         self.listeners = set()
