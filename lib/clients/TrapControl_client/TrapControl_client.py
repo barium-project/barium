@@ -80,7 +80,7 @@ class TrapControlClient(QtGui.QWidget):
         self.init_params = TrapControl_config.params
 
         # Load RF Map
-        self.rf_map = np.loadtxt('rf_map.txt')
+        self.rf_map = np.loadtxt('C:/Users/barium133/Code/barium/lib/clients/TrapControl_client/rf_map.txt')
 
         # Get channel numbers for each electrode
         self.rods = TrapControl_config.rods
@@ -221,7 +221,7 @@ class TrapControlClient(QtGui.QWidget):
         self.subLayout.addWidget(self.hvGUI, 2, 5, 1, 1)
 
         # Add current controler
-        self.HP = HP6033A_Client(reactor)
+        self.HP = HP6033A_Client(self.reactor)
         self.HP.self_connect('planetexpress',"HP6033A Client",0)
 
         self.subLayout.addWidget(self.HP, 2, 2, 1, 3)
