@@ -58,6 +58,7 @@ class linescan_camera(experiment):
 
         self.dv.add_parameter('Frequency', self.centerfrequency)
         self.dv.add_parameter('Laser', self.laser)
+        self.dv.add_parameter('Center_Frequency_650', self.parameters.Linescan_Camera.Center_Frequency_650)
 
         self.currentfreq = self.currentfrequency()
         tempdata = []
