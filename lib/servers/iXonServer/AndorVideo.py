@@ -1,8 +1,10 @@
+from config.andor_config import andor_config as config
 from PyQt4 import QtGui, QtCore
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.task import LoopingCall
 import numpy as np
 import pyqtgraph as pg
+from datetime import datetime
 
 
 class AndorVideo(QtGui.QWidget):
@@ -14,6 +16,9 @@ class AndorVideo(QtGui.QWidget):
         self.setup_layout()
         self.live_update_loop = LoopingCall(self.live_update)
         self.connect_layout()
+
+        self.save_images_state = False
+        self.image_path = config.image_path
 
 #        emrange= yield self.server.getemrange(None)
 #        self.emccdSpinBox.setMinimum(emrange[0])
@@ -62,6 +67,11 @@ class AndorVideo(QtGui.QWidget):
         #set image region button
         self.set_image_region_button = QtGui.QPushButton("Set Image Region")
         layout.addWidget(self.set_image_region_button, 2, 0)
+        #save images
+        self.save_images = QtGui.QCheckBox('Save Images')
+        layout.addWidget(self.save_images, 3, 0)
+
+
         #controlling the display buttons
         self.view_all_button = QtGui.QPushButton("View All")
         layout.addWidget(self.view_all_button, 1, 1)
@@ -70,18 +80,25 @@ class AndorVideo(QtGui.QWidget):
         #display mode buttons
         self.trigger_mode = QtGui.QLineEdit()
         self.acquisition_mode = QtGui.QLineEdit()
+        self.total_counts = QtGui.QLineEdit()
         self.trigger_mode.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         self.acquisition_mode.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.total_counts.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         self.trigger_mode.setReadOnly(True)
         self.acquisition_mode.setReadOnly(True)
+        self.total_counts.setReadOnly(True)
         label = QtGui.QLabel("Trigger Mode")
         label.setAlignment(QtCore.Qt.AlignRight| QtCore.Qt.AlignVCenter)
         layout.addWidget(label, 1, 2)
         label = QtGui.QLabel("Acquisition Mode")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         layout.addWidget(label, 2, 2)
+        label = QtGui.QLabel("Total Counts")
+        label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        layout.addWidget(label, 3, 2)
         layout.addWidget(self.trigger_mode, 1, 3)
         layout.addWidget(self.acquisition_mode, 2, 3)
+        layout.addWidget(self.total_counts, 3, 3)
         #add lines for the cross
         self.vLine = pg.InfiniteLine(angle=90, movable=False)
         self.hLine = pg.InfiniteLine(angle=0, movable=False)
@@ -123,6 +140,14 @@ class AndorVideo(QtGui.QWidget):
         self.live_button.clicked.connect(self.on_live_button)
         self.auto_levels_button.clicked.connect(self.on_auto_levels_button)
         self.view_all_button.clicked.connect(self.on_auto_range_button)
+        self.save_images.stateChanged.connect(lambda state = \
+                self.save_images.isChecked() : self.save_image_data(state))
+
+    def save_image_data(self, state):
+        if state >=1:
+            self.save_images_state = True
+        elif state == 0:
+            self.save_images_state = False
 
     def on_set_image_region(self, checked):
         #displays a non-modal dialog
@@ -188,6 +213,12 @@ class AndorVideo(QtGui.QWidget):
         data = yield self.server.getMostRecentImage(None)
         image_data = np.reshape(data, (self.pixels_y, self.pixels_x))
         self.img_view.setImage(image_data.transpose(), autoRange = False, autoLevels = False, pos = [self.startx, self.starty], scale = [self.binx,self.biny], autoHistogramRange = False)
+        self.total_counts.setText(str(np.sum(np.sum(image_data))))
+        if self.save_images_state == True:
+            dt = datetime.now()
+            time_stamp = str(dt.year)+str(dt.month)+str(dt.day)+str(dt.hour)\
+            +str(dt.minute)+str(dt.second)+str(dt.microsecond)+'.txt'
+            np.savetxt(self.image_path+time_stamp,image_data)
 
     @inlineCallbacks
     def start_live_display(self):
