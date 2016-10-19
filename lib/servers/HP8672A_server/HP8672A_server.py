@@ -64,9 +64,9 @@ class HP8672A_Server(GPIBManagedServer):
         yield None
         returnValue(self.deviceName)
 
-    @setting(201, range='v[dBm]', vernier='v[dbm]')
+    @setting(201, range='v[dBm]', vernier='v[dBm]')
     def amplitude(self, c, range, vernier):
-        """Sets the amplitude output rangn and vernier in units of dBm.
+        """Sets the amplitude output range and vernier in units of dBm.
         Must set one of the following values:
         range_map = {0:'0', -10:'1', -20:'2', -30:'3', -40:'4', -50:'5', -60:'6', -70:'7', -80:'8', -90:'9', -100:':', -110:';'}
         vernier_map = {3:'0', 2:'1', 1:'2', 0:'3', -1:'4', -2:'5', -3:'6', -4:'7', -5:'8', -6:'9', -7:':', -8:';', -9:'<', -10:'='}
@@ -98,23 +98,23 @@ class HP8672A_Server(GPIBManagedServer):
         # only has ten total digits
         value = value['THz']*10
         value = int(value*1e8)/1.e8
-        value = str(value)
+        value = '%.8f' % value
         dev.write("P"+value[2:]+"J8\r\n")
         yield None
 
 
-'''
+
     @setting(224, value='b')
     def RF_state(self, c, value):
         """Turns the RF state on or off.
         """
         dev = self.selectedDevice(c)
         if value:
-            dev.write("R3")
+            dev.write("O1\r\n")
         elif not value:
-            dev.write("R2")
+            dev.write("O0\r\n")
         yield None
-'''
+
 
 __server__ = HP8672A_Server()
 
