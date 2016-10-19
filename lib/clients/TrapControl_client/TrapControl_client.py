@@ -309,7 +309,6 @@ class TrapControlClient(QtGui.QWidget):
     @inlineCallbacks
     def rfMapChanged(self, state):
         if state >= 1:
-            print 'true'
             self.trap.spinAmp1.setEnabled(False)
             self.trap.spinPhase1.setEnabled(False)
             self.trap.spinAmp3.valueChanged.disconnect()
@@ -317,7 +316,6 @@ class TrapControlClient(QtGui.QWidget):
             yield self.server.set_rf_map_state(True)
 
         elif state == 0:
-            print 'false'
             self.trap.spinAmp1.setEnabled(True)
             self.trap.spinPhase1.setEnabled(True)
             self.trap.spinAmp3.valueChanged.disconnect()

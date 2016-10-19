@@ -151,7 +151,6 @@ class TrapServer( SerialDeviceServer ):
         step = int((self.dc_steps)*dc/self.max_dc)
         # Create a hex number without "0x" and pad with leading zeros if necessary
         hex_num = "{0:0{1}x}".format(step,4)
-        print hex_num
         yield self.ser.write('dcx ' + str(channel) + ' ' + hex_num + ' \n')
 
     @setting(7,'set_dc_rod', dc = 'v[]', channel = 'w')

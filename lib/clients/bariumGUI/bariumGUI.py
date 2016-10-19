@@ -32,7 +32,7 @@ class BARIUM_GUI(QtGui.QMainWindow):
         self.tabWidget.addTab(wavemeter, '&Wavemeter')
         #self.tabWidget.addTab(M2, '&M2')
         self.tabWidget.addTab(script_scanner, '&Script Scanner')
-        self.tabWidget.addTab(control, '&Control')
+        self.tabWidget.addTab(control, '&Trap Control')
 
 
         layout.addWidget(self.tabWidget)
