@@ -38,12 +38,12 @@ from labrad.units import WithUnit as U
 from time import sleep
 
 
-
+'''
 class HP8675BWrapper(GPIBDeviceWrapper):
     #@inlineCallbacks
     def initialize(self):
-        self.states = {}
-
+        pass
+'''
 class HP8657B_Server(GPIBManagedServer):
     """
     This server talks to the HP8657B Microwave Signal Generator.
@@ -56,10 +56,11 @@ class HP8657B_Server(GPIBManagedServer):
     name = 'HP8657B Server'
     deviceName = 'Generic GPIB Device'
     deviceIdentFunc = 'identify_device'
-    deviceWrapper = 'HP8675BWrapper'
+    #deviceWrapper = 'HP8675BWrapper'
 
     def __init__(self):
         super(HP8657B_Server, self).__init__()
+
 
     @setting(100, server='s', address='s')
     def identify_device(self, c, server, address):
@@ -73,7 +74,7 @@ class HP8657B_Server(GPIBManagedServer):
         returnValue(self.deviceName)
 
     @setting(201, value='v[dBm]')
-    def amplitude(self, c, value):
+    def set_amplitude(self, c, value):
         """Sets the amplitude of the signal generator.  Uses units of dBm.
         """
         dev = self.selectedDevice(c)
@@ -107,7 +108,7 @@ class HP8657B_Server(GPIBManagedServer):
         yield None
 
     @setting(205, value='v[MHz]')
-    def frequency(self, c, value):
+    def set_frequency(self, c, value):
         """Sets the frequency of the signal generator.  Uses units of frequency (i.e. MHz).
         """
         dev = self.selectedDevice(c)
