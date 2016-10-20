@@ -1,4 +1,4 @@
-# Copyright (C) 2016
+# Copyright (C) 2016 Justin Christensen
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,33 @@ from twisted.internet import reactor
 from labrad.units import WithUnit as U
 from time import sleep
 
+'''
+class HPWrapper(GPIBDeviceWrapper):
+    @inlineCallbacks
+    def amplitude_HP8672(self, value):
+        yield self.write("K"+value+"\r\n")
+
+    @inlineCallbacks
+    def frequency_HP8672(self, value):
+        yield self.write("P"+value+"J8\r\n")
+
+    @inlineCallbacks
+    def rf_HP8672(self, state):
+        if state:
+            yield self.write("O1\r\n")
+        elif not state:
+            yield self.write("O0\r\n")
+
+    @inlineCallbacks
+    def amplitude_HP8657(self, value):
+        yield self.write("AP "+value+" DM")
+
+    @inlineCallbacks
+    def frequency_HP8657(self, value):
+        yield self.write("FR "+value+" MZ")
+'''
+
+
 class HP8672A_Server(GPIBManagedServer):
     """
     This server talks to the HP8672A Microwave Signal Generator.
@@ -49,6 +76,7 @@ class HP8672A_Server(GPIBManagedServer):
     name = 'HP8672A Server'
     deviceName = 'Generic GPIB Device'
     deviceIdentFunc = 'identify_device'
+    #deviceWrapper = 'HPWrapper'
 
     def __init__(self):
         super(HP8672A_Server, self).__init__()
@@ -64,8 +92,11 @@ class HP8672A_Server(GPIBManagedServer):
         yield None
         returnValue(self.deviceName)
 
+
+
+    # HP8672A Settings
     @setting(201, range='v[dBm]', vernier='v[dBm]')
-    def amplitude(self, c, range, vernier):
+    def set_amplitude(self, c, range, vernier):
         """Sets the amplitude output range and vernier in units of dBm.
         Must set one of the following values:
         range_map = {0:'0', -10:'1', -20:'2', -30:'3', -40:'4', -50:'5', -60:'6', -70:'7', -80:'8', -90:'9', -100:':', -110:';'}
@@ -83,12 +114,11 @@ class HP8672A_Server(GPIBManagedServer):
             returnValue(vernier_map)
         else:
             dev = self.selectedDevice(c)
-            dev.write("K"+range_map[range['dBm']]+vernier_map[vernier['dBm']]+"\r\n")
-            yield None
+            yield dev.write("K"+range_map[range['dBm']]+vernier_map[vernier['dBm']]+"\r\n")
 
 
     @setting(205, value='v[GHz]')
-    def frequency(self, c, value):
+    def set_frequency(self, c, value):
         """Sets the frequency of the signal generator.  Uses units of frequency (i.e. GHz).
         """
         dev = self.selectedDevice(c)
@@ -96,12 +126,11 @@ class HP8672A_Server(GPIBManagedServer):
             print "Value out of range.  Acceptable range: [2 GHz, 18 GHz]"
         # Need to make sure the number has the 10GHz digit (even zero) and
         # only has ten total digits
-        value = value['THz']*10
-        value = int(value*1e8)/1.e8
-        value = '%.8f' % value
-        dev.write("P"+value[2:]+"J8\r\n")
-        yield None
-
+        else:
+            value = value['THz']*10
+            value = int(value*1e8)/1.e8
+            value = '%.8f' % value
+            yield dev.write("P"+value[2:]+"J8\r\n")
 
 
     @setting(224, value='b')
@@ -110,10 +139,10 @@ class HP8672A_Server(GPIBManagedServer):
         """
         dev = self.selectedDevice(c)
         if value:
-            dev.write("O1\r\n")
+            yield dev.write("O1\r\n")
         elif not value:
-            dev.write("O0\r\n")
-        yield None
+            yield dev.write("O0\r\n")
+
 
 
 __server__ = HP8672A_Server()
