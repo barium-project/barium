@@ -120,9 +120,6 @@
         <pointsize>12</pointsize>
        </font>
       </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
-      </property>
       <property name="suffix">
        <string/>
       </property>
@@ -150,9 +147,6 @@
         <pointsize>12</pointsize>
        </font>
       </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
-      </property>
       <property name="decimals">
        <number>1</number>
       </property>
@@ -179,9 +173,6 @@
        <font>
         <pointsize>12</pointsize>
        </font>
-      </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
       </property>
       <property name="decimals">
        <number>0</number>
@@ -222,9 +213,6 @@
       <property name="frame">
        <bool>true</bool>
       </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
-      </property>
       <property name="decimals">
        <number>0</number>
       </property>
@@ -251,9 +239,6 @@
        <font>
         <pointsize>12</pointsize>
        </font>
-      </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
       </property>
       <property name="decimals">
        <number>1</number>
@@ -282,9 +267,6 @@
         <pointsize>12</pointsize>
        </font>
       </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
-      </property>
       <property name="decimals">
        <number>0</number>
       </property>
@@ -311,9 +293,6 @@
        <font>
         <pointsize>12</pointsize>
        </font>
-      </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
       </property>
       <property name="decimals">
        <number>0</number>
@@ -345,9 +324,6 @@
         <pointsize>12</pointsize>
        </font>
       </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
-      </property>
      </widget>
     </item>
     <item row="4" column="2">
@@ -362,9 +338,6 @@
        <font>
         <pointsize>12</pointsize>
        </font>
-      </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
       </property>
       <property name="decimals">
        <number>0</number>
@@ -418,9 +391,6 @@
         <pointsize>12</pointsize>
        </font>
       </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
-      </property>
       <property name="decimals">
        <number>0</number>
       </property>
@@ -448,9 +418,6 @@
         <pointsize>12</pointsize>
        </font>
       </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
-      </property>
       <property name="decimals">
        <number>0</number>
       </property>
@@ -477,9 +444,6 @@
        <font>
         <pointsize>12</pointsize>
        </font>
-      </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
       </property>
       <property name="decimals">
        <number>0</number>
@@ -520,9 +484,6 @@
        <font>
         <pointsize>12</pointsize>
        </font>
-      </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
       </property>
       <property name="decimals">
        <number>1</number>
@@ -691,9 +652,6 @@
        <font>
         <pointsize>12</pointsize>
        </font>
-      </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
       </property>
      </widget>
     </item>
