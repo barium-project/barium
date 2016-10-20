@@ -37,6 +37,13 @@ from twisted.internet import reactor
 from labrad.units import WithUnit as U
 from time import sleep
 
+
+
+class HP8675BWrapper(GPIBDeviceWrapper):
+    #@inlineCallbacks
+    def initialize(self):
+        self.states = {}
+
 class HP8657B_Server(GPIBManagedServer):
     """
     This server talks to the HP8657B Microwave Signal Generator.
@@ -49,6 +56,7 @@ class HP8657B_Server(GPIBManagedServer):
     name = 'HP8657B Server'
     deviceName = 'Generic GPIB Device'
     deviceIdentFunc = 'identify_device'
+    deviceWrapper = 'HP8675BWrapper'
 
     def __init__(self):
         super(HP8657B_Server, self).__init__()
@@ -80,7 +88,7 @@ class HP8657B_Server(GPIBManagedServer):
         dev = self.selectedDevice(c)
         dev.write("AO "+str(value['dB'])+" DB")
         yield None
-        
+
     @setting(203, value='s')
     def amplitude_modulation_step(self, c, value):
         dev = self.selectedDevice(c)
@@ -91,13 +99,13 @@ class HP8657B_Server(GPIBManagedServer):
         elif value.lower() == 'down':
             dev.write("AM DN")
         yield None
-        
+
     @setting(204, value='v[dB]')
     def amplitude_modulation_increment(self, c, value):
         dev = self.selectedDevice(c)
         dev.write("AM IS "+str(value['dB'])+" DB")
         yield None
-        
+
     @setting(205, value='v[MHz]')
     def frequency(self, c, value):
         """Sets the frequency of the signal generator.  Uses units of frequency (i.e. MHz).
@@ -107,7 +115,7 @@ class HP8657B_Server(GPIBManagedServer):
             print "Value out of range.  Acceptable range: [0 MHz, 2060 MHz]"
         dev.write("FR "+str(value['MHz'])+" MZ")
         yield None
-        
+
     @setting(206, value='s')
     def frequency_modulation_step(self, c, value):
         dev = self.selectedDevice(c)
@@ -118,13 +126,13 @@ class HP8657B_Server(GPIBManagedServer):
         elif value.lower() == 'down':
             dev.write("FM DN")
         yield None
-        
+
     @setting(207, value='v[MHz]')
     def frequency_modulation_increment(self, c, value):
         dev = self.selectedDevice(c)
         dev.write("FM IS "+str(value['MHz'])+" MZ")
         yield None
-        
+
     @setting(208, value='s')
     def phase_step(self, c, value):
         dev = self.selectedDevice(c)
@@ -135,7 +143,7 @@ class HP8657B_Server(GPIBManagedServer):
         elif value.lower() == 'down':
             dev.write("PD")
         yield None
-        
+
     @setting(209, value='w')
     def recall(self, c, value):
         """Recalls settings from a memory location [0,99].
@@ -148,7 +156,7 @@ class HP8657B_Server(GPIBManagedServer):
         else:
             print "Value out of range.  Acceptable range: Integers in [0,99]"
         yield None
-        
+
     @setting(210, value='w')
     def save(self, c, value):
         """Saves settings to a memory location [0,99].
@@ -161,7 +169,7 @@ class HP8657B_Server(GPIBManagedServer):
         else:
             print "Value out of range.  Acceptable range: Integers in [0,99]"
         yield None
-        
+
     @setting(211, value='w')
     def select_external_AM(self, c, value):
         dev = self.selectedDevice(c)
@@ -170,13 +178,13 @@ class HP8657B_Server(GPIBManagedServer):
         else:
             print "Input out of range.  Acceptable range: Integers in [0,100]"
         yield None
-        
+
     @setting(212, value='v[kHz]')
     def select_external_FM(self, c, value):
         dev = self.selectedDevice(c)
         dev.write("S1 FM "+str(value)+" KZ")
         yield None
-        
+
     @setting(213, value='w')
     def select_internal_400_AM(self, c, value):
         dev = self.selectedDevice(c)
@@ -185,13 +193,13 @@ class HP8657B_Server(GPIBManagedServer):
         else:
             print "Input out of range.  Acceptable range: Integers in [0,100]"
         yield None
-        
+
     @setting(214, value='v[kHz]')
     def select_internal_400_FM(self, c, value):
         dev = self.selectedDevice(c)
         dev.write("S2 FM "+str(value)+" KZ")
         yield None
-        
+
     @setting(215, value='w')
     def select_internal_1000_AM(self, c, value):
         dev = self.selectedDevice(c)
@@ -200,19 +208,19 @@ class HP8657B_Server(GPIBManagedServer):
         else:
             print "Input out of range.  Acceptable range: Integers in [0,100]"
         yield None
-        
+
     @setting(216, value='v[kHz]')
     def select_internal_1000_FM(self, c, value):
         dev = self.selectedDevice(c)
         dev.write("S3 FM "+str(value)+" KZ")
         yield None
-        
+
     @setting(217, value='v[kHz]')
     def select_DC_FM(self, c, value):
         dev = self.selectedDevice(c)
         dev.write("S5 FM "+str(value)+" KZ")
         yield None
-        
+
     @setting(218, value='s')
     def shutoff_external(self, c, value):
         dev = self.selectedDevice(c)
@@ -223,7 +231,7 @@ class HP8657B_Server(GPIBManagedServer):
         else:
             print "Please enter modulation string 'AM' or 'FM' as an argument."
         yield None
-        
+
     @setting(219, value='s')
     def shutoff_internal_400(self, c, value):
         dev = self.selectedDevice(c)
@@ -234,7 +242,7 @@ class HP8657B_Server(GPIBManagedServer):
         else:
             print "Please enter modulation string 'AM' or 'FM' as an argument."
         yield None
-        
+
     @setting(220, value='s')
     def shutoff_internal_1000(self, c, value):
         dev = self.selectedDevice(c)
@@ -245,7 +253,7 @@ class HP8657B_Server(GPIBManagedServer):
         else:
             print "Please enter modulation string 'AM' or 'FM' as an argument."
         yield None
-        
+
     @setting(221)
     def shutoff_DC_FM(self, c):
         dev = self.selectedDevice(c)
