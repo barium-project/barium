@@ -26,6 +26,7 @@ class BARIUM_GUI(QtGui.QMainWindow):
         script_scanner = self.makeScriptScannerWidget(reactor, cxn)
         wavemeter = self.makeWavemeterWidget(reactor)
         control = self.makeControlWidget(reactor)
+        frequency = self.makeFrequencyWidget(reactor)
 
         # add tabs
         self.tabWidget = QtGui.QTabWidget()
@@ -33,7 +34,7 @@ class BARIUM_GUI(QtGui.QMainWindow):
         #self.tabWidget.addTab(M2, '&M2')
         self.tabWidget.addTab(script_scanner, '&Script Scanner')
         self.tabWidget.addTab(control, '&Trap Control')
-
+        self.tabWidget.addTab(frequency, '&Oscillators')
 
         layout.addWidget(self.tabWidget)
         centralWidget.setLayout(layout)
@@ -78,6 +79,11 @@ class BARIUM_GUI(QtGui.QMainWindow):
         from barium.lib.clients.TrapControl_client.TrapControl_client import TrapControlClient
         control = TrapControlClient(reactor)
         return control
+
+    def makeFrequencyWidget(self,reactor):
+        from barium.lib.clients.FrequencyControl_client.FrequencyControl_client import FrequencyControlClient
+        frequency = FrequencyControlClient(reactor)
+        return frequency
 
     def closeEvent(self, x):
         self.reactor.stop()
