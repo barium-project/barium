@@ -4,21 +4,20 @@ from common.lib.servers.abstractservers.script_scanner.scan_methods import exper
 import datetime as datetime
 from twisted.internet.defer import inlineCallbacks, returnValue
 import numpy as np
+from config.FrequencyControl_config import FrequencyControl_config
+import time
 
-class linescan_camera(experiment):
+class frequency_scan(experiment):
 
-    name = 'Linescan Camera'
+    name = 'Frequency Scan'
 
     exp_parameters = []
 
-    exp_parameters.append(('Linescan_Camera', 'lasername'))
-
-    exp_parameters.append(('Linescan_Camera', 'Center_Frequency_493'))
-    exp_parameters.append(('Linescan_Camera', 'Center_Freqeuncy_650'))
-
-    exp_parameters.append(('Linescan_Camera', 'wm_channel_493'))
-    exp_parameters.append(('Linescan_Camera', 'wm_channel_493'))
-
+    exp_parameters.append(('Frequency_Scan', 'Frequency'))
+    exp_parameters.append(('Frequency_Scan', 'Frequency_Start'))
+    exp_parameters.append(('Frequency_Scan', 'Frequency_Stop'))
+    exp_parameters.append(('Frequency_Scan', 'Frequency_Step'))
+    exp_parameters.append(('Frequency_Scan', 'Time_Step'))
 
 
     @classmethod
@@ -28,74 +27,92 @@ class linescan_camera(experiment):
 
     def initialize(self, cxn, context, ident):
         self.ident = ident
-        self.cxn = labrad.connect(name = 'Linescan Camera')
-        self.cxnwlm = labrad.connect('10.97.111.8', name = 'Linescan Camera', password = 'lab')
-        self.dv = self.cxn.data_vault
-        self.grapher = self.cxn.grapher
-        self.cam = self.cxn.andor_server
+        self.cxn = labrad.connect(name = 'Frequency Scan')
+        self.cxnwlm = labrad.connect('10.97.111.8', name = 'Frequency Scan', password = 'lab')
+        self.cxnFreq = labrad.connect('planetexpress', name = 'Frequency Scan', password = 'lab')
 
+        self.HPA = self.cxnFreq.hp8672a_server
+        self.HPB = self.cxnFreq.hp8657b_server
+        self.wm = self.cxnwlm.multiplexerserver
 
-        self.laser = self.parameters.Linescan_Camera.lasername
+        # Need to map the gpib address to the labrad context number
+        self.device_mapA = {}
+        self.device_mapB = {}
 
-        if self.laser == '493':
-            self.port = self.parameters.Linescan_Camera.wm_channel_493
-            self.centerfrequency = \
-                self.parameters.Linescan_Camera.Center_Frequency_493
+        self.get_device_map()
 
-        elif self.laser == '650':
-            self.port = self.parameters.Linescan_Camera.Port_650
-            self.centerfrequency = \
-                self.parameters.Linescan_Camera.Center_Frequency_650
+        self.frequency = self.parameters.Frequency_Scan.Frequency
+        self.start_frequency = self.parameters.Frequency_Scan.Frequency_Start
+        self.stop_frequency = self.parameters.Frequency_Scan.Frequency_Stop
+        self.step_frequency = self.parameters.Frequency_Scan.Frequency_Step
+        self.time_step = self.parameters.Frequency_Scan.Time_Step
 
 
     def run(self, cxn, context):
-        date = datetime.datetime.now()
-        year  = `date.year`
-        month = '%02d' % date.month  # Padded with a zero if one digit
-        day   = '%02d' % date.day    # Padded with a zero if one digit
-        trunk = year + '_' + month + '_' + day
-        self.dv.cd(['',year,month,trunk],True)
-        dataset = self.dv.new('Linescan Camera',[('freq', 'Hz')], [('', 'Amplitude','a.b.u.')])
-        self.grapher.plot(dataset, 'spectrum', False)
 
-        self.dv.add_parameter('Frequency', self.centerfrequency)
-        self.dv.add_parameter('Laser', self.laser)
-        self.dv.add_parameter('Center_Frequency_650', self.parameters.Linescan_Camera.Center_Frequency_650)
+        freq = np.linspace(self.start_frequency['THz'],self.stop_frequency['THz'],\
+                    int((self.stop_frequency['THz']-self.start_frequency['THz'])/self.step_frequency['THz'] +1))
+        if self.frequency == '493':
+            for i in range(len(freq)):
+                self.set_wm_frequency(freq[i], 1)
+                time.sleep(self.time_step['s'])
 
-        self.currentfreq = self.currentfrequency()
-        tempdata = []
+        if self.frequency == '650':
+            for i in range(len(freq)):
+                self.set_wm_frequency(freq[i], 11)
+                time.sleep(self.time_step['s'])
 
-        # Set cam paramters
-        self.cam.set_acquisition_mode('Run till abort')
-        self.cam.set_shutter_mode('Open')
-        self.binx, self.biny, self.startx, self.stopx, self.starty, self.stopy = self.cam.get_image_region(None)
-        self.pixels_x = (self.stopx - self.startx + 1) / self.binx
-        self.pixels_y = (self.stopy - self.starty + 1) / self.biny
-        self.cam.start_acquisition(None)
+        if self.frequency == 'GPIB0::19':
+            self.HPA.select_device(self.device_mapA['GPIB0::19'])
+            for i in range(len(freq)):
+                self.HPA.set_frequency(WithUnit(freq[i],'THz'))
+                time.sleep(self.time_step['s'])
 
-        while True:
-            should_stop = self.pause_or_stop()
-            if should_stop:
-                tempdata.sort()
-                self.dv.add(tempdata)
-                self.cam.abort_acquisition()
-                self.cam.set_shutter_mode('Close')
+        if self.frequency == 'GPIB0::21':
+            self.HPA.select_device(self.device_mapA['GPIB0::21'])
+            for i in range(len(freq)):
+                self.HPA.set_frequency(WithUnit(freq[i],'THz'))
+                time.sleep(self.time_step['s'])
 
-                break
-            self.cam.wait_for_acquisition()
-            image = self.cam.get_most_recent_image(None)
-            image_data = np.reshape(image, (self.pixels_y, self.pixels_x))
-            counts = np.sum(np.sum(image_data))
-            self.currentfrequency()
-            if self.currentfreq and counts:
-                tempdata.append([self.currentfreq['GHz'], counts])
+        if self.frequency == 'GPIB0::6':
+            self.HPB.select_device(self.device_mapB['GPIB0::6'])
+            for i in range(len(freq)):
+                self.HPB.set_frequency(WithUnit(freq[i],'THz'))
+                time.sleep(self.time_step['s'])
 
+        if self.frequency == 'GPIB0::7':
+            self.HPB.select_device(self.device_mapB['GPIB0::7'])
+            for i in range(len(freq)):
+                self.HPB.set_frequency(WithUnit(freq[i],'THz'))
+                time.sleep(self.time_step['s'])
 
+        if self.frequency == 'GPIB0::8':
+            self.HPB.select_device(self.device_mapB['GPIB0::8'])
+            for i in range(len(freq)):
+                self.HPB.set_frequency(WithUnit(freq[i],'THz'))
+                time.sleep(self.time_step['s'])
 
+    def get_device_map(self):
+        gpib_listA = FrequencyControl_config.gpibA
+        gpib_listB = FrequencyControl_config.gpibB
 
-    def currentfrequency(self):
-        absfreq = WithUnit(float(self.wm.get_frequency(self.port)), 'THz')
-        self.currentfreq = absfreq - self.centerfrequency
+        devices = self.HPA.list_devices()
+        for i in range(len(gpib_listA)):
+            for j in range(len(devices)):
+                if devices[j][1].find(gpib_listA[i]) > 0:
+                    self.device_mapA[gpib_listA[i]] = devices[j][0]
+                    break
+
+        devices = self.HPB.list_devices()
+        for i in range(len(gpib_listB)):
+            for j in range(len(devices)):
+                if devices[j][1].find(gpib_listB[i]) > 0:
+                    self.device_mapB[gpib_listB[i]] = devices[j][0]
+                    break
+
+    def set_wm_frequency(self, freq, chan):
+        self.wm.set_pid_course(chan, freq)
+
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()
@@ -104,7 +121,7 @@ class linescan_camera(experiment):
 if __name__ == '__main__':
     cxn = labrad.connect()
     scanner = cxn.scriptscanner
-    exprt = linescan_camera(cxn = cxn)
+    exprt = frequency_scan(cxn = cxn)
     ident = scanner.register_external_launch(exprt.name)
     exprt.execute(ident)
 
