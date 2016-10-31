@@ -18,6 +18,10 @@ class frequency_scan(experiment):
     exp_parameters.append(('Frequency_Scan', 'Frequency_Stop'))
     exp_parameters.append(('Frequency_Scan', 'Frequency_Step'))
     exp_parameters.append(('Frequency_Scan', 'Time_Step'))
+    exp_parameters.append(('Frequency_Scan', 'Center_Frequency_493'))
+    exp_parameters.append(('Frequency_Scan', 'Center_Frequency_650'))
+    exp_parameters.append(('Frequency_Scan', 'Return'))
+    exp_parameters.append(('Frequency_Scan', 'Return_Frequency'))
 
 
     @classmethod
@@ -41,56 +45,90 @@ class frequency_scan(experiment):
 
         self.get_device_map()
 
+
+        self.frequency_493 = self.parameters.Frequency_Scan.Center_Frequency_493
+        self.frequency_650 = self.parameters.Frequency_Scan.Center_Frequency_650
         self.frequency = self.parameters.Frequency_Scan.Frequency
         self.start_frequency = self.parameters.Frequency_Scan.Frequency_Start
         self.stop_frequency = self.parameters.Frequency_Scan.Frequency_Stop
         self.step_frequency = self.parameters.Frequency_Scan.Frequency_Step
         self.time_step = self.parameters.Frequency_Scan.Time_Step
+        self.return_bool = self.parameters.Frequency_Scan.Return
+        self.return_frequency = self.parameters.Frequency_Scan.Return_Frequency
 
 
     def run(self, cxn, context):
 
         freq = np.linspace(self.start_frequency['THz'],self.stop_frequency['THz'],\
-                    int((self.stop_frequency['THz']-self.start_frequency['THz'])/self.step_frequency['THz'] +1))
+                    int(abs(self.stop_frequency['THz']-self.start_frequency['THz'])/self.step_frequency['THz'] +1))
         if self.frequency == '493':
             for i in range(len(freq)):
-                self.set_wm_frequency(freq[i], 1)
+                if self.pause_or_stop():
+                    break
+                self.set_wm_frequency(self.frequency_493['THz'] + freq[i], 1)
                 time.sleep(self.time_step['s'])
+            if int(self.return_bool) == 1:
+                self.set_wm_frequency(self.frequency_493['THz'] , 1)
 
         if self.frequency == '650':
             for i in range(len(freq)):
-                self.set_wm_frequency(freq[i], 11)
+                if self.pause_or_stop():
+                    break
+                self.set_wm_frequency(self.frequency_650['THz'] + freq[i], 2)
                 time.sleep(self.time_step['s'])
+            if int(self.return_bool) == 1:
+                self.set_wm_frequency(self.frequency_650['THz'] , 1)
 
         if self.frequency == 'GPIB0::19':
             self.HPA.select_device(self.device_mapA['GPIB0::19'])
             for i in range(len(freq)):
+                if self.pause_or_stop():
+                    break
                 self.HPA.set_frequency(WithUnit(freq[i],'THz'))
                 time.sleep(self.time_step['s'])
+            if int(self.return_bool) == 1:
+                self.HPA.set_frequency(self.return_frequency)
+
 
         if self.frequency == 'GPIB0::21':
             self.HPA.select_device(self.device_mapA['GPIB0::21'])
             for i in range(len(freq)):
+                if self.pause_or_stop():
+                    break
                 self.HPA.set_frequency(WithUnit(freq[i],'THz'))
                 time.sleep(self.time_step['s'])
+            if int(self.return_bool) == 1:
+                self.HPA.set_frequency(self.return_frequency)
 
         if self.frequency == 'GPIB0::6':
             self.HPB.select_device(self.device_mapB['GPIB0::6'])
             for i in range(len(freq)):
+                if self.pause_or_stop():
+                    break
                 self.HPB.set_frequency(WithUnit(freq[i],'THz'))
                 time.sleep(self.time_step['s'])
+            if int(self.return_bool) == 1:
+                self.HPB.set_frequency(self.return_frequency)
 
         if self.frequency == 'GPIB0::7':
             self.HPB.select_device(self.device_mapB['GPIB0::7'])
             for i in range(len(freq)):
+                if self.pause_or_stop():
+                    break
                 self.HPB.set_frequency(WithUnit(freq[i],'THz'))
                 time.sleep(self.time_step['s'])
+            if int(self.return_bool) == 1:
+                self.HPB.set_frequency(self.return_frequency)
 
         if self.frequency == 'GPIB0::8':
             self.HPB.select_device(self.device_mapB['GPIB0::8'])
             for i in range(len(freq)):
+                if self.pause_or_stop():
+                    break
                 self.HPB.set_frequency(WithUnit(freq[i],'THz'))
                 time.sleep(self.time_step['s'])
+            if int(self.return_bool) == 1:
+                self.HPB.set_frequency(self.return_frequency)
 
     def get_device_map(self):
         gpib_listA = FrequencyControl_config.gpibA
