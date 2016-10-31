@@ -17,7 +17,7 @@ import numpy as np
 """
 ### BEGIN NODE INFO
 [info]
-name =  Andor Server
+name =  Andor Server Ba
 version = 1.0
 description =
 
