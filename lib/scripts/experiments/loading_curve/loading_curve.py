@@ -48,6 +48,7 @@ class loading_curve(experiment):
         self.hpa = self.cxnHP.hp8672a_server
         self.cam = self.cxn.andor_server
         self.pmt = self.cxn.normalpmtflow
+        self.pulser = self.cxn.pulser
 
         # Need to map the gpib address to the labrad context number
         self.device_mapA = {}
@@ -79,7 +80,8 @@ class loading_curve(experiment):
                     self.pmt.set_mode('Differential')
                 else:
                     self.pmt.set_mode('Normal')
-
+                    # Need to send a TTL high to the rf switch box
+                    self.pulser.switch_manual('Internal866',True)
 
             # Turn on the sideband for even isotope heating
             if int(self.heating) == 1:
@@ -110,6 +112,8 @@ class loading_curve(experiment):
             elif self.source == 'PMT':
                 # Start Chopping if we weren't
                 if int(self.chop_while_heating) == 0:
+                    # Switch the trigger back to auto
+                    self.pulser.switch_auto('Internal866')
                     self.pmt.set_mode('Differential')
 
                 for j in range(20):
@@ -189,13 +193,13 @@ class loading_curve(experiment):
         self.trap.set_dc_rod(rod3_volt,2)
 
     def get_image(self):
-        self.cam.set_shutter_mode('Auto')
-        self.cam.set_acquisition_mode('Single Scan')
-        self.cam.start_acquisition()
-        self.cam.wait_for_acquisition()
+        #self.cam.set_shutter_mode('Auto')
+        #self.cam.set_acquisition_mode('Single Scan')
+        #self.cam.start_acquisition()
+        #self.cam.wait_for_acquisition()
         image = self.cam.get_most_recent_image(None)
-        self.cam.abort_acquisition()
-        self.cam.set_shutter_mode('Close')
+        #self.cam.abort_acquisition()
+        #self.cam.set_shutter_mode('Close')
         return image
 
     def finalize(self, cxn, context):
