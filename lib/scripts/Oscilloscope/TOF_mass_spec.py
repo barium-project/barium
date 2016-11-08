@@ -21,16 +21,16 @@ hp.select_device()
 trap = cxn_bender.trap_server
 
 
-total_runs = 25
-load_time = 60 # Time the filament is on
-reaction_time =  0 # Time in between loading and pulsing
+total_runs = 40
+load_time = 0 # Time the filament is on
+reaction_time =  15 # Time in between loading and pulsing
 current1 = U(5,'A')
 current2 = U(6.75,'A')
 current3 = U(0,'A')
 voltage1 = U(1.5,'V')
 a_ramp_v = 0
 HV1 = 900
-HV2 = 849
+HV2 = 845
 HV3 = 1400
 HV4 = 1400
 
@@ -55,17 +55,17 @@ for i in range(total_runs):
 
     #trap.set_dc(a_ramp_v,2)
     #trap.set_dc(a_ramp_v,3)
-    hp.set_current(current1)
-    hp.set_current(current2)
-    time.sleep(load_time)
-    hp.set_current(current3)
-    time.sleep(5)
+    #hp.set_current(current1)
+    #hp.set_current(current2)
+    #time.sleep(load_time)
+    #hp.set_current(current3)
+    #time.sleep(5)
     #trap.set_dc(0,2)
     #trap.set_dc(0,3)
     #time.sleep(reaction_time)
     #raw_input("Press Enter")
-    #trap.trigger_loading()
-    #time.sleep(reaction_time)
+    trap.trigger_loading()
+    time.sleep(reaction_time)
     trap.trigger_hv_pulse()
     #time.sleep(1)
     # The below command will grab the scope traces. Scope needs to be in single mode
@@ -76,8 +76,8 @@ for i in range(total_runs):
     channel4[0,:] = ch4
 
 
-    file_loc = 'Z:/Group_Share/Barium/Data/2016/10/11/TOF_Data/run1'
-    data_string = '#[number of traces,time step in voltage data, loading time, load current, reaction time, rod1V, rod2V, rod3V, rod4V, rod1 DCV, rod3 DCV, pt]'
+    file_loc = 'Z:/Group_Share/Barium/Data/2016/11/7/TOF_Data/run0'
+    data_string = '#[number of traces,time step in voltage data, loading time, load current, reaction time, rod1V, rod2V, rod3V, rod4V, rod1 DCV, rod3 DCV, ablation]'
     data = np.array([total_runs,time_step,load_time,current2['A'],reaction_time,HV1,HV2,HV3,HV4,a_ramp_v,a_ramp_v])
     np.savetxt(file_loc+'/' + str(i+1) + '_parameters.txt',data,fmt="%0.5e",
            header = data_string, comments = '')

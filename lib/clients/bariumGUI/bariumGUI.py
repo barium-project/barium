@@ -27,6 +27,7 @@ class BARIUM_GUI(QtGui.QMainWindow):
         wavemeter = self.makeWavemeterWidget(reactor)
         control = self.makeControlWidget(reactor)
         frequency = self.makeFrequencyWidget(reactor)
+        switch = self.makePMTCameraSwitchWidget(reactor)
 
         # add tabs
         self.tabWidget = QtGui.QTabWidget()
@@ -35,6 +36,7 @@ class BARIUM_GUI(QtGui.QMainWindow):
         self.tabWidget.addTab(script_scanner, '&Script Scanner')
         self.tabWidget.addTab(control, '&Trap Control')
         self.tabWidget.addTab(frequency, '&Oscillators')
+        self.tabWidget.addTab(switch, '&PMT')
 
         layout.addWidget(self.tabWidget)
         centralWidget.setLayout(layout)
@@ -84,6 +86,11 @@ class BARIUM_GUI(QtGui.QMainWindow):
         from barium.lib.clients.FrequencyControl_client.FrequencyControl_client import FrequencyControlClient
         frequency = FrequencyControlClient(reactor)
         return frequency
+
+    def makePMTCameraSwitchWidget(self,reactor):
+        from barium.lib.clients.PMTCameraSwitch_client.PMTCameraSwitch_client import PMTCameraSwitchClient
+        switch = PMTCameraSwitchClient(reactor)
+        return switch
 
     def closeEvent(self, x):
         self.reactor.stop()
