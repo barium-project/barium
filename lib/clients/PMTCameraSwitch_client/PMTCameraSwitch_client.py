@@ -1,6 +1,6 @@
 from twisted.internet.defer import inlineCallbacks, returnValue
 from PyQt4 import QtGui
-
+from common.lib.clients.PMT_Control.PMT_CONTROL import pmtWidget
 
 import socket
 import os
@@ -29,7 +29,7 @@ class PMTCameraSwitchClient(QtGui.QWidget):
 
         """
         from labrad.wrappers import connectAsync
-        self.cxn = yield connectAsync('bender',
+        self.cxn = yield connectAsync(
                                       name=self.name,
                                       password=self.password)
 
@@ -47,11 +47,16 @@ class PMTCameraSwitchClient(QtGui.QWidget):
 
         # initialize main Gui
         self.switch = QtGui.QPushButton('PMT/Camera')
-
+        self.switch.setMinimumHeight(100)
+        self.switch.setMinimumWidth(100)
+        self.switch.setMaximumWidth(100)
         self.switch.clicked.connect(self.switchState)
 
 
-        self.subLayout.addWidget(self.switch, 0,0)
+        pmt = pmtWidget(self.reactor)
+        self.subLayout.addWidget(pmt, 0,0)
+        self.subLayout.addWidget(self.switch, 0,1)
+
 
         self.setLayout(self.layout)
 
