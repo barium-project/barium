@@ -40,7 +40,7 @@ class loading_curve(experiment):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Loading Curve')
         #self.cxnwlm = labrad.connect('10.97.111.8', name = 'Linescan Camera', password = 'lab')
-        self.cxnHP = labrad.connect('planetexpress', name = 'loading curve', password = 'lab')
+        self.cxnHP = labrad.connect('bender', name = 'loading curve', password = 'lab')
         self.trap = self.cxn.trap_server
         self.hp = self.cxnHP.hp6033a_server
         self.hp.select_device(0)
@@ -99,6 +99,10 @@ class loading_curve(experiment):
             # a ramp
             if int(self.a_ramp) == 1:
                 self.a_param()
+                time.sleep(1)
+
+
+            time.sleep(3)
 
             if self.source == 'Camera':
                 image_data = self.get_image()
@@ -107,6 +111,7 @@ class loading_curve(experiment):
 
                 counts = np.sum(np.sum(image_data))
                 self.dv.add(self.time_arr[i],counts)
+                time.sleep(1)
                 self.trap.trigger_hv_pulse()
 
             elif self.source == 'PMT':
@@ -121,6 +126,7 @@ class loading_curve(experiment):
                     counts_off = self.pmt.get_next_counts('OFF', 1, False)
                     counts_diff = self.pmt.get_next_counts('DIFF', 1, False)
                     self.dv.add(self.time_arr[i],counts_on, counts_off, counts_diff)
+
 
         if self.source == 'PMT':
             self.pmt.set_mode('Normal')
@@ -171,8 +177,12 @@ class loading_curve(experiment):
     def run_filament(self,load_time):
         self.hp.set_voltage(self.voltage)
         self.hp.set_current(self.current)
+        self.trap.set_rf_state(False)
+        time.sleep(30)
+        self.trap.set_rf_state(True)
         time.sleep(int(load_time))
         self.hp.set_current(U(0,'A'))
+        time.sleep(3)
 
     def get_device_map(self):
         gpib_listA = FrequencyControl_config.gpibA

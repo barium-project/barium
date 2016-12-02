@@ -195,7 +195,7 @@ if __name__ == "__main__":
     from twisted.internet import reactor
 
     client = HP6033A_Client(reactor)
-    client.self_connect('planetexpress',"HP6033A Client",0)  #.self_connect(host_name, client_name, device_id)
+    client.self_connect('bender',"HP6033A Client",0)  #.self_connect(host_name, client_name, device_id)
     client.show()
 
     reactor.run()

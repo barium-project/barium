@@ -41,7 +41,7 @@ class loading_curve_cam(experiment):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Loading Curve Cam')
         #self.cxnwlm = labrad.connect('10.97.111.8', name = 'Linescan Camera', password = 'lab')
-        self.cxnHP = labrad.connect('planetexpress', name = 'loading curve cam', password = 'lab')
+        self.cxnHP = labrad.connect('bender', name = 'loading curve cam', password = 'lab')
         self.trap = self.cxn.trap_server
         self.hp = self.cxnHP.hp6033a_server
         self.hp.select_device(0)
@@ -49,7 +49,7 @@ class loading_curve_cam(experiment):
         self.cam = self.cxn.andor_server
         self.pmt = self.cxn.normalpmtflow
         self.pulser = self.cxn.pulser
-
+        self.grapher = self.cxn.grapher
 
     def run(self, cxn, context):
         self.set_up_parameters()
@@ -61,6 +61,9 @@ class loading_curve_cam(experiment):
 
         self.hp.set_voltage(self.voltage)
         self.hp.set_current(self.current)
+        self.trap.set_rf_state(False)
+        time.sleep(30)
+        self.trap.set_rf_state(True)
 
         date = datetime.datetime.now()
         self.start_time = (date.hour*3600+date.minute*60+date.second+date.microsecond*1e-6)
@@ -68,7 +71,7 @@ class loading_curve_cam(experiment):
         while True:
             if self.pause_or_stop():
                 break
-
+            time.sleep(.250)
             date = datetime.datetime.now()
             date = date.hour*3600+date.minute*60+date.second+date.microsecond*1e-6
             print date
@@ -93,7 +96,7 @@ class loading_curve_cam(experiment):
         if int(self.a_ramp) == 1:
                 self.a_param()
 
-        self.get_tof_data()
+        #self.get_tof_data()
 
 
     def set_up_datavault(self):
@@ -105,7 +108,7 @@ class loading_curve_cam(experiment):
         trunk = year + '_' + month + '_' + day
         self.dv.cd(['',year,month,trunk],True)
         dataset = self.dv.new('Loading_Curve_Cam' + str(int(self.run_number)),[('Time', 's')], [('', 'Counts', 'a.b.u')])
-
+        self.grapher.plot(dataset, 'Loading_Curve_Cam', False)
 
         # add dv params
         self.dv.add_parameter('Loading_Current', self.parameters.Loading_Curve_Cam.Loading_Current)

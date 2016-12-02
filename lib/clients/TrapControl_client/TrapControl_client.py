@@ -222,7 +222,7 @@ class TrapControlClient(QtGui.QWidget):
 
         # Add current controler
         self.HP = HP6033A_Client(self.reactor)
-        self.HP.self_connect('planetexpress',"HP6033A Client",0)
+        self.HP.self_connect('bender',"HP6033A Client",0)
 
         self.subLayout.addWidget(self.HP, 2, 2, 1, 3)
 

@@ -19,22 +19,22 @@ print 'Connected to Labrad'
 
 trap = cxn_bender.trap_server
 
-file_loc = 'rf_settings_1001_1233.txt'
+file_loc = 'rf_settings_101_400.txt'
 
 
 
-start_voltage = 1001
-stop_voltage = 1233
+start_voltage = 101
+stop_voltage = 400
 voltage_step = 1
 max_voltage_itt = 75
-voltage_convergence = .001
+voltage_convergence = .005
 voltage_guess = 0
 
 
-start_phase = 12.1
-phase_step = .1
+start_phase = 24.8
+phase_step = .02
 max_phase_itt = 25
-phase_convergence = .001
+phase_convergence = .005
 
 total_v_points = ((stop_voltage-start_voltage)/voltage_step) + 1
 print total_v_points
@@ -85,9 +85,9 @@ for i in range(int(total_v_points)):
             # if did not converge then adjust voltages
             if abs(amplitude3-amplitude2)/abs(amplitude2) > voltage_convergence:
                 if amplitude3-amplitude2 > 0:
-                    voltage_guess = voltage_guess - 1
+                    voltage_guess = voltage_guess - voltage_step
                 else:
-                    voltage_guess = voltage_guess + 1
+                    voltage_guess = voltage_guess + voltage_step
                 print voltage_guess
                 if j == max_voltage_itt -1:
                     # If failed save current point

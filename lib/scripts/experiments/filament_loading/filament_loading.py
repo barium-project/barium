@@ -34,7 +34,7 @@ class filament_loading(experiment):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Filament Loading')
         #self.cxnwlm = labrad.connect('10.97.111.8', name = 'Linescan Camera', password = 'lab')
-        self.cxnHP = labrad.connect('planetexpress', name = 'filament loading', password = 'lab')
+        self.cxnHP = labrad.connect('bender', name = 'filament loading', password = 'lab')
         self.trap = self.cxn.trap_server
         self.hp = self.cxnHP.hp6033a_server
         self.hp.select_device(0)
