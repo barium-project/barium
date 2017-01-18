@@ -343,10 +343,10 @@ class SR430_Scalar_Server(GPIBManagedServer):
          SR430 commands used: LLIM, RLIM, STAT, and SPAR?2
         '''
         dev = self.selectedDevice(c)
-        yield dev.write('LLIM 0')                       #Sets the left limit as bin 0
-        bins_per_record = yield self.bins_per_record(c,0) #Looks up bins per record (total number of bins)
-        last_bin_index = int(bins_per_record) - 1
-        yield dev.write('RLIM '+str(last_bin_index))    #Lets the right limit as the total number of bins - 1 (last bin)
+        #yield dev.write('LLIM 0')                       #Sets the left limit as bin 0
+        #bins_per_record = yield self.bins_per_record(c,0) #Looks up bins per record (total number of bins)
+        #last_bin_index = int(bins_per_record) - 1
+        #yield dev.write('RLIM '+str(last_bin_index))    #Lets the right limit as the total number of bins - 1 (last bin)
         yield dev.write('STAT')
         sleep(1)
         yield dev.write('SPAR?2')           #Queries for the total # of counts (SPAR?2) See Manual

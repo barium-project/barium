@@ -20,29 +20,27 @@ hp.select_device()
 
 trap = cxn_bender.trap_server
 
-
+file_loc = 'Z:/Group_Share/Barium/Data/2017/01/13/TOF_Data/run6'
 total_runs = 25
-load_time = 0 # Time the filament is on
+load_time = 60 # Time the filament is on
 reaction_time =  20 # Time in between loading and pulsing
 current1 = U(5,'A')
 current2 = U(6.75,'A')
 current3 = U(0,'A')
-voltage1 = U(1.5,'V')
+voltage1 = U(3.0,'V')
 a_ramp_v = 0
-HV1 = 900
-HV2 = 900
-HV3 = 1100
-HV4 = 1100
-E1 = 800
-E2 = 650
+HV1 = 800
+HV2 = 805
+HV3 = 1000
+HV4 = 1000
+E1 = 600
+E2 = 525
 
 
 #trap.set_hv(HV1,3)
 #trap.set_hv(HV2,1)
 #trap.set_hv(HV3,2)
 #trap.set_hv(HV4,0)
-
-
 
 
 
@@ -54,18 +52,41 @@ for i in range(total_runs):
     channel3  = np.zeros((1,10000))
     channel4  = np.zeros((1,10000))
 
+    #time.sleep(30)
     #trap.set_dc(a_ramp_v,2)
     #trap.set_dc(a_ramp_v,3)
+    #trap.set_amplitude(175,2) #rod 3 is channel 2
+    #trap.set_amplitude(172,3) #rod 1 is channel 3
+    #trap.set_phase(40.4,3)
+    #trap.update_rf()
+    #time.sleep(30)
+    #trap.trigger_loading()
+    #time.sleep(2)
+    #raw_input("Press Enter")
     #hp.set_current(current1)
+    #time.sleep(1)
     #hp.set_current(current2)
     #time.sleep(load_time)
     #hp.set_current(current3)
     #time.sleep(5)
-    #trap.set_dc(0,2)
-    #trap.set_dc(0,3)
-    #time.sleep(reaction_time)
-    #raw_input("Press Enter")
+    #trap.set_amplitude(125,2) #rod 3 is channel 2
+    #trap.set_amplitude(122,3) #rod 1 is channel 3
+    #trap.set_phase(40.4,3)
+    #trap.update_rf()
+    #time.sleep(10)
+    #trap.set_amplitude(200,2) #rod 3 is channel 2
+    #trap.set_amplitude(198,3) #rod 1 is channel 3
+    #trap.set_phase(41.7,3)
+    #trap.update_rf()
+    #time.sleep(5)
+    #trap.set_dc(9,0)
+    #trap.set_dc(9,1)
+    #time.sleep(3)
+    #trap.set_dc(0,0) #set final values for a ramp
+    #trap.set_dc(0,1) #set final values for a ramp
+    #time.sleep(5)
     trap.trigger_loading()
+    #raw_input("Press Enter")
     time.sleep(reaction_time)
     trap.trigger_hv_pulse()
     #time.sleep(1)
@@ -77,8 +98,8 @@ for i in range(total_runs):
     channel4[0,:] = ch4
 
 
-    file_loc = 'Z:/Group_Share/Barium/Data/2016/12/1/TOF_Data/run1'
-    data_string = '#[number of traces,time step in voltage data, loading time, load current, reaction time, rod1V, rod2V, rod3V, rod4V, E1, E2, ablation]'
+
+    data_string = '#[number of traces,time step in voltage data, loading time, load current, reaction time, rod1V, rod2V, rod3V, rod4V, E1, E2, ablation then pt]'
     data = np.array([total_runs,time_step,load_time,current2['A'],reaction_time,HV1,HV2,HV3,HV4,E1,E2])
     np.savetxt(file_loc+'/' + str(i+1) + '_parameters.txt',data,fmt="%0.5e",
            header = data_string, comments = '')
