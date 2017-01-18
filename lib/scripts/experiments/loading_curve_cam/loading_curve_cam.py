@@ -13,8 +13,7 @@ class loading_curve_cam(experiment):
     '''
     This experiment is designed to take a loading curve by specifying an
     array of times to load for (filament on), and then look at the data.
-    The camera will take a picture before and after loading. The PMT will
-    will chop during or after loading based on user input.
+    The camera will take a picture before and after loading.
     '''
 
     name = 'Loading Curve Cam'

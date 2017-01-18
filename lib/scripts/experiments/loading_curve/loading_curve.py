@@ -6,6 +6,8 @@ import numpy as np
 import time
 import datetime as datetime
 from config.FrequencyControl_config import FrequencyControl_config
+from keysight import command_expert as kt
+
 
 class loading_curve(experiment):
     '''
@@ -39,20 +41,19 @@ class loading_curve(experiment):
     def initialize(self, cxn, context, ident):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Loading Curve')
-        #self.cxnwlm = labrad.connect('10.97.111.8', name = 'Linescan Camera', password = 'lab')
         self.cxnHP = labrad.connect('bender', name = 'loading curve', password = 'lab')
         self.trap = self.cxn.trap_server
         self.hp = self.cxnHP.hp6033a_server
         self.hp.select_device(0)
         self.dv = self.cxn.data_vault
-        self.hpa = self.cxnHP.hp8672a_server
-        self.cam = self.cxn.andor_server
-        self.pmt = self.cxn.normalpmtflow
-        self.pulser = self.cxn.pulser
+        #self.hpa = self.cxnHP.hp8672a_server
+        #self.cam = self.cxn.andor_server
+        #self.pmt = self.cxn.normalpmtflow
+        #self.pulser = self.cxn.pulser
 
         # Need to map the gpib address to the labrad context number
-        self.device_mapA = {}
-        self.get_device_map()
+        #self.device_mapA = {}
+        #self.get_device_map()
 
     def run(self, cxn, context):
         self.set_up_parameters()

@@ -136,7 +136,7 @@ if __name__ == "__main__":
     from twisted.internet import reactor
 
     client = RGA_Client(reactor)
-    client.self_connect('planetexpress', 'RGA Client')
+    client.self_connect('flexo', 'RGA Client')
     client.show()
 
     reactor.run()
