@@ -20,21 +20,21 @@ hp.select_device()
 
 trap = cxn_bender.trap_server
 
-file_loc = 'Z:/Group_Share/Barium/Data/2017/01/13/TOF_Data/run6'
+file_loc = 'Z:/Group_Share/Barium/Data/2017/01/21/TOF_Data/run2'
 total_runs = 25
 load_time = 60 # Time the filament is on
-reaction_time =  20 # Time in between loading and pulsing
+reaction_time =  30 # Time in between loading and pulsing
 current1 = U(5,'A')
 current2 = U(6.75,'A')
 current3 = U(0,'A')
 voltage1 = U(3.0,'V')
 a_ramp_v = 0
-HV1 = 800
-HV2 = 805
-HV3 = 1000
-HV4 = 1000
-E1 = 600
-E2 = 525
+HV1 = 900
+HV2 = 910
+HV3 = 1100
+HV4 = 1100
+E1 = 700
+E2 = 625
 
 
 #trap.set_hv(HV1,3)
