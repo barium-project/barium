@@ -178,26 +178,36 @@ class FrequencyControlClient(Frequency_Ui):
     def setDefault(self):
 
         self.GPIB19spinFreq.setValue(self.default['GPIB0::19'][0])
+        # Don't know what the issue is but these spin boxes are being set before
+        # the connection is made. Set them here for initialization.
+        self.freqChangedHPA(self.default['GPIB0::19'][0], self.clients_hpa[0])
         self.GPIB19spinAmpDec.setValue(self.default['GPIB0::19'][1])
         self.GPIB19spinAmpVer.setValue(self.default['GPIB0::19'][2])
         self.GPIB19switch.setChecked(False)
+        self.setRFHPA(self.clients_hpa[0],False)
 
         self.GPIB21spinFreq.setValue(self.default['GPIB0::21'][0])
+        self.freqChangedHPA(self.default['GPIB0::21'][0], self.clients_hpa[1])
         self.GPIB21spinAmpDec.setValue(self.default['GPIB0::21'][1])
         self.GPIB21spinAmpVer.setValue(self.default['GPIB0::21'][2])
         self.GPIB21switch.setChecked(False)
+        self.setRFHPA(self.clients_hpa[1],False)
 
         self.GPIB6spinFreq.setValue(self.default['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.default['GPIB0::6'][1])
         self.GPIB6switch.setChecked(False)
+        self.setRFHPB(self.clients_hpb[0],False)
 
         self.GPIB7spinFreq.setValue(self.default['GPIB0::7'][0])
         self.GPIB7spinAmp.setValue(self.default['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
+        self.setRFHPB(self.clients_hpb[1],False)
 
         self.GPIB8spinFreq.setValue(self.default['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.default['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
+        self.setRFHPB(self.clients_hpb[2],False)
+
 
     def cool_ba133(self):
 
@@ -205,24 +215,28 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB19spinAmpDec.setValue(self.cool_133['GPIB0::19'][1])
         self.GPIB19spinAmpVer.setValue(self.cool_133['GPIB0::19'][2])
         self.GPIB19switch.setChecked(True)
+        self.setRFHPA(self.clients_hpa[0],True)
 
         self.GPIB21spinFreq.setValue(self.cool_133['GPIB0::21'][0])
         self.GPIB21spinAmpDec.setValue(self.cool_133['GPIB0::21'][1])
         self.GPIB21spinAmpVer.setValue(self.cool_133['GPIB0::21'][2])
         self.GPIB21switch.setChecked(True)
+        self.setRFHPA(self.clients_hpa[1],True)
 
         self.GPIB6spinFreq.setValue(self.cool_133['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_133['GPIB0::6'][1])
         self.GPIB6switch.setChecked(True)
+        self.setRFHPB(self.clients_hpb[0],True)
 
         self.GPIB7spinFreq.setValue(self.cool_133['GPIB0::7'][0])
         self.GPIB7spinAmp.setValue(self.cool_133['GPIB0::7'][1])
         self.GPIB7switch.setChecked(True)
+        self.setRFHPB(self.clients_hpb[1],True)
 
         self.GPIB8spinFreq.setValue(self.cool_133['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_133['GPIB0::8'][1])
         self.GPIB8switch.setChecked(True)
-
+        self.setRFHPB(self.clients_hpb[2],True)
 
 
 
