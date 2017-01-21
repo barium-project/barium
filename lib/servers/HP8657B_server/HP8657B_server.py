@@ -38,12 +38,11 @@ from labrad.units import WithUnit as U
 from time import sleep
 
 
-'''
+
 class HP8675BWrapper(GPIBDeviceWrapper):
-    #@inlineCallbacks
     def initialize(self):
         pass
-'''
+
 class HP8657B_Server(GPIBManagedServer):
     """
     This server talks to the HP8657B Microwave Signal Generator.
@@ -56,7 +55,7 @@ class HP8657B_Server(GPIBManagedServer):
     name = 'HP8657B Server'
     deviceName = 'Generic GPIB Device'
     deviceIdentFunc = 'identify_device'
-    #deviceWrapper = 'HP8675BWrapper'
+    deviceWrapper = HP8675BWrapper
 
     def __init__(self):
         super(HP8657B_Server, self).__init__()
