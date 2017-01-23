@@ -36,7 +36,7 @@ class QCustomHVPulseGui(QtGui.QFrame):
         self.hv_pulse.setFont(QtGui.QFont(shell_font, pointSize=14))
         self.hv_pulse.setStyleSheet("background-color: green")
 
-        self.hv_graph = QtGui.QPushButton('Graph')
+        self.hv_graph = QtGui.QPushButton(' HV Pulse/Graph')
         self.hv_graph.setMaximumHeight(30)
         self.hv_graph.setMinimumHeight(30)
         self.hv_graph.setFont(QtGui.QFont(shell_font, pointSize=14))

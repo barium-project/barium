@@ -37,31 +37,11 @@ from twisted.internet import reactor
 from labrad.units import WithUnit as U
 from time import sleep
 
-'''
-class HPWrapper(GPIBDeviceWrapper):
-    @inlineCallbacks
-    def amplitude_HP8672(self, value):
-        yield self.write("K"+value+"\r\n")
 
-    @inlineCallbacks
-    def frequency_HP8672(self, value):
-        yield self.write("P"+value+"J8\r\n")
+class HP8672AWrapper(GPIBDeviceWrapper):
+    def initialize(self):
+        pass
 
-    @inlineCallbacks
-    def rf_HP8672(self, state):
-        if state:
-            yield self.write("O1\r\n")
-        elif not state:
-            yield self.write("O0\r\n")
-
-    @inlineCallbacks
-    def amplitude_HP8657(self, value):
-        yield self.write("AP "+value+" DM")
-
-    @inlineCallbacks
-    def frequency_HP8657(self, value):
-        yield self.write("FR "+value+" MZ")
-'''
 
 
 class HP8672A_Server(GPIBManagedServer):
@@ -76,7 +56,7 @@ class HP8672A_Server(GPIBManagedServer):
     name = 'HP8672A Server'
     deviceName = 'Generic GPIB Device'
     deviceIdentFunc = 'identify_device'
-    #deviceWrapper = 'HPWrapper'
+    deviceWrapper = HP8672AWrapper
 
     def __init__(self):
         super(HP8672A_Server, self).__init__()
