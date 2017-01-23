@@ -4,16 +4,18 @@ from barium.lib.clients.gui.HVPulse_gui import QCustomHVPulseGui
 from barium.lib.clients.HP6033A_client.HP6033Aclient import HP6033A_Client
 from common.lib.clients.qtui.q_custom_text_changing_button import \
     TextChangingButton
+
 from twisted.internet.defer import inlineCallbacks, returnValue
 from PyQt4 import QtGui
 #try:
 from config.TrapControl_config import TrapControl_config
 #except:
 #    from barium.lib.config.TrapControl_config import TrapControl_config
-
+import time
 import socket
 import os
 import numpy as np
+from keysight import command_expert as kt
 
 SIGNALID1 = 445566
 SIGNALID2 = 143533
@@ -61,7 +63,9 @@ class TrapControlClient(QtGui.QWidget):
                                       name=self.name,
                                       password=self.password)
 
+        self.tof = yield self.cxn.tof_server
         self.server = yield self.cxn.trap_server
+
         self.initializeGUI()
 
     @inlineCallbacks
@@ -217,6 +221,7 @@ class TrapControlClient(QtGui.QWidget):
         # HV Gui
         self.hvGUI = QCustomHVPulseGui()
         self.hvGUI.hv_pulse.clicked.connect(lambda : self.hv_pulse())
+        self.hvGUI.hv_graph.clicked.connect(lambda : self.hv_graph())
 
         self.subLayout.addWidget(self.hvGUI, 2, 5, 1, 1)
 
@@ -280,7 +285,15 @@ class TrapControlClient(QtGui.QWidget):
 
     @inlineCallbacks
     def hv_pulse(self):
+        kt.run_sequence('C:/Users/barium133/Code/barium/lib/scripts/Oscilloscope/set_run')
         yield self.server.trigger_hv_pulse()
+
+    @inlineCallbacks
+    def hv_graph(self):
+        kt.run_sequence('C:/Users/barium133/Code/barium/lib/scripts/Oscilloscope/set_single')
+        yield self.server.trigger_hv_pulse()
+        yield self.tof.get_trace()
+
 
     def endCapChanged(self, endCap, channel):
         self.endCap[str(len(self.endCap) +1)] = [endCap, channel]
@@ -370,6 +383,7 @@ class TrapControlClient(QtGui.QWidget):
 
 
         self.trap.useRFMap.setCheckState(False)
+
 
 
 if __name__ == "__main__":

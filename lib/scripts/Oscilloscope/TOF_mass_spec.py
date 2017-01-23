@@ -20,7 +20,7 @@ hp.select_device()
 
 trap = cxn_bender.trap_server
 
-file_loc = 'Z:/Group_Share/Barium/Data/2017/01/21/TOF_Data/run2'
+file_loc = 'Z:/Group_Share/Barium/Data/2017/01/22/TOF_Data/run1'
 total_runs = 25
 load_time = 60 # Time the filament is on
 reaction_time =  30 # Time in between loading and pulsing
@@ -47,10 +47,10 @@ E2 = 625
 #hp.set_voltage(voltage1)
 # Acquire the data
 for i in range(total_runs):
-    channel1  = np.zeros((1,10000))
-    channel2  = np.zeros((1,10000))
-    channel3  = np.zeros((1,10000))
-    channel4  = np.zeros((1,10000))
+    channel1  = np.zeros((1,20000))
+    channel2  = np.zeros((1,20000))
+    channel3  = np.zeros((1,20000))
+    channel4  = np.zeros((1,20000))
 
     #time.sleep(30)
     #trap.set_dc(a_ramp_v,2)
