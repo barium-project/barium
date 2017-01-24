@@ -1,6 +1,7 @@
 from barium.lib.clients.gui.TrapControl_gui import QCustomTrapGui
 from barium.lib.clients.gui.Ablation_gui import QCustomAblationGui
 from barium.lib.clients.gui.HVPulse_gui import QCustomHVPulseGui
+from barium.lib.clients.gui.ARamp_gui import QCustomARampGui
 from barium.lib.clients.HP6033A_client.HP6033Aclient import HP6033A_Client
 from common.lib.clients.qtui.q_custom_text_changing_button import \
     TextChangingButton
@@ -229,7 +230,12 @@ class TrapControlClient(QtGui.QWidget):
         self.HP = HP6033A_Client(self.reactor)
         self.HP.self_connect('bender',"HP6033A Client",0)
 
-        self.subLayout.addWidget(self.HP, 2, 2, 1, 3)
+        self.subLayout.addWidget(self.HP, 2, 2, 1, 2)
+
+        self.ARampGUI = QCustomARampGui()
+        self.ARampGUI.ARamp.clicked.connect(lambda: self.a_ramp())
+
+        self.subLayout.addWidget(self.ARampGUI, 2, 4, 1, 1)
 
         self.setLayout(self.layout)
 
@@ -384,7 +390,37 @@ class TrapControlClient(QtGui.QWidget):
 
         self.trap.useRFMap.setCheckState(False)
 
+    @inlineCallbacks
+    def a_ramp(self):
 
+        #Get current settings
+        oldRod1 = self.trap.spinDC1.value()
+        oldRod2 = self.trap.spinDC2.value()
+        oldRod3 = self.trap.spinDC3.value()
+        oldRod4 = self.trap.spinDC4.value()
+
+        # Get a-ramp settings
+        a1 = self.ARampGUI.spinDC1.value()
+        a2 = self.ARampGUI.spinDC2.value()
+        a3 = self.ARampGUI.spinDC3.value()
+        a4 = self.ARampGUI.spinDC4.value()
+
+        self.ARampGUI.ARamp.setStyleSheet("background-color: red")
+        # Add the a-ramp
+        yield self.server.set_dc_rod(oldRod1+a1, self.rods['1'])
+        yield self.server.set_dc_rod(oldRod1+a2, self.rods['2'])
+        yield self.server.set_dc_rod(oldRod1+a3, self.rods['3'])
+        yield self.server.set_dc_rod(oldRod1+a4, self.rods['4'])
+
+        yield time.sleep(int(self.ARampGUI.waitTime.value()))
+
+        # Return to current settings
+        yield self.server.set_dc_rod(oldRod1, self.rods['1'])
+        yield self.server.set_dc_rod(oldRod1, self.rods['2'])
+        yield self.server.set_dc_rod(oldRod1, self.rods['3'])
+        yield self.server.set_dc_rod(oldRod1, self.rods['4'])
+
+        self.ARampGUI.ARamp.setStyleSheet("background-color: green")
 
 if __name__ == "__main__":
     a = QtGui.QApplication([])
