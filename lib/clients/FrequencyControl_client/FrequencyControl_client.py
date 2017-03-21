@@ -34,6 +34,8 @@ class FrequencyControlClient(Frequency_Ui):
         #load default parameters and initialize the devices off
         self.lasers = multiplexer_config.info
         self.default = FrequencyControl_config.default
+        self.cool_130 = FrequencyControl_config.cool_130
+        self.cool_132 = FrequencyControl_config.cool_132
         self.cool_133 = FrequencyControl_config.cool_133
         self.cool_134 = FrequencyControl_config.cool_134
         self.cool_135= FrequencyControl_config.cool_135
@@ -188,6 +190,8 @@ class FrequencyControlClient(Frequency_Ui):
 
 
         # Connect push buttons to set freqs
+        self.cool130.clicked.connect(lambda : self.cool_ba130())
+        self.cool132.clicked.connect(lambda : self.cool_ba132())
         self.cool133.clicked.connect(lambda : self.cool_ba133())
         self.cool134.clicked.connect(lambda : self.cool_ba134())
         self.cool135.clicked.connect(lambda : self.cool_ba135())
@@ -231,6 +235,83 @@ class FrequencyControlClient(Frequency_Ui):
         self.setRFHPB(self.clients_hpb[2],False)
 
     @inlineCallbacks
+    def cool_ba130(self):
+
+        #add the frequency shifts relative to 138
+        freq_130_493 = float(self.lasers['493nm'][1]) + self.cool_130['493nm']
+        freq_130_650 = float(self.lasers['650nm'][1]) + self.cool_130['650nm']
+
+        yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),freq_130_493)
+        yield self.wm.set_pid_course(int(self.lasers['650nm'][5]),freq_130_650)
+
+        self.GPIB19spinFreq.setValue(self.cool_130['GPIB0::19'][0])
+        self.GPIB19spinAmpDec.setValue(self.cool_130['GPIB0::19'][1])
+        self.GPIB19spinAmpVer.setValue(self.cool_130['GPIB0::19'][2])
+        self.GPIB19switch.setChecked(False)
+        self.setRFHPA(self.clients_hpa[0],False)
+
+        self.GPIB21spinFreq.setValue(self.cool_130['GPIB0::21'][0])
+        self.GPIB21spinAmpDec.setValue(self.cool_130['GPIB0::21'][1])
+        self.GPIB21spinAmpVer.setValue(self.cool_130['GPIB0::21'][2])
+        self.GPIB21switch.setChecked(False)
+        self.setRFHPA(self.clients_hpa[1],False)
+
+        self.GPIB6spinFreq.setValue(self.cool_130['GPIB0::6'][0])
+        self.GPIB6spinAmp.setValue(self.cool_130['GPIB0::6'][1])
+        self.GPIB6switch.setChecked(False)
+        self.setRFHPB(self.clients_hpb[0],False)
+
+        self.GPIB7spinFreq.setValue(self.cool_130['GPIB0::7'][0])
+        self.GPIB7spinAmp.setValue(self.cool_130['GPIB0::7'][1])
+        self.GPIB7switch.setChecked(False)
+        self.setRFHPB(self.clients_hpb[1],False)
+
+        self.GPIB8spinFreq.setValue(self.cool_130['GPIB0::8'][0])
+        self.GPIB8spinAmp.setValue(self.cool_130['GPIB0::8'][1])
+        self.GPIB8switch.setChecked(False)
+        self.setRFHPB(self.clients_hpb[2],False)
+
+
+
+    @inlineCallbacks
+    def cool_ba132(self):
+
+        #add the frequency shifts relative to 138
+        freq_132_493 = float(self.lasers['493nm'][1]) + self.cool_132['493nm']
+        freq_132_650 = float(self.lasers['650nm'][1]) + self.cool_132['650nm']
+
+        yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),freq_132_493)
+        yield self.wm.set_pid_course(int(self.lasers['650nm'][5]),freq_132_650)
+
+        self.GPIB19spinFreq.setValue(self.cool_132['GPIB0::19'][0])
+        self.GPIB19spinAmpDec.setValue(self.cool_132['GPIB0::19'][1])
+        self.GPIB19spinAmpVer.setValue(self.cool_132['GPIB0::19'][2])
+        self.GPIB19switch.setChecked(False)
+        self.setRFHPA(self.clients_hpa[0],False)
+
+        self.GPIB21spinFreq.setValue(self.cool_132['GPIB0::21'][0])
+        self.GPIB21spinAmpDec.setValue(self.cool_132['GPIB0::21'][1])
+        self.GPIB21spinAmpVer.setValue(self.cool_132['GPIB0::21'][2])
+        self.GPIB21switch.setChecked(False)
+        self.setRFHPA(self.clients_hpa[1],False)
+
+        self.GPIB6spinFreq.setValue(self.cool_132['GPIB0::6'][0])
+        self.GPIB6spinAmp.setValue(self.cool_132['GPIB0::6'][1])
+        self.GPIB6switch.setChecked(False)
+        self.setRFHPB(self.clients_hpb[0],False)
+
+        self.GPIB7spinFreq.setValue(self.cool_132['GPIB0::7'][0])
+        self.GPIB7spinAmp.setValue(self.cool_132['GPIB0::7'][1])
+        self.GPIB7switch.setChecked(False)
+        self.setRFHPB(self.clients_hpb[1],False)
+
+        self.GPIB8spinFreq.setValue(self.cool_132['GPIB0::8'][0])
+        self.GPIB8spinAmp.setValue(self.cool_132['GPIB0::8'][1])
+        self.GPIB8switch.setChecked(False)
+        self.setRFHPB(self.clients_hpb[2],False)
+
+
+    @inlineCallbacks
     def cool_ba133(self):
 
         #add the frequency shifts relative to 138
@@ -259,13 +340,13 @@ class FrequencyControlClient(Frequency_Ui):
 
         self.GPIB7spinFreq.setValue(self.cool_133['GPIB0::7'][0])
         self.GPIB7spinAmp.setValue(self.cool_133['GPIB0::7'][1])
-        self.GPIB7switch.setChecked(True)
-        self.setRFHPB(self.clients_hpb[1],True)
+        self.GPIB7switch.setChecked(False)
+        self.setRFHPB(self.clients_hpb[1],False)
 
         self.GPIB8spinFreq.setValue(self.cool_133['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_133['GPIB0::8'][1])
-        self.GPIB8switch.setChecked(True)
-        self.setRFHPB(self.clients_hpb[2],True)
+        self.GPIB8switch.setChecked(False)
+        self.setRFHPB(self.clients_hpb[2],False)
 
     @inlineCallbacks
     def cool_ba134(self):
