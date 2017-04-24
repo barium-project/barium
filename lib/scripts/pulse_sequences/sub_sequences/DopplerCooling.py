@@ -4,12 +4,18 @@ from common.lib.servers.Pulser2.pulse_sequences.pulse_sequence import pulse_sequ
 For now in this experiment, Doppler cooling just consists of turning on one EOM sideband.
 This is done with an rf switch, so all we need is a TTL high for a specified amount
 of time. If/When we use a dds, we'll need to add to this subsequence
+
+4/14/2017
+AS of now the default state of these TTL switches is high, they are auto inverted,
+so that we cool by default. This means to turn off Doppler cooling we need to write
+a TTL high for the off time.
 """
 
 class doppler_cooling(pulse_sequence):
 
     required_parameters = [
                            ('DopplerCooling', 'doppler_cooling_duration'),
+                           ('DopplerCooling', 'off_time'),
                            ('DopplerCooling', 'doppler_cooling_TTL')
                            ]
 
@@ -22,6 +28,6 @@ class doppler_cooling(pulse_sequence):
             self.ttl = 'TTL3'
         else:
             self.ttl = 'TTL2'
-        self.addTTL(self.ttl, self.start, p.doppler_cooling_duration)
-        self.end = self.start + p.doppler_cooling_duration
+        self.addTTL(self.ttl, p.doppler_cooling_duration, p.off_time)
+        self.end = self.start + p.doppler_cooling_duration + p.off_time
 
