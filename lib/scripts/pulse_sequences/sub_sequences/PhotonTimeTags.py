@@ -16,4 +16,4 @@ class photon_timetags(pulse_sequence):
         # start time is defined to be 0s.
         p = self.parameters.PhotonTimeTags
         self.addTTL('TimeResolvedCount', self.start, p.record_timetags_duration)
-        self.end = self.start + self.parameters.PhotonTimetags.record_timetags_duration
+        self.end = self.start + p.record_timetags_duration
