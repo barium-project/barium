@@ -34,6 +34,7 @@ class probe_line_scan(experiment):
     exp_parameters.append(('ProbeLineScan', 'Carrier_Frequency_650'))
     exp_parameters.append(('ProbeLineScan', 'Cooling_Oscillator'))
     exp_parameters.append(('ProbeLineScan', 'Probe_Oscillator'))
+    exp_parameters.append(('ProbeLineScan', 'Repeats_Per_Point'))
 
 
     # Add the parameters from the required subsequences
@@ -76,6 +77,7 @@ class probe_line_scan(experiment):
         self.probe_cycles = self.p.ProbeLineScan.Probe_Cycles
         self.cooling_oscillator = self.p.ProbeLineScan.Cooling_Oscillator
         self.probe_oscillator = self.p.ProbeLineScan.Probe_Oscillator
+        self.repeats = self.p.ProbeLineScan.Repeats_Per_Point
 
         self.wm_p = multiplexer_config.info
 
@@ -102,15 +104,16 @@ class probe_line_scan(experiment):
 
                 self.HPA.set_frequency(WithUnit(freq[i],'MHz'))
                 time.sleep(.5) # time to switch frequencies
-                self.pulser.switch_auto('TTL3',False)
-                self.pulser.start_number(int(self.probe_cycles))
-                self.pulser.wait_sequence_done()
-                self.pulser.stop_sequence()
-                time_tags = self.pulser.get_timetags()
-                self.dv.add(freq[i],len(time_tags))
-                self.pulser.reset_timetags()
-                self.pulser.switch_manual('TTL3',True)
-
+                counts = 0
+                for j in range(int(self.repeats)):
+                    self.pulser.start_number(int(self.probe_cycles))
+                    self.pulser.wait_sequence_done()
+                    self.pulser.stop_sequence()
+                    time_tags = self.pulser.get_timetags()
+                    frequency = (self.wm.get_frequency(self.wm_p['493nm'][0]) - self.frequency_493['THz'])*1e6 # MHz
+                    counts = counts + len(time_tags)
+                    self.pulser.reset_timetags()
+                self.dv.add(frequency+freq[i],counts)
         else:
             self.HPB.select_device(self.device_mapB[self.probe_oscillator])
 
@@ -119,15 +122,18 @@ class probe_line_scan(experiment):
                     break
 
                 self.HPB.set_frequency(WithUnit(freq[i],'MHz'))
-                time.sleep(.5) # time to switch frequencies
-                self.pulser.switch_auto('TTL2',False)
-                self.pulser.start_number(int(self.probe_cycles))
-                self.pulser.wait_sequence_done()
-                self.pulser.stop_sequence()
-                time_tags = self.pulser.get_timetags()
-                self.dv.add(freq[i],len(time_tags))
-                self.pulser.reset_timetags()
-                self.pulser.switch_manual('TTL2',True)
+                counts = 0
+                for j in range(int(self.repeats)):
+                    self.pulser.start_number(int(self.probe_cycles))
+                    self.pulser.wait_sequence_done()
+                    self.pulser.stop_sequence()
+                    time_tags = self.pulser.get_timetags()
+                    frequency = (self.wm.get_frequency(self.wm_p['650nm'][0]) - self.frequency_650['THz'])*1e6 # MHz
+                    counts = counts + len(time_tags)
+                    self.pulser.reset_timetags()
+                self.dv.add(frequency+freq[i],counts)
+
+
 
     def set_init_frequencies(self):
 
@@ -137,7 +143,7 @@ class probe_line_scan(experiment):
         time.sleep(5)
 
         # Set cooling sideband
-        if self.cooling_oscillator == 'GPIB0::19' or self.cooling_oscillator == 'GPIB0::21':
+        if self.cooling_oscillator == '493nm':
             #self.HPA.select_device(self.device_mapA[self.cooling_oscillator])
             #self.HPA.set_frequency(self.cool_sb)
             pass
@@ -145,7 +151,6 @@ class probe_line_scan(experiment):
             self.HPB.select_device(self.device_mapB[self.cooling_oscillator])
             self.HPB.set_frequency(self.cool_sb)
 
-        self.pulser.switch_manual('TTL2',True)
         # time to switch oscillators
         time.sleep(.5)
 
