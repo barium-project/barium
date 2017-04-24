@@ -10,11 +10,18 @@ class doppler_cooling(pulse_sequence):
 
     required_parameters = [
                            ('DopplerCooling', 'doppler_cooling_duration'),
+                           ('DopplerCooling', 'doppler_cooling_TTL')
                            ]
 
     def sequence(self):
         # start time is defined to be 0s.
         p = self.parameters.DopplerCooling
-        self.addTTL('TTL2', self.start, p.doppler_cooling_duration)
+
+        # select which laser to scan
+        if p.doppler_cooling_TTL == '493nm':
+            self.ttl = 'TTL3'
+        else:
+            self.ttl = 'TTL2'
+        self.addTTL(self.ttl, self.start, p.doppler_cooling_duration)
         self.end = self.start + p.doppler_cooling_duration
 

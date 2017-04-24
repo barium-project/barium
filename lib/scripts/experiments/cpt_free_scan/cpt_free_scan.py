@@ -7,7 +7,7 @@ from common.lib.servers.abstractservers.script_scanner.scan_methods import exper
 from barium.lib.scripts.pulse_sequences.sub_sequences.ProbeLaser import probe_laser as probe_laser
 from barium.lib.scripts.pulse_sequences.sub_sequences.DopplerCooling import doppler_cooling as doppler_cooling
 from barium.lib.scripts.pulse_sequences.sub_sequences.PhotonTimeTags import photon_timetags as photon_timetags
-from barium.lib.scripts.pulse_sequences.ProbeLineScan import probe_line_scan as main_sequence
+from barium.lib.scripts.pulse_sequences.CPTFreeScan import cpt_free_scan as main_sequence
 
 
 from config.FrequencyControl_config import FrequencyControl_config
@@ -19,22 +19,26 @@ import numpy as np
 import datetime as datetime
 
 
-class probe_line_scan(experiment):
+class cpt_free_scan(experiment):
 
-    name = 'Probe Line Scan'
+    name = 'CPT Free Scan'
 
     exp_parameters = []
 
-    exp_parameters.append(('ProbeLineScan', 'Cooling_Sideband_Frequency'))
-    exp_parameters.append(('ProbeLineScan', 'Probe_Frequency_Start'))
-    exp_parameters.append(('ProbeLineScan', 'Probe_Frequency_Stop'))
-    exp_parameters.append(('ProbeLineScan', 'Probe_Frequency_Step'))
-    exp_parameters.append(('ProbeLineScan', 'Probe_Cycles'))
-    exp_parameters.append(('ProbeLineScan', 'Carrier_Frequency_493'))
-    exp_parameters.append(('ProbeLineScan', 'Carrier_Frequency_650'))
-    exp_parameters.append(('ProbeLineScan', 'Cooling_Oscillator'))
-    exp_parameters.append(('ProbeLineScan', 'Probe_Oscillator'))
-
+    exp_parameters.append(('CPTFreeScan', 'Cooling_Sideband_Frequency'))
+    exp_parameters.append(('CPTFreeScan', 'Repump_Sideband_Frequency'))
+    exp_parameters.append(('CPTFreeScan', 'Probe_Frequency_Start'))
+    exp_parameters.append(('CPTFreeScan', 'Probe_Frequency_Stop'))
+    exp_parameters.append(('CPTFreeScan', 'Probe_Frequency_Step'))
+    exp_parameters.append(('CPTFreeScan', 'Probe_Cycles'))
+    exp_parameters.append(('CPTFreeScan', 'Repump_Cycles'))
+    exp_parameters.append(('CPTFreeScan', 'Carrier_Frequency_493'))
+    exp_parameters.append(('CPTFreeScan', 'Carrier_Frequency_650'))
+    exp_parameters.append(('CPTFreeScan', 'Cooling_Oscillator'))
+    exp_parameters.append(('CPTFreeScan', 'Probe_Oscillator'))
+    exp_parameters.append(('CPTFreeScan', 'Repump_Oscillator'))
+    exp_parameters.append(('CPTFreeScan', 'Repeats_Per_Point'))
+    exp_parameters.append(('CPTFreeScan', 'Repump_Duration'))
 
     # Add the parameters from the required subsequences
     exp_parameters.extend(probe_laser.all_required_parameters())
@@ -48,11 +52,13 @@ class probe_line_scan(experiment):
 
     def initialize(self, cxn, context, ident):
         self.ident = ident
-        self.cxn = labrad.connect(name = 'Probe Line Scan')
-        self.cxnwlm = labrad.connect('10.97.111.8', name = 'Probe Line Scan', password = 'lab')
+        self.cxn = labrad.connect(name = 'CPT Free Scan')
+        self.cxnwlm = labrad.connect('10.97.111.8', name = 'CPT Free Scan', password = 'lab')
 
-        self.HPA = self.cxn.hp8672a_server
-        self.HPB = self.cxn.hp8657b_server
+        self.HPA_cool = self.cxn.hp8672a_server
+        self.HPB_cool = self.cxn.hp8657b_server
+        self.HPA_probe = self.cxn.hp8672a_server
+        self.HPB_probe = self.cxn.hp8657b_server
         self.wm = self.cxnwlm.multiplexerserver
         self.pulser = self.cxn.pulser
         self.grapher = self.cxn.grapher
@@ -67,15 +73,19 @@ class probe_line_scan(experiment):
         self.p = self.parameters
 
 
-        self.frequency_493 = self.p.ProbeLineScan.Carrier_Frequency_493
-        self.frequency_650 = self.p.ProbeLineScan.Carrier_Frequency_650
-        self.cool_sb = self.p.ProbeLineScan.Cooling_Sideband_Frequency
-        self.start_frequency = self.p.ProbeLineScan.Probe_Frequency_Start
-        self.stop_frequency = self.p.ProbeLineScan.Probe_Frequency_Stop
-        self.step_frequency = self.p.ProbeLineScan.Probe_Frequency_Step
-        self.probe_cycles = self.p.ProbeLineScan.Probe_Cycles
-        self.cooling_oscillator = self.p.ProbeLineScan.Cooling_Oscillator
-        self.probe_oscillator = self.p.ProbeLineScan.Probe_Oscillator
+        self.frequency_493 = self.p.CPTFreeScan.Carrier_Frequency_493
+        self.frequency_650 = self.p.CPTFreeScan.Carrier_Frequency_650
+        self.cool_sb = self.p.CPTFreeScan.Cooling_Sideband_Frequency
+        self.repump_sb = self.p.CPTFreeScan.Repump_Sideband_Frequency
+        self.start_frequency = self.p.CPTFreeScan.Probe_Frequency_Start
+        self.stop_frequency = self.p.CPTFreeScan.Probe_Frequency_Stop
+        self.step_frequency = self.p.CPTFreeScan.Probe_Frequency_Step
+        self.probe_cycles = self.p.CPTFreeScan.Probe_Cycles
+        self.repump_cycles = self.p.CPTFreeScan.Repump_Cycles
+        self.cooling_oscillator = self.p.CPTFreeScan.Cooling_Oscillator
+        self.probe_oscillator = self.p.CPTFreeScan.Probe_Oscillator
+        self.repump_oscillator = self.p.CPTFreeScan.Repump_Oscillator
+        self.repeats = self.p.CPTFreeScan.Repeats_Per_Point
 
         self.wm_p = multiplexer_config.info
 
@@ -93,8 +103,8 @@ class probe_line_scan(experiment):
         pulse_sequence.programSequence(self.pulser)
 
         # Select probe oscillator
-        if self.probe_oscillator == 'GPIB0::19' or self.probe_oscillator == 'GPIB0::21':
-            self.HPA.select_device(self.device_mapA[self.probe_oscillator])
+        if self.probe_oscillator == 'GPIB0::19':
+            self.HPA_probe.select_device(self.device_mapA[self.probe_oscillator])
 
             for i in range(len(freq)):
                 if self.pause_or_stop():
@@ -102,32 +112,36 @@ class probe_line_scan(experiment):
 
                 self.HPA.set_frequency(WithUnit(freq[i],'MHz'))
                 time.sleep(.5) # time to switch frequencies
-                self.pulser.switch_auto('TTL3',False)
-                self.pulser.start_number(int(self.probe_cycles))
-                self.pulser.wait_sequence_done()
-                self.pulser.stop_sequence()
-                time_tags = self.pulser.get_timetags()
-                self.dv.add(freq[i],len(time_tags))
-                self.pulser.reset_timetags()
-                self.pulser.switch_manual('TTL3',True)
-
+                counts = 0
+                for j in range(int(self.repeats)):
+                    self.pulser.start_number(int(self.probe_cycles))
+                    self.pulser.wait_sequence_done()
+                    self.pulser.stop_sequence()
+                    time_tags = self.pulser.get_timetags()
+                    frequency = (self.wm.get_frequency(self.wm_p['493nm'][0]) - self.frequency_493['THz'])*1e6 # MHz
+                    counts = counts + len(time_tags)
+                    self.pulser.reset_timetags()
+                self.dv.add(frequency+freq[i],counts)
         else:
-            self.HPB.select_device(self.device_mapB[self.probe_oscillator])
+            self.HPB_probe.select_device(self.device_mapB[self.probe_oscillator])
 
             for i in range(len(freq)):
                 if self.pause_or_stop():
                     break
 
                 self.HPB.set_frequency(WithUnit(freq[i],'MHz'))
-                time.sleep(.5) # time to switch frequencies
-                self.pulser.switch_auto('TTL2',False)
-                self.pulser.start_number(int(self.probe_cycles))
-                self.pulser.wait_sequence_done()
-                self.pulser.stop_sequence()
-                time_tags = self.pulser.get_timetags()
-                self.dv.add(freq[i],len(time_tags))
-                self.pulser.reset_timetags()
-                self.pulser.switch_manual('TTL2',True)
+                counts = 0
+                for j in range(int(self.repeats)):
+                    self.pulser.start_number(int(self.probe_cycles))
+                    self.pulser.wait_sequence_done()
+                    self.pulser.stop_sequence()
+                    time_tags = self.pulser.get_timetags()
+                    frequency = (self.wm.get_frequency(self.wm_p['650nm'][0]) - self.frequency_650['THz'])*1e6 # MHz
+                    counts = counts + len(time_tags)
+                    self.pulser.reset_timetags()
+                self.dv.add(frequency+freq[i],counts)
+
+
 
     def set_init_frequencies(self):
 
@@ -136,16 +150,15 @@ class probe_line_scan(experiment):
         self.set_wm_frequency(self.frequency_650['THz'], self.wm_p['650nm'][5])
         time.sleep(5)
 
-        # Set cooling sideband
-        if self.cooling_oscillator == 'GPIB0::19' or self.cooling_oscillator == 'GPIB0::21':
-            #self.HPA.select_device(self.device_mapA[self.cooling_oscillator])
-            #self.HPA.set_frequency(self.cool_sb)
-            pass
-        else:
-            self.HPB.select_device(self.device_mapB[self.cooling_oscillator])
-            self.HPB.set_frequency(self.cool_sb)
+        # Set cooling and repump oscillators
 
-        self.pulser.switch_manual('TTL2',True)
+        #self.HPA_cool.select_device(self.device_mapA['GPIB0::21'])
+        #self.HPA_cool.set_frequency(self.cool_sb)
+        self.HPB_cool.select_device(self.device_mapB['GPIB::6'])
+        self.HPB_cool.set_frequency(self.repump_sb)
+
+
+
         # time to switch oscillators
         time.sleep(.5)
 
@@ -157,7 +170,7 @@ class probe_line_scan(experiment):
         day   = '%02d' % date.day    # Padded with a zero if one digit
         trunk = year + '_' + month + '_' + day
         self.dv.cd(['',year,month,trunk],True)
-        dataset = self.dv.new('ProbeLineScan',[('Frequency', 'MHz')], [('Counts/sec', 'Counts', 'num')])
+        dataset = self.dv.new('CPTFreeScan',[('Frequency', 'MHz')], [('Counts/sec', 'Counts', 'num')])
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter])
@@ -194,7 +207,7 @@ class probe_line_scan(experiment):
 if __name__ == '__main__':
     cxn = labrad.connect()
     scanner = cxn.scriptscanner
-    exprt = probe_line_scan(cxn = cxn)
+    exprt = cpt_free_scan(cxn = cxn)
     ident = scanner.register_external_launch(exprt.name)
     exprt.execute(ident)
 
