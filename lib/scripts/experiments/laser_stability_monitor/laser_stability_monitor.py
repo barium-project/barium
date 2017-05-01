@@ -1,26 +1,46 @@
 import labrad
-from Qsim.scripts.experiments.qsimexperiment import QsimExperiment
+from twisted.internet.defer import inlineCallbacks, returnValue
+from common.lib.servers.abstractservers.script_scanner.scan_methods import experiment
+
+from config.multiplexerclient_config import multiplexer_config
 import time
 import socket
 import os
+import datetime as datetime
 
 
-class lasermonitor(QsimExperiment):
+class laser_stability_monitor(experiment):
 
     name = 'Laser Monitor'
 
     exp_parameters = []
-    exp_parameters.append(('lasermonitor', 'lasers'))
-    exp_parameters.append(('lasermonitor', 'measuretime'))
+    exp_parameters.append(('LaserMonitor', 'Laser'))
+    exp_parameters.append(('LaserMonitor', 'Measure_Time'))
+
+
+    @classmethod
+    def all_required_parameters(cls):
+        return cls.exp_parameters
+
 
     def initialize(self, cxn, context, ident):
 
         self.ident = ident
-        self.cxnwlm = labrad.connect('10.97.112.2',
+        self.wm_p = multiplexer_config.info
+        self.ip = multiplexer_config.ip
+        self.cxnwlm = labrad.connect(self.ip,
                                      name=socket.gethostname() + " Laser Monitor",
                                      password=os.environ['LABRADPASSWORD'])
+        self.cxn = labrad.connect(name = 'Laser Monitor')
 
         self.wlm = self.cxnwlm.multiplexerserver
+        self.grapher = self.cxn.grapher
+        self.dv = self.cxn.data_vault
+        self.p = self.parameters
+
+        self.set_up_datavault()
+        self.laser = self.p.LaserMonitor.Laser
+        print self.laser
 
     def run(self, cxn, context):
 
@@ -29,20 +49,36 @@ class lasermonitor(QsimExperiment):
         '''
 
         self.inittime = time.time()
-        self.initfreq = self.wlm.get_frequency(int(self.p.lasermonitor.lasers[-1]))
-        self.setup_datavault('Elapsed Time', 'Frequency Deviation')
-        self.setup_grapher('current')
-        while (time.time() - self.inittime) <= self.p.lasermonitor.measuretime['s']:
+        self.initfreq = float(self.wm_p[self.laser][1])
+        while (time.time() - self.inittime) <= self.p.LaserMonitor.Measure_Time['s']:
             should_stop = self.pause_or_stop()
             if should_stop:
                 break
-            freq = self.wlm.get_frequency(int(self.p.lasermonitor.lasers[-1]))
+            freq = self.wlm.get_frequency(self.wm_p[self.laser][0])
             try:
                 self.dv.add(time.time() - self.inittime, 1e6*(self.initfreq - freq))
             except:
                 pass
-            progress = float(time.time() - self.inittime)/self.p.lasermonitor.measuretime['s']
-            self.sc.script_set_progress(self.ident, progress)
+            #progress = float(time.time() - self.inittime)/self.p.LaserMonitor.measuretime['s']
+            #self.sc.script_set_progress(self.ident, progress)
+
+
+    def set_up_datavault(self):
+        # set up folder
+        date = datetime.datetime.now()
+        year  = `date.year`
+        month = '%02d' % date.month  # Padded with a zero if one digit
+        day   = '%02d' % date.day    # Padded with a zero if one digit
+        trunk = year + '_' + month + '_' + day
+        self.dv.cd(['',year,month,trunk],True)
+        dataset = self.dv.new('Laser Monitor',[('Time', 's')], [('Frequency Deviation', 'Frequency', 'MHz')])
+        # add dv params
+        for parameter in self.p:
+            self.dv.add_parameter(parameter, self.p[parameter])
+
+        # Set live plotting
+        self.grapher.plot(dataset, 'Laser Monitor', False)
+
 
     def finalize(self, cxn, context):
         self.cxnwlm.disconnect()
@@ -51,6 +87,6 @@ class lasermonitor(QsimExperiment):
 if __name__ == '__main__':
     cxn = labrad.connect()
     scanner = cxn.scriptscanner
-    exprt = lasermonitor(cxn=cxn)
+    exprt = laser_stability_monitor(cxn=cxn)
     ident = scanner.register_external_launch(exprt.name)
     exprt.execute(ident)

@@ -52,8 +52,9 @@ class cpt_free_scan(experiment):
 
     def initialize(self, cxn, context, ident):
         self.ident = ident
+        self.wm_p = multiplexer_config.info
         self.cxn = labrad.connect(name = 'CPT Free Scan')
-        self.cxnwlm = labrad.connect('10.97.111.8', name = 'CPT Free Scan', password = 'lab')
+        self.cxnwlm = labrad.connect(self.wm_p.ip, name = 'CPT Free Scan', password = 'lab')
 
         self.HPA_cool = self.cxn.hp8672a_server
         self.HPB_cool = self.cxn.hp8657b_server
@@ -87,7 +88,7 @@ class cpt_free_scan(experiment):
         self.repump_oscillator = self.p.CPTFreeScan.Repump_Oscillator
         self.repeats = self.p.CPTFreeScan.Repeats_Per_Point
 
-        self.wm_p = multiplexer_config.info
+
 
         self.set_up_datavault()
         self.set_init_frequencies()
