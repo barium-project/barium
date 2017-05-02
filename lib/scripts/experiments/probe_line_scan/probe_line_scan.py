@@ -54,6 +54,7 @@ class probe_line_scan(experiment):
 
         self.HPA = self.cxn.hp8672a_server
         self.HPB = self.cxn.hp8657b_server
+        self.HP8373 = self.cxn.hp8673server
         self.wm = self.cxnwlm.multiplexerserver
         self.pulser = self.cxn.pulser
         self.grapher = self.cxn.grapher
@@ -95,7 +96,7 @@ class probe_line_scan(experiment):
         pulse_sequence.programSequence(self.pulser)
 
         # Select probe oscillator
-        if self.probe_oscillator == 'GPIB0::19' or self.probe_oscillator == 'GPIB0::21':
+        if self.probe_oscillator == 'GPIB0::19':
             self.HPA.select_device(self.device_mapA[self.probe_oscillator])
 
             for i in range(len(freq)):
@@ -142,14 +143,16 @@ class probe_line_scan(experiment):
         self.set_wm_frequency(self.frequency_650['THz'], self.wm_p['650nm'][5])
         time.sleep(5)
 
+        # only one 8673 so select it
+        self.HP8673.select_device()
         # Set cooling sideband
         if self.cooling_oscillator == '493nm':
-            #self.HPA.select_device(self.device_mapA[self.cooling_oscillator])
-            #self.HPA.set_frequency(self.cool_sb)
-            pass
+            self.HP8673.set_frequency(self.cool_sb)
+            self.HP8673.rf_state(True)
         else:
-            self.HPB.select_device(self.device_mapB[self.cooling_oscillator])
+            self.HPB.select_device(self.device_mapB['GPIB0::8'])
             self.HPB.set_frequency(self.cool_sb)
+            self.HPB.rf_state(True)
 
         # time to switch oscillators
         time.sleep(.5)
