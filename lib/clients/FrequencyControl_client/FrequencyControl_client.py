@@ -97,13 +97,13 @@ class FrequencyControlClient(Frequency_Ui):
 
         self.hp8672a_19 = self.cxn19.hp8672a_server
 
-        self.cxn21 = yield connectAsync(self.serverIP,
+        self.cxn1 = yield connectAsync(self.serverIP,
                                       name=self.name,
                                       password=self.password)
 
-        self.hp8672a_21 = self.cxn21.hp8672a_server
+        self.hp8673 = self.cxn1.hp8673server
 
-        self.clients_hpa = [self.hp8672a_19, self.hp8672a_21]
+        self.clients_hpa = [self.hp8672a_19]
         self.clients_hpb = [self.hp8657b_6, self.hp8657b_7, self.hp8657b_8]
 
         self.connectHPGUI()
@@ -131,7 +131,7 @@ class FrequencyControlClient(Frequency_Ui):
                     self.clients_hpb[i].select_device(devices[j][1])
                     break
 
-
+        self.hp8673.select_device()
 
         # set up hp8672a oscillators
         self.GPIB19spinFreq.valueChanged.connect(lambda freq = \
@@ -143,19 +143,18 @@ class FrequencyControlClient(Frequency_Ui):
 
         self.GPIB19spinAmpVer.valueChanged.connect(lambda : self.ampChangedHPA19(self.clients_hpa[0]))
 
-
-        self.GPIB21spinFreq.valueChanged.connect(lambda freq = \
-                self.GPIB21spinFreq.value(), client = self.clients_hpa[1] : self.freqChangedHPA(freq, client))
-
-        self.GPIB21spinAmpDec.valueChanged.connect(lambda : self.ampChangedHPA21(self.clients_hpa[1]))
-
-        self.GPIB21spinAmpVer.valueChanged.connect(lambda : self.ampChangedHPA21(self.clients_hpa[1]))
-
         self.GPIB19switch.clicked.connect(lambda state = self.GPIB19switch.isChecked(), \
                 client = self.clients_hpa[0] : self.setRFHPA(client, state))
 
-        self.GPIB21switch.clicked.connect(lambda state = self.GPIB21switch.isChecked(), \
-                client = self.clients_hpa[1] : self.setRFHPA(client, state))
+
+        self.GPIB1spinFreq.valueChanged.connect(lambda freq = \
+                self.GPIB1spinFreq.value() : self.freqChangedHP8673(freq))
+
+        self.GPIB1spinAmp.valueChanged.connect(lambda amp = self.GPIB1spinAmp.value() \
+                                               : self.ampChangedHP8673(amp))
+
+        self.GPIB1switch.clicked.connect(lambda state = self.GPIB1switch.isChecked(), \
+                                         : self.setRFHP8673(state))
 
 
         # set up hp8672b oscillators
@@ -213,11 +212,10 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB19switch.setChecked(False)
         self.setRFHPA(self.clients_hpa[0],False)
 
-        self.GPIB21spinFreq.setValue(self.default['GPIB0::21'][0])
-        self.GPIB21spinAmpDec.setValue(self.default['GPIB0::21'][1])
-        self.GPIB21spinAmpVer.setValue(self.default['GPIB0::21'][2])
-        self.GPIB21switch.setChecked(False)
-        self.setRFHPA(self.clients_hpa[1],False)
+        self.GPIB1spinFreq.setValue(self.default['GPIB0::1'][0])
+        self.GPIB1spinAmp.setValue(self.default['GPIB0::1'][1])
+        self.GPIB1switch.setChecked(False)
+        self.setRFHP8673(False)
 
         self.GPIB6spinFreq.setValue(self.default['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.default['GPIB0::6'][1])
@@ -250,11 +248,10 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB19switch.setChecked(False)
         self.setRFHPA(self.clients_hpa[0],False)
 
-        self.GPIB21spinFreq.setValue(self.cool_130['GPIB0::21'][0])
-        self.GPIB21spinAmpDec.setValue(self.cool_130['GPIB0::21'][1])
-        self.GPIB21spinAmpVer.setValue(self.cool_130['GPIB0::21'][2])
-        self.GPIB21switch.setChecked(False)
-        self.setRFHPA(self.clients_hpa[1],False)
+        self.GPIB1spinFreq.setValue(self.cool_130['GPIB0::1'][0])
+        self.GPIB1spinAmp.setValue(self.cool_130['GPIB0::1'][1])
+        self.GPIB1switch.setChecked(False)
+        self.setRFHP8673(False)
 
         self.GPIB6spinFreq.setValue(self.cool_130['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_130['GPIB0::6'][1])
@@ -289,11 +286,10 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB19switch.setChecked(False)
         self.setRFHPA(self.clients_hpa[0],False)
 
-        self.GPIB21spinFreq.setValue(self.cool_132['GPIB0::21'][0])
-        self.GPIB21spinAmpDec.setValue(self.cool_132['GPIB0::21'][1])
-        self.GPIB21spinAmpVer.setValue(self.cool_132['GPIB0::21'][2])
-        self.GPIB21switch.setChecked(False)
-        self.setRFHPA(self.clients_hpa[1],False)
+        self.GPIB1spinFreq.setValue(self.cool_132['GPIB0::1'][0])
+        self.GPIB1spinAmp.setValue(self.cool_132['GPIB0::1'][1])
+        self.GPIB1switch.setChecked(False)
+        self.setRFHP8673(False)
 
         self.GPIB6spinFreq.setValue(self.cool_132['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_132['GPIB0::6'][1])
@@ -327,11 +323,10 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB19switch.setChecked(True)
         self.setRFHPA(self.clients_hpa[0],True)
 
-        self.GPIB21spinFreq.setValue(self.cool_133['GPIB0::21'][0])
-        self.GPIB21spinAmpDec.setValue(self.cool_133['GPIB0::21'][1])
-        self.GPIB21spinAmpVer.setValue(self.cool_133['GPIB0::21'][2])
-        self.GPIB21switch.setChecked(True)
-        self.setRFHPA(self.clients_hpa[1],True)
+        self.GPIB1spinFreq.setValue(self.cool_133['GPIB0::1'][0])
+        self.GPIB1spinAmp.setValue(self.cool_133['GPIB0::1'][1])
+        self.GPIB1switch.setChecked(True)
+        self.setRFHP8673(True)
 
         self.GPIB6spinFreq.setValue(self.cool_133['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_133['GPIB0::6'][1])
@@ -364,11 +359,10 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB19switch.setChecked(False)
         self.setRFHPA(self.clients_hpa[0],False)
 
-        self.GPIB21spinFreq.setValue(self.cool_134['GPIB0::21'][0])
-        self.GPIB21spinAmpDec.setValue(self.cool_134['GPIB0::21'][1])
-        self.GPIB21spinAmpVer.setValue(self.cool_134['GPIB0::21'][2])
-        self.GPIB21switch.setChecked(False)
-        self.setRFHPA(self.clients_hpa[1],False)
+        self.GPIB1spinFreq.setValue(self.cool_134['GPIB0::1'][0])
+        self.GPIB1spinAmp.setValue(self.cool_134['GPIB0::1'][1])
+        self.GPIB1switch.setChecked(False)
+        self.setRFHP8673(False)
 
         self.GPIB6spinFreq.setValue(self.cool_134['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_134['GPIB0::6'][1])
@@ -402,11 +396,10 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB19switch.setChecked(True)
         self.setRFHPA(self.clients_hpa[0],True)
 
-        self.GPIB21spinFreq.setValue(self.cool_135['GPIB0::21'][0])
-        self.GPIB21spinAmpDec.setValue(self.cool_135['GPIB0::21'][1])
-        self.GPIB21spinAmpVer.setValue(self.cool_135['GPIB0::21'][2])
-        self.GPIB21switch.setChecked(True)
-        self.setRFHPA(self.clients_hpa[1],True)
+        self.GPIB1spinFreq.setValue(self.cool_135['GPIB0::1'][0])
+        self.GPIB1spinAmp.setValue(self.cool_135['GPIB0::1'][1])
+        self.GPIB1switch.setChecked(True)
+        self.setRFHP8673(True)
 
         self.GPIB6spinFreq.setValue(self.cool_135['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_135['GPIB0::6'][1])
@@ -440,11 +433,10 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB19switch.setChecked(False)
         self.setRFHPA(self.clients_hpa[0],False)
 
-        self.GPIB21spinFreq.setValue(self.cool_136['GPIB0::21'][0])
-        self.GPIB21spinAmpDec.setValue(self.cool_136['GPIB0::21'][1])
-        self.GPIB21spinAmpVer.setValue(self.cool_136['GPIB0::21'][2])
-        self.GPIB21switch.setChecked(False)
-        self.setRFHPA(self.clients_hpa[1],False)
+        self.GPIB1spinFreq.setValue(self.cool_136['GPIB0::1'][0])
+        self.GPIB1spinAmp.setValue(self.cool_136['GPIB0::1'][1])
+        self.GPIB1switch.setChecked(False)
+        self.setRFHP8673(False)
 
         self.GPIB6spinFreq.setValue(self.cool_136['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_136['GPIB0::6'][1])
@@ -477,11 +469,10 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB19switch.setChecked(True)
         self.setRFHPA(self.clients_hpa[0],True)
 
-        self.GPIB21spinFreq.setValue(self.cool_137['GPIB0::21'][0])
-        self.GPIB21spinAmpDec.setValue(self.cool_137['GPIB0::21'][1])
-        self.GPIB21spinAmpVer.setValue(self.cool_137['GPIB0::21'][2])
-        self.GPIB21switch.setChecked(True)
-        self.setRFHPA(self.clients_hpa[1],True)
+        self.GPIB1spinFreq.setValue(self.cool_137['GPIB0::1'][0])
+        self.GPIB1spinAmp.setValue(self.cool_137['GPIB0::1'][1])
+        self.GPIB1switch.setChecked(True)
+        self.setRFHP8673(True)
 
         self.GPIB6spinFreq.setValue(self.cool_137['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_137['GPIB0::6'][1])
@@ -510,11 +501,10 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB19switch.setChecked(False)
         self.setRFHPA(self.clients_hpa[0],False)
 
-        self.GPIB21spinFreq.setValue(self.cool_138['GPIB0::21'][0])
-        self.GPIB21spinAmpDec.setValue(self.cool_138['GPIB0::21'][1])
-        self.GPIB21spinAmpVer.setValue(self.cool_138['GPIB0::21'][2])
-        self.GPIB21switch.setChecked(False)
-        self.setRFHPA(self.clients_hpa[1],False)
+        self.GPIB1spinFreq.setValue(self.cool_138['GPIB0::1'][0])
+        self.GPIB1spinAmp.setValue(self.cool_138['GPIB0::1'][1])
+        self.GPIB1switch.setChecked(False)
+        self.setRFHP8673(False)
 
         self.GPIB6spinFreq.setValue(self.cool_138['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_138['GPIB0::6'][1])
@@ -535,8 +525,8 @@ class FrequencyControlClient(Frequency_Ui):
     def all_off(self):
         self.GPIB19switch.setChecked(False)
         self.setRFHPA(self.clients_hpa[0],False)
-        self.GPIB21switch.setChecked(False)
-        self.setRFHPA(self.clients_hpa[1],False)
+        self.GPIB1switch.setChecked(False)
+        self.setRFHP8673(False)
         self.GPIB6switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[0],False)
         self.GPIB7switch.setChecked(False)
@@ -552,6 +542,12 @@ class FrequencyControlClient(Frequency_Ui):
         yield client.set_frequency(frequency)
 
     @inlineCallbacks
+    def freqChangedHP8673(self, freq):
+        from labrad.units import WithUnit as U
+        frequency = U(freq,'MHz')
+        yield self.hp8673.set_frequency(frequency)
+
+    @inlineCallbacks
     def ampChangedHPA19(self, client):
         from labrad.units import WithUnit as U
         output = self.GPIB19spinAmpDec.value()
@@ -561,18 +557,18 @@ class FrequencyControlClient(Frequency_Ui):
         yield client.set_amplitude(out,ver)
 
     @inlineCallbacks
-    def ampChangedHPA21(self, client):
+    def ampChangedHP8673(self, amp):
         from labrad.units import WithUnit as U
-        output = self.GPIB21spinAmpDec.value()
-        vernier = self.GPIB21spinAmpVer.value()
-        out = U(output,'dBm')
-        ver = U(vernier,'dBm')
-        yield client.set_amplitude(out,ver)
+        out = U(amp,'dBm')
+        yield self.hp8673.set_amplitude(out)
 
     @inlineCallbacks
     def setRFHPA(self, client, state):
         yield client.rf_state(state)
 
+    @inlineCallbacks
+    def setRFHP8673(self, state):
+        yield self.hp8673.rf_state(state)
 
     #hp8657b
     @inlineCallbacks

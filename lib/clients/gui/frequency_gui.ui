@@ -69,7 +69,7 @@
     <item row="2" column="0">
      <widget class="QLabel" name="label_3">
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:18pt;&quot;&gt;493-GPIB 21&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:18pt;&quot;&gt;493-GPIB 1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
      </widget>
     </item>
@@ -108,7 +108,7 @@
      </widget>
     </item>
     <item row="2" column="1">
-     <widget class="QDoubleSpinBox" name="GPIB21spinFreq">
+     <widget class="QDoubleSpinBox" name="GPIB1spinFreq">
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -164,39 +164,6 @@
       </property>
       <property name="singleStep">
        <double>0.100000000000000</double>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="3">
-     <widget class="QDoubleSpinBox" name="GPIB21spinAmpDec">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
-      </property>
-      <property name="decimals">
-       <number>0</number>
-      </property>
-      <property name="minimum">
-       <double>-110.000000000000000</double>
-      </property>
-      <property name="maximum">
-       <double>0.000000000000000</double>
-      </property>
-      <property name="singleStep">
-       <double>10.000000000000000</double>
-      </property>
-      <property name="value">
-       <double>-110.000000000000000</double>
       </property>
      </widget>
     </item>
@@ -286,7 +253,7 @@
        <bool>false</bool>
       </property>
       <property name="decimals">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="minimum">
        <double>-143.000000000000000</double>
@@ -367,7 +334,7 @@
        <bool>false</bool>
       </property>
       <property name="decimals">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="minimum">
        <double>-143.000000000000000</double>
@@ -381,7 +348,7 @@
      </widget>
     </item>
     <item row="2" column="5">
-     <widget class="QPushButton" name="GPIB21switch">
+     <widget class="QPushButton" name="GPIB1switch">
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -405,36 +372,6 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="4">
-     <widget class="QDoubleSpinBox" name="GPIB21spinAmpVer">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="keyboardTracking">
-       <bool>false</bool>
-      </property>
-      <property name="decimals">
-       <number>0</number>
-      </property>
-      <property name="minimum">
-       <double>-10.000000000000000</double>
-      </property>
-      <property name="maximum">
-       <double>3.000000000000000</double>
-      </property>
-      <property name="value">
-       <double>-10.000000000000000</double>
-      </property>
-     </widget>
-    </item>
     <item row="3" column="2">
      <widget class="QDoubleSpinBox" name="GPIB6spinAmp">
       <property name="minimumSize">
@@ -452,7 +389,7 @@
        <bool>false</bool>
       </property>
       <property name="decimals">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="minimum">
        <double>-143.000000000000000</double>
@@ -714,6 +651,36 @@
       </property>
       <property name="checkable">
        <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="2">
+     <widget class="QDoubleSpinBox" name="GPIB1spinAmp">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="keyboardTracking">
+       <bool>false</bool>
+      </property>
+      <property name="decimals">
+       <number>1</number>
+      </property>
+      <property name="minimum">
+       <double>-143.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>13.000000000000000</double>
+      </property>
+      <property name="value">
+       <double>-143.000000000000000</double>
       </property>
      </widget>
     </item>

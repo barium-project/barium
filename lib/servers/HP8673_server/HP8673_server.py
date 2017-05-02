@@ -54,15 +54,16 @@ class HP8673_Server(GPIBManagedServer):
     will map any devices that do not respond to *IDN? to this generic device name.
     """
     name = 'HP8673Server'
-    deviceName = 'Generic GPIB Device'
+    deviceName = 'FR00000000000HZ'
     deviceIdentFunc = 'identify_device'
+    deviceManager = 'GPIB Device Manager'
     deviceWrapper = HP8673Wrapper
 
     def __init__(self):
         super(HP8673_Server, self).__init__()
 
-    @setting(100, server='s', address='s')
-    def identify_device(self, c, server, address):
+    @setting(100, server='s', address='s', response = 's')
+    def identify_device(self, c, server, address, response):
         """
         Since the HP8673 does not have talk capability, it does not respond to *IDN? requests.
         Therefore, I've set the deviceName to 'Generic GPIB Device' to allow the HP8673 to be seen
@@ -76,7 +77,7 @@ class HP8673_Server(GPIBManagedServer):
 
     # HP8673 Settings
     @setting(201, amplitude='v[dBm]')
-    def set_amplitude(self, c, range, vernier):
+    def set_amplitude(self, c, amplitude):
         """Sets the amplitude output range and vernier in units of dBm.
         Must be between [-100, +13] dBm
         """
@@ -87,7 +88,7 @@ class HP8673_Server(GPIBManagedServer):
             print 'Error: amplitude must be between -100 and 13.'
         else:
             dev = self.selectedDevice(c)
-            yield dev.write("AP-"+str(amp)+"DM\r\n")
+            yield dev.write("AP"+str(amp)+"DM\r\n")
 
 
     @setting(205, value='v[GHz]')
@@ -103,7 +104,7 @@ class HP8673_Server(GPIBManagedServer):
             value = value['MHz']
             #value = int(value*1e8)/1.e8
             #value = '%.8f' % value
-            yield dev.write("FR"+value+"MZ\r\n")
+            yield dev.write("FR"+str(value)+"MZ\r\n")
 
 
     @setting(224, value='b')
