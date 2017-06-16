@@ -54,7 +54,7 @@ class probe_line_scan(experiment):
 
         self.HPA = self.cxn.hp8672a_server
         self.HPB = self.cxn.hp8657b_server
-        self.HP8373 = self.cxn.hp8673server
+        self.HP8673 = self.cxn.hp8673server
         self.wm = self.cxnwlm.multiplexerserver
         self.pulser = self.cxn.pulser
         self.grapher = self.cxn.grapher

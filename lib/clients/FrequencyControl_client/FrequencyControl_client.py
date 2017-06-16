@@ -200,7 +200,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.allOff.clicked.connect(lambda: self.all_off())
 
 
-        self.setDefault()
+        #self.setDefault()
 
 
     def setDefault(self):
@@ -340,8 +340,8 @@ class FrequencyControlClient(Frequency_Ui):
 
         self.GPIB8spinFreq.setValue(self.cool_133['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_133['GPIB0::8'][1])
-        self.GPIB8switch.setChecked(False)
-        self.setRFHPB(self.clients_hpb[2],False)
+        self.GPIB8switch.setChecked(True)
+        self.setRFHPB(self.clients_hpb[2],True)
 
     @inlineCallbacks
     def cool_ba134(self):
