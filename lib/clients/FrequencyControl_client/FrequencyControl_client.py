@@ -335,8 +335,8 @@ class FrequencyControlClient(Frequency_Ui):
 
         self.GPIB7spinFreq.setValue(self.cool_133['GPIB0::7'][0])
         self.GPIB7spinAmp.setValue(self.cool_133['GPIB0::7'][1])
-        self.GPIB7switch.setChecked(False)
-        self.setRFHPB(self.clients_hpb[1],False)
+        self.GPIB7switch.setChecked(True)
+        self.setRFHPB(self.clients_hpb[1],True)
 
         self.GPIB8spinFreq.setValue(self.cool_133['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_133['GPIB0::8'][1])

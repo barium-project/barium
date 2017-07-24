@@ -31,7 +31,7 @@ voltage_convergence = .003
 voltage_guess = 0
 
 
-start_phase = 37.2
+start_phase = 36.9
 phase_step = .1
 max_phase_itt = 25
 phase_convergence = .003
@@ -72,12 +72,12 @@ for i in range(int(total_v_points)):
             phase3 = fit3[0][1]
             offset3 = fit3[0][2]
 
-            dat = sin_wave(time_array,amplitude3,phase3,offset3)
+            dat = sin_wave(time_array,amplitude2,phase2,offset2)
 
-            # Use to check fit
-            #plot(time_array,ch1)
+            #Use to check fit
+            #plot(time_array,ch2)
             #plot(time_array,dat)
-            #show()
+            show()
 
             print amplitude2, phase2, offset2
             print amplitude3, phase3, offset3
