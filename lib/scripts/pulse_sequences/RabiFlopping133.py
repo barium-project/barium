@@ -42,20 +42,16 @@ class rabi_flopping(pulse_sequence):
         self.addDDS(self.channel, self.start,  self.cool_time + self.prep_time , self.freq, self.amp)
         # First Doppler cool which is doing nothing
         # Next optically pump by turning off 5.8GHz and 1.84GHz on
-        self.addTTL(self.ttl_493, self.start + self.cool_time, self.prep_time + self.microwave_time + self.sd_time + 2*self.switch_time)
+        self.addTTL(self.ttl_493, self.start + self.cool_time, self.prep_time + self.switch_time + self.microwave_time + self.switch_time + self.sd_time)
         self.addTTL(self.ttl_prep, self.start + self.cool_time, self.prep_time)
         # Next apply microwaves and turn off everything else
-        self.addTTL(self.ttl_650, self.start + self.cool_time + self.prep_time, self.sd_time + self.microwave_time + 2*self.switch_time)
-        # Add a small delay so DDS and ttl can turn off
-        self.start += self.switch_time
-        self.addTTL(self.ttl_microwave, self.start + self.cool_time + self.prep_time , self.microwave_time)
-
-
+        # DDS will turn off from above setting
+        self.addTTL(self.ttl_650, self.start + self.cool_time + self.prep_time, self.switch_time + self.microwave_time + self.switch_time + self.sd_time)
+        self.addTTL(self.ttl_microwave, self.start + self.cool_time + self.prep_time + self.switch_time , self.microwave_time)
         # Turn the dds back on for state detection
-        self.addDDS(self.channel, self.start + self.cool_time + self.prep_time + self.microwave_time,  self.sd_time + self.switch_time , self.freq, self.amp)
-        # Add the delay back so the time tag photons line up
-        self.start += self.switch_time
-        self.addTTL('ReadoutCount', self.start + self.cool_time + self.prep_time + self.microwave_time, self.sd_time)
+        self.addDDS(self.channel, self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time, self.switch_time + self.sd_time, self.freq, self.amp)
+        # Turn on photon counting for state detection
+        self.addTTL('ReadoutCount', self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time, self.switch_time + self.sd_time)
 
 
 
