@@ -36,7 +36,7 @@ class BARIUM_GUI(QtGui.QMainWindow):
         self.tabWidget.addTab(script_scanner, '&Script Scanner')
         self.tabWidget.addTab(control, '&Trap Control')
         self.tabWidget.addTab(frequency, '&Oscillators')
-        self.tabWidget.addTab(switch, '&PMT')
+        self.tabWidget.addTab(switch, '&Switches')
 
         layout.addWidget(self.tabWidget)
         centralWidget.setLayout(layout)
