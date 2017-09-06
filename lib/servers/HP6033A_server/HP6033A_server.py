@@ -16,7 +16,7 @@
 """
 ### BEGIN NODE INFO
 [info]
-name = HP6033A Server
+name = HP6033A_Server
 version = 1.3
 description =
 
@@ -53,7 +53,7 @@ class HP6033A_Server(GPIBManagedServer):
          1) Press and hold the LCL button until the secondary address is displayed.
          2) Turn the RPG while the secondary address is being displayed to change the secondary address.
     '''
-    name = 'HP6033A Server'
+    name = 'HP6033A_Server'
     deviceName = 'HEWLETT-PACKARD 6033A'
 
     currsignal = Signal(CURRSIGNAL, 'signal: current changed', 'v[A]')

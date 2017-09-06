@@ -191,7 +191,7 @@ class readout_histogram(QtGui.QWidget):
     def reinitialize_data_vault(self):
         self.setDisabled(False)
         server = yield self.cxn.get_server('DataVault')
-        yield server.signal__new_parameter_dataset(config_hist.ID_A, context = self.context)
+        yield server.signal__new_dataset(config_hist.ID_A, context = self.context)
         if not self.subscribed[0]:
             yield server.addListener(listener = self.on_new_dataset, source = None, ID = config_hist.ID_A, context = self.context)
             self.subscribed[0] = True
@@ -221,6 +221,7 @@ class readout_histogram(QtGui.QWidget):
 
     @inlineCallbacks
     def on_new_dataset(self, x, y):
+    	print x,y
         if y[3] in config_hist.dv_parameter:
             dv = yield self.cxn.get_server('Data Vault')
             dataset = y[0]

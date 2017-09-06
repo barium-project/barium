@@ -30,7 +30,7 @@ class rabi_flopping(experiment):
     def initialize(self, cxn, context, ident):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Rabi Flopping')
-        self.cxnwlm = labrad.connect('10.97.111.8', name = 'Rabi Flopping', password = 'lab')
+        self.cxnwlm = labrad.connect(multiplexer_config.ip, name = 'Rabi Flopping', password = 'lab')
 
 
         self.wm = self.cxnwlm.multiplexerserver
@@ -48,6 +48,10 @@ class rabi_flopping(experiment):
         self.step_time = self.p.RabiFlopping133.Time_Step
         self.freq = self.p.RabiFlopping133.microwave_frequency
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+
+        # Define contexts for saving data sets
+        self.c_prob = self.cxn.context()
+        self.c_hist = self.cxn.context()
 
         # Need to map the gpib address to the labrad conection
         self.device_mapA = {}
@@ -81,7 +85,9 @@ class rabi_flopping(experiment):
             self.pulser.reset_readout_counts()
             bright = np.where(counts >= self.disc)
             fid = float(len(bright[0]))/len(counts)
-            self.dv.add(t[i] , fid)
+            self.dv.add(t[i] , fid, context = self.c_prob)
+            data = np.column_stack((np.arange(self.cycles),counts))
+            self.dv.add(data, context = self.c_hist)
 
     def set_up_datavault(self):
         # set up folder
@@ -90,11 +96,19 @@ class rabi_flopping(experiment):
         month = '%02d' % date.month  # Padded with a zero if one digit
         day   = '%02d' % date.day    # Padded with a zero if one digit
         trunk = year + '_' + month + '_' + day
-        self.dv.cd(['',year,month,trunk],True)
-        dataset = self.dv.new('RabiFlopping',[('run', 'arb u')], [('Counts', 'Counts', 'num')])
+
+        # Define data sets for probability and the associated histograms
+        self.dv.cd(['',year,month,trunk],True, context = self.c_prob)
+        dataset = self.dv.new('RabiFlopping_prob',[('run', 'arb u')], [('Counts', 'Counts', 'num')], context = self.c_prob)
         # add dv params
         for parameter in self.p:
-            self.dv.add_parameter(parameter, self.p[parameter])
+            self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
+
+        self.dv.cd(['',year,month,trunk],True, context = self.c_hist)
+        dataset1 = self.dv.new('RabiFlopping_hist',[('run', 'arb u')], [('Counts', 'Counts', 'num')], context = self.c_hist)
+        # add dv params
+        for parameter in self.p:
+            self.dv.add_parameter(parameter, self.p[parameter], context = self.c_hist)
 
         # Set live plotting
         self.grapher.plot(dataset, 'rabi_flopping', False)

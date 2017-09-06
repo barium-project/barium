@@ -1,30 +1,32 @@
 from common.lib.servers.Pulser2.pulse_sequences.pulse_sequence import pulse_sequence
 from labrad.units import WithUnit
 
-class rabi_flopping(pulse_sequence):
+class ramsey(pulse_sequence):
 
-    required_parameters = [('RabiFlopping133', 'dds_channel'),
-                           ('RabiFlopping133', 'dds_frequency'),
-                           ('RabiFlopping133', 'dds_amplitude'),
-                           ('RabiFlopping133', 'doppler_cooling_duration'),
-                           ('RabiFlopping133', 'state_prep_duration'),
-                           ('RabiFlopping133', 'state_detection_duration'),
-                           ('RabiFlopping133', 'microwave_frequency'),
-                           ('RabiFlopping133', 'microwave_duration'),
-                           ('RabiFlopping133', 'TTL_493'),
-                           ('RabiFlopping133', 'TTL_650'),
-                           ('RabiFlopping133', 'TTL_prep'),
-                           ('RabiFlopping133', 'TTL_microwaves'),
-                           ('RabiFlopping133', 'Sequences_Per_Point'),
-                           ('RabiFlopping133', 'Start_Time'),
-                           ('RabiFlopping133', 'Stop_Time'),
-                           ('RabiFlopping133', 'Time_Step'),
-                           ('RabiFlopping133', 'Ramsey_Delay'),
+    required_parameters = [('Ramsey133', 'dds_channel'),
+                           ('Ramsey133', 'dds_frequency'),
+                           ('Ramsey133', 'dds_amplitude'),
+                           ('Ramsey133', 'doppler_cooling_duration'),
+                           ('Ramsey133', 'state_prep_duration'),
+                           ('Ramsey133', 'state_detection_duration'),
+                           ('Ramsey133', 'microwave_frequency'),
+                           ('Ramsey133', 'microwave_duration'),
+                           ('Ramsey133', 'TTL_493'),
+                           ('Ramsey133', 'TTL_650'),
+                           ('Ramsey133', 'TTL_prep'),
+                           ('Ramsey133', 'TTL_microwaves'),
+                           ('Ramsey133', 'Sequences_Per_Point'),
+                           ('Ramsey133', 'Start_Time'),
+                           ('Ramsey133', 'Stop_Time'),
+                           ('Ramsey133', 'Time_Step'),
+                           # Ramsey Delay is the parameter that's changed and passed to the pulser for each
+                           # pulse sequence.
+                           ('Ramsey133', 'Ramsey_Delay'),
                            ]
 
     def sequence(self):
         self.start = WithUnit(10.0,'us')
-        self.p = self.parameters.RabiFlopping133
+        self.p = self.parameters.Ramsey133
 
         self.channel = self.p.dds_channel
         self.freq = self.p.dds_frequency
@@ -41,30 +43,29 @@ class rabi_flopping(pulse_sequence):
         self.switch_time = WithUnit(500,'ns')
         self.ramsey_delay = self.p.Ramsey_Delay
 
+        # Turn on the 493
         self.addDDS(self.channel, self.start,  self.cool_time + self.prep_time , self.freq, self.amp)
         # First Doppler cool which is doing nothing
         # Next optically pump by turning off 5.8GHz and 1.84GHz on
-        self.addTTL(self.ttl_493, self.start + self.cool_time, self.prep_time + 2*self.microwave_time + self.sd_time + 2*self.switch_time + self.ramsey_delay)
+        self.addTTL(self.ttl_493, self.start + self.cool_time, self.prep_time + self.switch_time + self.microwave_time + self.ramsey_delay + \
+                     self.microwave_time  + self.switch_time + self.sd_time)
         self.addTTL(self.ttl_prep, self.start + self.cool_time, self.prep_time)
         # Next apply microwaves and turn off everything else
-        self.addTTL(self.ttl_650, self.start + self.cool_time + self.prep_time, self.sd_time + 2*self.microwave_time + 2*self.switch_time + self.ramsey_delay)
-        # Add a small delay so DDS and ttl can turn off
-        self.start += self.switch_time
-        self.addTTL(self.ttl_microwave, self.start + self.cool_time + self.prep_time , self.microwave_time)
+        self.addTTL(self.ttl_650, self.start + self.cool_time + self.prep_time, self.switch_time + self.microwave_time + self.ramsey_delay + \
+                    self.microwave_time + self.switch_time  + self.sd_time)
+        self.addTTL(self.ttl_microwave, self.start + self.cool_time + self.prep_time + self.switch_time , self.microwave_time)
 
-        '''
-        Adding code for a ramsey scan
-        '''
         # Wait for the ramsey delay time
         # Do another microwave pulse
-        self.addTTL(self.ttl_microwave, self.start + self.cool_time + self.prep_time + self.microwave_time + self.ramsey_delay , self.microwave_time)
+        self.addTTL(self.ttl_microwave, self.start + self.cool_time + self.prep_time + self.microwave_time + self.switch_time + self.ramsey_delay , self.microwave_time)
 
 
         # Turn the dds back on for state detection
-        self.addDDS(self.channel, self.start + self.cool_time + self.prep_time + 2*self.microwave_time + self.ramsey_delay,  self.sd_time + self.switch_time , self.freq, self.amp)
-        # Add the delay back so the time tag photons line up
-        self.start += self.switch_time
-        self.addTTL('ReadoutCount', self.start + self.cool_time + self.prep_time + 2*self.microwave_time + self.ramsey_delay, self.sd_time)
+        self.addDDS(self.channel, self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time + self.ramsey_delay + \
+                    + self.microwave_time, self.switch_time + self.sd_time , self.freq, self.amp)
+
+        self.addTTL('ReadoutCount', self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time + self.ramsey_delay + \
+                    + self.microwave_time, self.switch_time + self.sd_time)
 
 
 

@@ -65,7 +65,7 @@ class TrapControlClient(QtGui.QWidget):
                                       password=self.password)
 
         self.tof = yield self.cxn.tof_server
-        self.server = yield self.cxn.trap_server
+        self.server = yield self.cxn.trapserver
 
         self.initializeGUI()
 

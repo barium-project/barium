@@ -2,7 +2,7 @@ import labrad
 from twisted.internet.defer import inlineCallbacks, returnValue
 
 from common.lib.servers.abstractservers.script_scanner.scan_methods import experiment
-from barium.lib.scripts.pulse_sequences.MicrowaveSweep133 import microwave_sweep as main_sequence
+from barium.lib.scripts.pulse_sequences.Ramsey133 import ramsey as main_sequence
 
 from config.FrequencyControl_config import FrequencyControl_config
 from config.multiplexerclient_config import multiplexer_config
@@ -13,9 +13,9 @@ import numpy as np
 import datetime as datetime
 
 
-class microwave_sweep(experiment):
+class ramsey(experiment):
 
-    name = 'Microwave Sweep'
+    name = 'Ramsey'
 
     exp_parameters = []
 
@@ -29,8 +29,8 @@ class microwave_sweep(experiment):
 
     def initialize(self, cxn, context, ident):
         self.ident = ident
-        self.cxn = labrad.connect(name = 'Microwave Sweep')
-        self.cxnwlm = labrad.connect(multiplexer_config.ip, name = 'Microwave Sweep', password = 'lab')
+        self.cxn = labrad.connect(name = 'Ramsey')
+        self.cxnwlm = labrad.connect(multiplexer_config.ip, name = 'Ramsey', password = 'lab')
 
 
         self.wm = self.cxnwlm.multiplexerserver
@@ -42,15 +42,16 @@ class microwave_sweep(experiment):
 
         # Define variables to be used
         self.p = self.parameters
-        self.cycles = self.p.MicrowaveSweep133.Sequences_Per_Point
-        self.start_frequency = self.p.MicrowaveSweep133.Start_Frequency
-        self.stop_frequency = self.p.MicrowaveSweep133.Stop_Frequency
-        self.step_frequency = self.p.MicrowaveSweep133.Frequency_Step
+        self.cycles = self.p.Ramsey133.Sequences_Per_Point
+        self.start_time = self.p.Ramsey133.Start_Time
+        self.stop_time = self.p.Ramsey133.Stop_Time
+        self.step_time = self.p.Ramsey133.Time_Step
+        self.freq = self.p.Ramsey133.microwave_frequency
+        self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
 
-        # Get contexts for saving the data sets
+        # Define contexts for saving different data sets
         self.c_prob = self.cxn.context()
         self.c_hist = self.cxn.context()
-
         # Need to map the gpib address to the labrad conection
         self.device_mapA = {}
         self.device_mapB = {}
@@ -61,21 +62,21 @@ class microwave_sweep(experiment):
 
     def run(self, cxn, context):
 
-        freq = np.linspace(self.start_frequency['MHz'],self.stop_frequency['MHz'],\
-                    int((abs(self.stop_frequency['MHz']-self.start_frequency['MHz'])/self.step_frequency['MHz']) +1))
+        t = np.linspace(self.start_time['us'],self.stop_time['us'],\
+                    int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
 
-        # program sequence to be repeated
-        pulse_sequence = main_sequence(self.p)
-        pulse_sequence.programSequence(self.pulser)
+        self.HPA.set_frequency(self.freq)
+        time.sleep(.3) # time to switch frequencies
 
-        for i in range(len(freq)):
+
+        for i in range(len(t)):
             if self.pause_or_stop():
                 break
-            print "started"
+            # set the microwave duration
+            self.p.Ramsey133.Ramsey_Delay = WithUnit(t[i],'us')
             self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-            self.HPA.set_frequency(WithUnit(freq[i],'MHz'))
-            time.sleep(.3) # time to switch frequencies
-            counts = 0
+            pulse_sequence = main_sequence(self.p)
+            pulse_sequence.programSequence(self.pulser)
             self.pulser.start_number(int(self.cycles))
             self.pulser.wait_sequence_done()
             self.pulser.stop_sequence()
@@ -83,7 +84,7 @@ class microwave_sweep(experiment):
             self.pulser.reset_readout_counts()
             bright = np.where(counts >= self.disc)
             fid = float(len(bright[0]))/len(counts)
-            self.dv.add(freq[i] , fid, context = self.c_prob)
+            self.dv.add(t[i] , fid, context = self.c_prob)
             data = np.column_stack((np.arange(self.cycles),counts))
             self.dv.add(data, context = self.c_hist)
 
@@ -95,21 +96,21 @@ class microwave_sweep(experiment):
         day   = '%02d' % date.day    # Padded with a zero if one digit
         trunk = year + '_' + month + '_' + day
 
-        # Open new data sets for prob and saving histogram data
+        # open data sets for probability and histograms
         self.dv.cd(['',year,month,trunk],True, context = self.c_prob)
-        dataset = self.dv.new('MicrowaveSweep_prob',[('run', 'arb u')], [('Counts', 'Counts', 'num')], context = self.c_prob)
+        dataset = self.dv.new('Ramsey_prob',[('run', 'arb u')], [('Counts', 'Counts', 'num')], context = self.c_prob)
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
 
         self.dv.cd(['',year,month,trunk],True, context = self.c_hist)
-        dataset1 = self.dv.new('MicrowaveSweep_hist',[('run', 'arb u')], [('Counts', 'Counts', 'num')], context = self.c_hist)
+        dataset1 = self.dv.new('Ramsey_hist',[('run', 'arb u')], [('Counts', 'Counts', 'num')], context = self.c_hist)
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_hist)
 
         # Set live plotting
-        self.grapher.plot(dataset, 'microwave_sweep', False)
+        self.grapher.plot(dataset, 'rabi_flopping', False)
 
 
     def set_wm_frequency(self, freq, chan):
@@ -135,7 +136,7 @@ class microwave_sweep(experiment):
 if __name__ == '__main__':
     cxn = labrad.connect()
     scanner = cxn.scriptscanner
-    exprt = microwave_sweep(cxn = cxn)
+    exprt = ramsey(cxn = cxn)
     ident = scanner.register_external_launch(exprt.name)
     exprt.execute(ident)
 

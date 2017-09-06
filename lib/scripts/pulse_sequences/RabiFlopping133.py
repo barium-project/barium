@@ -10,6 +10,8 @@ class rabi_flopping(pulse_sequence):
                            ('RabiFlopping133', 'state_prep_duration'),
                            ('RabiFlopping133', 'state_detection_duration'),
                            ('RabiFlopping133', 'microwave_frequency'),
+                           # The microwave duration is the parameter that can be changed and passed to the pulser
+                           # each time you run a pulse sequence
                            ('RabiFlopping133', 'microwave_duration'),
                            ('RabiFlopping133', 'TTL_493'),
                            ('RabiFlopping133', 'TTL_650'),
@@ -37,7 +39,8 @@ class rabi_flopping(pulse_sequence):
         self.prep_time = self.p.state_prep_duration
         self.microwave_time = self.p.microwave_duration
         self.sd_time = self.p.state_detection_duration
-        self.switch_time = WithUnit(500,'ns')
+        self.switch_time = WithUnit(500,'ns') # Looked on a scope. Really about 200ns but figured this was safe
+
 
         self.addDDS(self.channel, self.start,  self.cool_time + self.prep_time , self.freq, self.amp)
         # First Doppler cool which is doing nothing
