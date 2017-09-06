@@ -92,6 +92,33 @@ class SR430_Scalar_Server(GPIBManagedServer):
             notified.remove(c.ID)
         return notified
 
+    def convert_trace(self, trace_str_fmt):
+        """Convert the string of counts returned from SR430 to readble data.
+
+        A trace from SR430 can be accessed by "BINA?", which returns the entire
+        data recorded by SR430 in ASCII format. An example of trace returned is
+        '0.000000e+000,1.000000e+000,1.000000e+000,0.000000e+000,'. This
+        function convert the abovementioned string to the following list of
+        integers:
+        [0, 1, 1, 0]
+        """
+        def str_to_float(string):
+            try:
+                a, b = string.split('e+')
+                a = float(a)
+                b = float(b)
+                return int(a*10**b)
+            except:
+                return None
+
+        # break up the string into substrings
+        intermediate_list = trace_str_fmt.split(",")
+        # convert substrings to integers
+        intermediate_list2 = [str_to_float(d) for d in intermediate_list]
+        # remove a None at the very end of the list
+        trace_int_fmt = [d for d in intermediate_list2 if d is not None]
+        return trace_int_fmt
+
     @setting(96, 'Update Settings', returns = 's')
     def update_settings(self, c):
         '''
@@ -413,6 +440,15 @@ class SR430_Scalar_Server(GPIBManagedServer):
                         query_error+'; Execution Error '+execution_error+
                         '; Command Error '+command_error+'; URQ '+URQ+'; PON '+PON)
         returnValue(message)
+
+    @setting(26, 'Get Trace', returns='*i')
+    def get_trace(self, c):
+        """Return the entire data recorded by SR430 in ASCII format"""
+        dev = self.selectedDevice(c)
+        yield dev.write('BINA?')
+        trace_str_fmt = yield dev.read()
+        trace_int_fmt = self.convert_trace(trace_str_fmt)
+        returnValue(trace_int_fmt)
 
 
 __server__ = SR430_Scalar_Server()
