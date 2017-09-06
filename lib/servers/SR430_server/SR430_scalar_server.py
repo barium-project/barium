@@ -73,7 +73,7 @@ class SR430_Scalar_Server(GPIBManagedServer):
     def initContext(self, c):          #Adds new contexts to the listeners list?
         self.listeners.add(c.ID)
         if self.updating == False:
-            self.updating = True
+            self.updating = False
             self.update_settings(c)    #The server will initially get a "No devices has be selected" error, but this will pass once the client selects a device.
     def expireContext(self, c):        #Removes expired contexts from the listeners list?
         self.listeners.remove(c.ID)

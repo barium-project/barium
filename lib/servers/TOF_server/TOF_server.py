@@ -42,7 +42,7 @@ class TOFServer(LabradServer):
                                       name=self.name,
                                       password=self.password)
 
-        self.server = yield self.cxn.trap_server
+        self.server = yield self.cxn.trapserver
         self.dv = yield self.cxn.data_vault
         self.grapher = yield self.cxn.grapher
 

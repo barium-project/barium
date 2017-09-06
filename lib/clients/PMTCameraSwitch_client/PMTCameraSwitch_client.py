@@ -1,6 +1,8 @@
 from twisted.internet.defer import inlineCallbacks, returnValue
 from PyQt4 import QtGui
 from common.lib.clients.PMT_Control.PMT_CONTROL import pmtWidget
+from common.lib.clients.Pulser2_DDS.DDS_CONTROL import DDS_CONTROL
+from barium.lib.clients.ProtectionBeam_client.protectionBeamClient import protectionBeamClient
 
 import socket
 import os
@@ -53,10 +55,18 @@ class PMTCameraSwitchClient(QtGui.QWidget):
         self.switch.clicked.connect(self.switchState)
 
 
+        # Add PMT control
         pmt = pmtWidget(self.reactor)
         self.subLayout.addWidget(pmt, 0,0)
         self.subLayout.addWidget(self.switch, 0,1)
 
+        # Add Protection Beam Control
+        prot = protectionBeamClient(self.reactor)
+        self.subLayout.addWidget(prot ,1,0)
+
+        # Add DDS Controls
+        dds = DDS_CONTROL(self.reactor)
+        self.subLayout.addWidget(dds,1,1)
 
         self.setLayout(self.layout)
 

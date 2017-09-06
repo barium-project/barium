@@ -16,7 +16,7 @@
 """
 ### BEGIN NODE INFO
 [info]
-name = Trap Server
+name = TrapServer
 version = 1.0
 description =
 instancename = %LABRADNODE% Trap Server
@@ -42,12 +42,12 @@ from labrad.support import getNodeName
 import time
 from labrad.units import WithUnit as U
 
-SERVERNAME = 'Trap Server'
+SERVERNAME = 'TrapServer'
 TIMEOUT = 1.0
 BAUDRATE = 38400
 
 class TrapServer( SerialDeviceServer ):
-    name = SERVERNAME
+    name = 'TrapServer'
     regKey = 'TrapControl'
     port = None
     serNode = getNodeName()
