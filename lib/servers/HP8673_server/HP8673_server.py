@@ -16,7 +16,7 @@
 """
 ### BEGIN NODE INFO
 [info]
-name = HP8673 Server
+name = HP8673Server
 version = 1.3
 description =
 
@@ -48,13 +48,9 @@ class HP8673_Server(GPIBManagedServer):
     """
     This server talks to the HP8673 Microwave Signal Generator.
 
-    Since the HP8673 does not have talk capability, it will not respond to a *IDN?
-    query and therefore will not provide a device name.  Instead, we use the deviceIdentFunc
-    option which returns 'Generic GPIB Device' as the name, so that the GPIB Device Manager
-    will map any devices that do not respond to *IDN? to this generic device name.
     """
     name = 'HP8673Server'
-    deviceName = 'FR00000000000HZ'
+    deviceName = 'FR03000000000HZ'
     deviceIdentFunc = 'identify_device'
     deviceManager = 'GPIB Device Manager'
     deviceWrapper = HP8673Wrapper
@@ -65,10 +61,16 @@ class HP8673_Server(GPIBManagedServer):
     @setting(100, server='s', address='s', response = 's')
     def identify_device(self, c, server, address, response):
         """
-        Since the HP8673 does not have talk capability, it does not respond to *IDN? requests.
-        Therefore, I've set the deviceName to 'Generic GPIB Device' to allow the HP8673 to be seen
-        by this server.  This could also mean devices other than the HP8673 are seen by this server
-        as well.
+        The HP8673 does not return a standard messeage to *IDN?. Because of this, an identification
+        function needs to be used. There are two types of generic identification functions, see the
+        register_ident_funct in the gpib manager file. The gpbi device manager will run through
+        each identification function it knows about to try and find one that can properly identify
+        the device. The manager will error if you connect the device before running the server (sill not
+        sure why), even if you refresh the device list. This is because the ident function is not known
+        before the server starts, so the manager doens't know how to handle the response. I would think
+        that after starting the server and refreshing it would work, but doens't seem like it.
+        So.... just start all the servers before turning on the GPIB devices with non-standard responses,
+        refresh the device list, and everything will connect accordingly.
         """
         yield None
         returnValue(self.deviceName)
