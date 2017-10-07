@@ -106,6 +106,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.clients_hpa = [self.hp8672a_19]
         self.clients_hpb = [self.hp8657b_6, self.hp8657b_7, self.hp8657b_8]
 
+        self.pulser = self.cxn1.pulser
         self.connectHPGUI()
 
 
@@ -177,7 +178,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7switch.clicked.connect(lambda state = self.GPIB7switch.isChecked(), \
                 client = self.clients_hpb[1] : self.setRFHPB(client, state))
 
-
+        '''
         self.GPIB8spinFreq.valueChanged.connect(lambda freq = \
                 self.GPIB8spinFreq.value(), client = self.clients_hpb[2] : self.freqChangedHPB(freq, client))
 
@@ -186,7 +187,7 @@ class FrequencyControlClient(Frequency_Ui):
 
         self.GPIB8switch.clicked.connect(lambda state = self.GPIB8switch.isChecked(), \
                 client = self.clients_hpb[2] : self.setRFHPB(client, state))
-
+        '''
 
         # Connect push buttons to set freqs
         self.cool130.clicked.connect(lambda : self.cool_ba130())
@@ -227,11 +228,12 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
 
+        '''
         self.GPIB8spinFreq.setValue(self.default['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.default['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[2],False)
-
+        '''
     @inlineCallbacks
     def cool_ba130(self):
 
@@ -262,13 +264,15 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_130['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
-
+        '''
         self.GPIB8spinFreq.setValue(self.cool_130['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_130['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[2],False)
-
-
+        '''
+        # Switch the sidebands off
+        yield self.pulser.switch_auto('TTL2',False)
+        yield self.pulser.switch_auto('TTL3',False)
 
     @inlineCallbacks
     def cool_ba132(self):
@@ -300,13 +304,15 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_132['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
-
+        '''
         self.GPIB8spinFreq.setValue(self.cool_132['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_132['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[2],False)
-
-
+        '''
+        # Switch the sidebands off
+        yield self.pulser.switch_auto('TTL2',False)
+        yield self.pulser.switch_auto('TTL3',False)
     @inlineCallbacks
     def cool_ba133(self):
 
@@ -338,11 +344,16 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[1],True)
 
+        # Switch the sidebands on
+        yield self.pulser.switch_auto('TTL2',True)
+        yield self.pulser.switch_auto('TTL3',True)
+
+        '''
         self.GPIB8spinFreq.setValue(self.cool_133['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_133['GPIB0::8'][1])
         self.GPIB8switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[2],True)
-
+        '''
     @inlineCallbacks
     def cool_ba134(self):
 
@@ -373,12 +384,15 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_134['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
-
+        '''
         self.GPIB8spinFreq.setValue(self.cool_134['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_134['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[2],False)
-
+        '''
+        # Switch the sidebands off
+        yield self.pulser.switch_auto('TTL2',False)
+        yield self.pulser.switch_auto('TTL3',False)
 
     @inlineCallbacks
     def cool_ba135(self):
@@ -410,12 +424,12 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_135['GPIB0::7'][1])
         self.GPIB7switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[1],True)
-
+        '''
         self.GPIB8spinFreq.setValue(self.cool_135['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_135['GPIB0::8'][1])
         self.GPIB8switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[2],True)
-
+        '''
 
     @inlineCallbacks
     def cool_ba136(self):
@@ -447,11 +461,15 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_136['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
-
+        '''
         self.GPIB8spinFreq.setValue(self.cool_136['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_136['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[2],False)
+        '''
+        # Switch the sidebands off
+        yield self.pulser.switch_auto('TTL2',False)
+        yield self.pulser.switch_auto('TTL3',False)
 
     @inlineCallbacks
     def cool_ba137(self):
@@ -483,12 +501,12 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_137['GPIB0::7'][1])
         self.GPIB7switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[1],True)
-
+        '''
         self.GPIB8spinFreq.setValue(self.cool_137['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_137['GPIB0::8'][1])
         self.GPIB8switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[2],True)
-
+        '''
     @inlineCallbacks
     def cool_ba138(self):
 
@@ -515,12 +533,15 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_138['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
-
+        '''
         self.GPIB8spinFreq.setValue(self.cool_138['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_138['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[2],False)
-
+        '''
+        # Switch the sidebands off
+        yield self.pulser.switch_auto('TTL2',False)
+        yield self.pulser.switch_auto('TTL3',False)
 
     def all_off(self):
         self.GPIB19switch.setChecked(False)
@@ -531,8 +552,9 @@ class FrequencyControlClient(Frequency_Ui):
         self.setRFHPB(self.clients_hpb[0],False)
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
-        self.GPIB8switch.setChecked(False)
-        self.setRFHPB(self.clients_hpb[2],False)
+        #self.GPIB8switch.setChecked(False)
+        #self.setRFHPB(self.clients_hpb[2],False)
+        # Switch the sidebands off
 
 
     @inlineCallbacks

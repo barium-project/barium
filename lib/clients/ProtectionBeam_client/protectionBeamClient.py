@@ -3,7 +3,7 @@ from twisted.internet.defer import inlineCallbacks
 from common.lib.clients.connection import connection
 from PyQt4 import QtGui, QtCore
 import os,socket
-
+import time
 from config.shutter_client_config import shutter_config
 
 
@@ -88,7 +88,7 @@ class protectionBeamClient(QtGui.QFrame):
         self.enableProtection.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=16))
 
         init  = yield self.arduino.ttl_read(self.enable)
-        print init
+
         self.enableProtection.setCheckState(init)
 
         layout.addWidget(self.spinThreshold, 3,0)
@@ -125,23 +125,21 @@ class protectionBeamClient(QtGui.QFrame):
         running = yield self.pmt.isrunning()
         if self.protection_state and running:
             counts = yield self.pmt.get_next_counts('ON',1)
-            print counts, self.threshold
             if counts < self.threshold:
                 if self.inverted:
                     self.widget.TTLswitch.setChecked(True)
-                    print 'inverted'
+
                 else:
                     #self.arduino.ttl_output(self.port,True)
                     self.widget.TTLswitch.setChecked(False)
-                    print 'less'
-
+            '''
             else:
                 if self.inverted:
                     self.widget.TTLswitch.setChecked(False)
                 else:
                     self.widget.TTLswitch.setChecked(True)
                     print 'greater'
-
+            '''
         self.reactor.callLater(.1, self.protectionLoop)
 
 

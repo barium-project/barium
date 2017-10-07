@@ -30,7 +30,7 @@ class bright_state_detection(experiment):
     def initialize(self, cxn, context, ident):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Bright State')
-        self.cxnwlm = labrad.connect('10.97.111.8', name = 'Bright State', password = 'lab')
+        self.cxnwlm = labrad.connect(multiplexer_config.ip, name = 'Bright State', password = 'lab')
 
 
         self.wm = self.cxnwlm.multiplexerserver
@@ -57,7 +57,7 @@ class bright_state_detection(experiment):
         self.pulser.reset_readout_counts()
         data = np.column_stack((np.arange(self.cycles),counts))
         self.dv.add(data)
-        self.dv.add_parameter('BrightState', True)
+        self.dv.add_parameter('hist', True)
 
     def set_up_datavault(self):
         # set up folder

@@ -14,21 +14,43 @@ class frequency_sweep(pulse_sequence):
                            ('FrequencySweep', 'LO_amp'),
                            ('FrequencySweep', 'time_per_freq'),
                            ('FrequencySweep', 'b_field'),
-                           ('FrequencySweep', 'hyperfine_freq')
+                           ('FrequencySweep', 'hyperfine_freq'),
+                           ('FrequencySweep', 'cycles')
                            ]
 
     def sequence(self):
-        #self.start = WithUnit(1.0,'us')
+        self.start = WithUnit(10.0,'us')
 
         self.p = self.parameters.FrequencySweep
 
         self.scan_channel = self.p.scan_dds_channel
         self.scan_amp = self.p.scan_dds_amplitude
         self.time_per_freq = self.p.time_per_freq
+        self.cycles = self.p.cycles
+        self.t0 = self.start - WithUnit(1.0,'us') # takes 1us to switch frequencies. This way actually turns on at 10us
+        self.advance = WithUnit(0.85,'us')
 
-        # Add the scan frequencies
-        self.addDDS(self.scan_channel, self.start, self.time_per_freq, self.p.freq_1, self.scan_amp)
-        self.addDDS(self.scan_channel, self.start + self.time_per_freq, self.time_per_freq, self.p.freq_2, self.scan_amp)
-        self.addDDS(self.scan_channel, self.start + 2*self.time_per_freq, self.time_per_freq, self.p.freq_3, self.scan_amp)
 
+
+        for i in range(int(self.cycles - 1)):
+            # Add the scan frequencies
+            self.addDDS(self.scan_channel, self.t0, self.time_per_freq, self.p.freq_1, self.scan_amp)
+            self.t0 = self.t0 + self.time_per_freq
+
+            self.addDDS(self.scan_channel, self.t0, self.time_per_freq, self.p.freq_2, self.scan_amp)
+            self.t0 = self.t0 + self.time_per_freq
+
+            self.addDDS(self.scan_channel, self.t0, self.time_per_freq , self.p.freq_3, self.scan_amp)
+            self.t0 = self.t0 + self.time_per_freq
+            #self.addTTL('ReadoutCount', self.start, 3*self.time_per_freq + 3*self.freq_advance_duration)
+
+        # The final pulse needs to add .85us. For some reason pulse cuts the last one off
+        self.addDDS(self.scan_channel, self.t0, self.time_per_freq, self.p.freq_1, self.scan_amp)
+        self.t0 = self.t0 + self.time_per_freq
+
+        self.addDDS(self.scan_channel, self.t0, self.time_per_freq, self.p.freq_2, self.scan_amp)
+        self.t0 = self.t0 + self.time_per_freq
+
+        self.addDDS(self.scan_channel, self.t0, self.time_per_freq + self.advance , self.p.freq_3, self.scan_amp)
+        self.t0 = self.t0 + self.time_per_freq
 

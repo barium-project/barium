@@ -31,6 +31,8 @@ class frequency_sweep(experiment):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Frequency Sweep')
         self.pulser = self.cxn.pulser
+        self.dv = self.cxn.data_vault
+        self.grapher = self.cxn.grapher
 
         self.HPA = self.cxn.hp8672a_server
         self.HPB = self.cxn.hp8657b_server
@@ -44,12 +46,14 @@ class frequency_sweep(experiment):
         self.device_mapB = {}
         self.get_device_map()
         self.get_transitions()
+        self.set_up_datavault()
 
     def run(self, cxn, context):
 
         self.HPB.select_device(self.device_mapB['GPIB0::7'])
         self.HPB.set_frequency(self.d.LO_freq)
         self.HPB.set_amplitude(self.d.LO_amp)
+
 
         # set the frequencies based on b-field and hyperfine splitting
         self.p.FrequencySweep.freq_1 = WithUnit(self.pi1,'MHz')
@@ -59,11 +63,18 @@ class frequency_sweep(experiment):
         pulse_sequence = main_sequence(self.p)
         pulse_sequence.programSequence(self.pulser)
         self.pulser.start_infinite()
+        #self.pulser.start_number(10000)
+        #self.pulser.wait_sequence_done()
+        #self.pulser.stop_sequence()
         while not self.pause_or_stop():
             pass
         self.pulser.stop_sequence()
+        #counts = self.pulser.get_readout_counts()
+        #counts = np.sum(counts)
+        #self.pulser.reset_readout_counts()
+        #self.dv.add(self.d.hyperfine_freq['MHz'],counts)
+        self.pulser.output('LF DDS',True)
         self.HPB.rf_state(False)
-
 
     def get_transitions(self):
         self.pi1 = -1*np.sqrt(1 + (1.25491*self.d.b_field['G']**2/self.d.hyperfine_freq['MHz']**2) + \
@@ -91,7 +102,24 @@ class frequency_sweep(experiment):
                     self.device_mapB[gpib_listB[i]] = devices[j][0]
                     break
 
+    def set_up_datavault(self):
+        # set up folder
+        date = datetime.datetime.now()
+        year  = `date.year`
+        month = '%02d' % date.month  # Padded with a zero if one digit
+        day   = '%02d' % date.day    # Padded with a zero if one digit
+        trunk = year + '_' + month + '_' + day
+        self.dv.cd(['',year,month,trunk],True)
+        dataset = self.dv.new('d32',[('Frequency', 'MHz')], [('Counts/sec', 'Counts', 'num')])
+        # add dv params
+        for parameter in self.p:
+            self.dv.add_parameter(parameter, self.p[parameter])
+
+        # Set live plotting
+        self.grapher.plot(dataset, 'd32', False)
+
     def finalize(self, cxn, context):
+        self.pulser.output('LF DDS',False)
         self.cxn.disconnect()
 
 

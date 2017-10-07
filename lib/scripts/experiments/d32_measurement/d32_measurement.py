@@ -33,6 +33,7 @@ class d32_measurement(experiment):
         self.pulser = self.cxn.pulser
         self.dv = self.cxn.data_vault
         self.grapher = self.cxn.grapher
+        self.pv = self.cxn.parametervault
 
         self.HPA = self.cxn.hp8672a_server
         self.HPB = self.cxn.hp8657b_server
@@ -72,6 +73,7 @@ class d32_measurement(experiment):
                 break
 
             self.f.time_per_freq = WithUnit(t[i],'us')
+            self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
             pulse_sequence = main_sequence(self.p)
             pulse_sequence.programSequence(self.pulser)
             self.pulser.start_number(int(self.cycles))
@@ -80,11 +82,12 @@ class d32_measurement(experiment):
 
             counts = self.pulser.get_readout_counts()
             self.pulser.reset_readout_counts()
-            bright = np.where(counts >= 1)
+            bright = np.where(counts >= self.disc)
             fid = float(len(bright[0]))/len(counts)
             self.dv.add(3*t[i] , fid, context = self.c_prob)
             data = np.column_stack((np.arange(self.cycles),counts))
             self.dv.add(data, context = self.c_hist)
+            self.dv.add_parameter('hist'+str(i), True, context = self.c_hist)
 
         self.HPB.rf_state(False)
 

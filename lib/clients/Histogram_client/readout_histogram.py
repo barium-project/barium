@@ -11,13 +11,14 @@ from matplotlib.figure import Figure
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.threads import deferToThread
 import numpy, array
+import time
 
 class config_hist(object):
     #IDs for signaling
     ID_A = 99999
     ID_B = 99998
     #data vault comment
-    dv_parameter = ['OpticalPumping','BrightState']
+    dv_data_set = ['OpticalPumping','BrightState','D32_hist', 'MicrowaveSweep_hist', 'RabiFlopping_hist', 'Ramsey_hist']
     #semaphore locations
     readout_threshold_dir =  ('StateReadout','state_readout_threshold')
 
@@ -82,16 +83,12 @@ class readout_histogram(QtGui.QWidget):
             self.last_hist.remove()
             #explicitly delete the reference although not necessary
             #el self.last_hist
-        print numpy.max([data[:,1].max()-data[:,1].min(),1])
         y = numpy.histogram(data[:,1],int(numpy.max([data[:,1].max()-data[:,1].min(),1])))
-        print y
         counts = y[0]
         bins = y[1][:-1]
         if bins[0] < 0:
         	bins = bins + .5
-        print bins, counts
         self.last_hist = self.axes.bar(bins, counts, width = 1)
-        print 'plot'
         x_maximum = bins.max()
         x_min = bins.min()
         self.axes.set_xlim(left = int(x_min - 2))
@@ -178,6 +175,7 @@ class readout_histogram(QtGui.QWidget):
         yield dv.addListener(listener = self.on_new_dataset, source = None, ID = config_hist.ID_A, context = self.context)
         self.subscribed[0] = True
 
+
     @inlineCallbacks
     def subscribe_parameter_vault(self):
         server = yield self.cxn.get_server('ParameterVault')
@@ -190,8 +188,8 @@ class readout_histogram(QtGui.QWidget):
     @inlineCallbacks
     def reinitialize_data_vault(self):
         self.setDisabled(False)
-        server = yield self.cxn.get_server('DataVault')
-        yield server.signal__new_dataset(config_hist.ID_A, context = self.context)
+        server = yield self.cxn.get_server('Data Vault')
+        yield server.signal__new_parameter_dataset(config_hist.ID_A, context = self.context)
         if not self.subscribed[0]:
             yield server.addListener(listener = self.on_new_dataset, source = None, ID = config_hist.ID_A, context = self.context)
             self.subscribed[0] = True
@@ -221,18 +219,18 @@ class readout_histogram(QtGui.QWidget):
 
     @inlineCallbacks
     def on_new_dataset(self, x, y):
-    	print x,y
-        if y[3] in config_hist.dv_parameter:
+    	if y[3][:4] == 'hist':
             dv = yield self.cxn.get_server('Data Vault')
             dataset = y[0]
             directory = y[2]
             yield dv.cd(directory, context = self.context)
             yield dv.open(dataset, context = self.context)
-            data = yield dv.get( context = self.context)
-            #data = data.asarray
+            data = yield dv.get(context = self.context)
+          	#data = data.asarray
             #data = np.asarray(data)
             yield deferToThread(self.on_new_data, data)
             yield dv.cd([''], context = self.context)
+
     def closeEvent(self, x):
         self.reactor.stop()
 

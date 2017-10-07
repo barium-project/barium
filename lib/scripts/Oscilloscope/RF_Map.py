@@ -17,7 +17,7 @@ print 'Connected to Labrad'
 # Connect to devices
 
 
-trap = cxn_bender.trap_server
+trap = cxn_bender.trapserver
 
 file_loc = 'rf_settings_101_400.txt'
 
@@ -27,14 +27,14 @@ start_voltage = 101
 stop_voltage = 400
 voltage_step = 1
 max_voltage_itt = 100
-voltage_convergence = .003
+voltage_convergence = .002
 voltage_guess = 0
 
 
-start_phase = 36.9
+start_phase = 38.4
 phase_step = .1
 max_phase_itt = 25
-phase_convergence = .003
+phase_convergence = .002
 
 total_v_points = ((stop_voltage-start_voltage)/voltage_step) + 1
 print total_v_points

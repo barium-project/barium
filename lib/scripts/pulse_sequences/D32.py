@@ -61,19 +61,21 @@ class D32_measurement(pulse_sequence):
         self.addDDS(self.channel_650, self.start,  self.cool_time , self.freq_650, self.amp_650)
 
         # First Doppler cool which is doing nothing
-        # Next optically pump by turning off 5.8GHz and 1.84GHz on
-        self.addTTL(self.ttl_493, self.start + self.cool_time, self.prep_time_d + self.switch_time + self.microwave_time + \
-                    self.switch_time + self.sd_time)
+        # Next optically pump by turning off 650
 
-        #self.addTTL(self.ttl_prep, self.start + self.cool_time, self.prep_time_s)
 
         # Next we optically pump to the D, F = 1. The 650 DDS should turn off. Need to turn off the 904MHz sideband
         self.addTTL(self.ttl_650, self.start + self.cool_time , self.prep_time_d + self.switch_time + self.microwave_time + \
                     self.switch_time  + self.sd_time)
 
+        # Turn off 5.8GHz. Could wait until right before state detection but just do it now
+        self.addTTL(self.ttl_493, self.start + self.cool_time + self.prep_time_d,  self.switch_time + self.microwave_time + \
+                    self.switch_time + self.sd_time)
+
         # Next we need to apply the microwave pulse using the frequency sweep pulse sequence.
-        # This sequentially hits all three pi transitions for a specified number of
-        self.addSequence(frequency_sweep, position = self.start + self.cool_time + self.prep_time_d + self.switch_time)
+        # This sequentially hits all three pi transitions for a specified number of transitions. We need to subtract
+        # the start time of the frequency sweep sequence which is 10 usec
+        self.addSequence(frequency_sweep, position = self.start + self.cool_time + self.prep_time_d + self.switch_time - WithUnit(10.0,'us'))
 
         # Wait for the microwaves and then do state detection
 

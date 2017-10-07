@@ -17,10 +17,7 @@ class probe_laser(pulse_sequence):
         # start time is defined to be 0s.
         p = self.parameters.ProbeLaser
         # select which laser to scan
-        if p.probe_laser_TTL == '493nm':
-            self.ttl = 'TTL26'
-        else:
-            self.ttl = 'TTL25'
+        self.ttl = p.probe_laser_TTL
 
         self.addTTL(self.ttl, self.start, p.probe_laser_duration)
         self.end = self.start + p.probe_laser_duration

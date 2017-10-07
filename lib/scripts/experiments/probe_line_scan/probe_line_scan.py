@@ -35,6 +35,7 @@ class probe_line_scan(experiment):
     exp_parameters.append(('ProbeLineScan', 'Cooling_Oscillator'))
     exp_parameters.append(('ProbeLineScan', 'Probe_Oscillator'))
     exp_parameters.append(('ProbeLineScan', 'Repeats_Per_Point'))
+    exp_parameters.append(('ProbeLineScan', 'Scan_Laser'))
 
 
     # Add the parameters from the required subsequences
@@ -50,7 +51,7 @@ class probe_line_scan(experiment):
     def initialize(self, cxn, context, ident):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Probe Line Scan')
-        self.cxnwlm = labrad.connect('10.97.111.8', name = 'Probe Line Scan', password = 'lab')
+        self.cxnwlm = labrad.connect(multiplexer_config.ip, name = 'Probe Line Scan', password = 'lab')
 
         self.HPA = self.cxn.hp8672a_server
         self.HPB = self.cxn.hp8657b_server
@@ -79,7 +80,7 @@ class probe_line_scan(experiment):
         self.cooling_oscillator = self.p.ProbeLineScan.Cooling_Oscillator
         self.probe_oscillator = self.p.ProbeLineScan.Probe_Oscillator
         self.repeats = self.p.ProbeLineScan.Repeats_Per_Point
-
+        self.laser = self.p.ProbeLineScan.Scan_Laser
         self.wm_p = multiplexer_config.info
 
         self.set_up_datavault()
@@ -96,14 +97,14 @@ class probe_line_scan(experiment):
         pulse_sequence.programSequence(self.pulser)
 
         # Select probe oscillator
-        if self.probe_oscillator == 'GPIB0::19':
-            self.HPA.select_device(self.device_mapA[self.probe_oscillator])
+        if self.probe_oscillator == 'GPIB0::1':
+            self.HP8673.select_device()
 
             for i in range(len(freq)):
                 if self.pause_or_stop():
                     break
 
-                self.HPA.set_frequency(WithUnit(freq[i],'MHz'))
+                self.HP8673.set_frequency(WithUnit(freq[i],'MHz'))
                 time.sleep(.5) # time to switch frequencies
                 counts = 0
                 for j in range(int(self.repeats)):
@@ -111,7 +112,7 @@ class probe_line_scan(experiment):
                     self.pulser.wait_sequence_done()
                     self.pulser.stop_sequence()
                     time_tags = self.pulser.get_timetags()
-                    frequency = (self.wm.get_frequency(self.wm_p['493nm'][0]) - self.frequency_493['THz'])*1e6 # MHz
+                    frequency = (self.wm.get_frequency(self.wm_p[self.laser][0]) - self.frequency_493['THz'])*1e6 # MHz
                     counts = counts + len(time_tags)
                     self.pulser.reset_timetags()
                 self.dv.add(frequency+freq[i],counts)
@@ -129,7 +130,7 @@ class probe_line_scan(experiment):
                     self.pulser.wait_sequence_done()
                     self.pulser.stop_sequence()
                     time_tags = self.pulser.get_timetags()
-                    frequency = (self.wm.get_frequency(self.wm_p['650nm'][0]) - self.frequency_650['THz'])*1e6 # MHz
+                    frequency = (self.wm.get_frequency(self.wm_p[self.laser][0]) - self.frequency_650['THz'])*1e6 # MHz
                     counts = counts + len(time_tags)
                     self.pulser.reset_timetags()
                 self.dv.add(frequency+freq[i],counts)
@@ -146,13 +147,17 @@ class probe_line_scan(experiment):
         # only one 8673 so select it
         self.HP8673.select_device()
         # Set cooling sideband
-        if self.cooling_oscillator == '493nm':
+        if self.cooling_oscillator == 'GPIB::1':
             self.HP8673.set_frequency(self.cool_sb)
             self.HP8673.rf_state(True)
         else:
-            self.HPB.select_device(self.device_mapB['GPIB0::8'])
+            self.HPB.select_device(self.device_mapB['GPIB0::6'])
             self.HPB.set_frequency(self.cool_sb)
             self.HPB.rf_state(True)
+
+
+        # set probe oscillator
+
 
         # time to switch oscillators
         time.sleep(.5)

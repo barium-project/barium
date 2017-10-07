@@ -24,10 +24,7 @@ class doppler_cooling(pulse_sequence):
         p = self.parameters.DopplerCooling
 
         # select which laser to scan
-        if p.doppler_cooling_TTL == '493nm':
-            self.ttl = 'TTL3'
-        else:
-            self.ttl = 'TTL2'
+        self.ttl = p.doppler_cooling_TTL
         self.addTTL(self.ttl, p.doppler_cooling_duration, p.off_time)
         self.end = self.start + p.doppler_cooling_duration + p.off_time
 

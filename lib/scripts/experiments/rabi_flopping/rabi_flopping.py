@@ -88,6 +88,7 @@ class rabi_flopping(experiment):
             self.dv.add(t[i] , fid, context = self.c_prob)
             data = np.column_stack((np.arange(self.cycles),counts))
             self.dv.add(data, context = self.c_hist)
+            self.dv.add_parameter('hist'+str(i), True, context = self.c_hist)
 
     def set_up_datavault(self):
         # set up folder
