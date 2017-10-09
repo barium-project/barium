@@ -43,6 +43,7 @@ class Single_Channel_Lock_Server(LabradServer):
         self.lasers = multiplexer_config.info
         self.laser_chan = '455nm'
         self.lc = LoopingCall(self.loop)
+        self.output = 0.0
         self.connect()
 
     @inlineCallbacks
@@ -61,15 +62,15 @@ class Single_Channel_Lock_Server(LabradServer):
     def loop(self):
             freq = yield self.wm.get_frequency(self.lasers[self.laser_chan][0])
             error = (self.set_frequency - freq)*1e6 # gives me diff in MHz
-            output = error*self.gain + self.prev_output
-            if output >= self.high_rail:
-                output = self.high_rail
-            elif output <= self.low_rail:
-                output = self.low_rail
+            self.output = error*self.gain + self.prev_output
+            if self.output >= self.high_rail:
+                self.output = self.high_rail
+            elif self.output <= self.low_rail:
+                self.output = self.low_rail
             else:
                 pass
-            self.prev_output = output
-            yield self.trap.set_dc(output,int(self.dac_chan))
+            self.prev_output = self.output
+            yield self.trap.set_dc(self.output,int(self.dac_chan))
 
     @setting(13, state='b')
     def toggle(self, c, state):
@@ -114,6 +115,10 @@ class Single_Channel_Lock_Server(LabradServer):
     @setting(21, returns = '*v')
     def get_rails(self, c):
         return([self.low_rail,self.high_rail])
+
+    @setting(22, returns = 'v')
+    def get_dac_voltage(self, c):
+        return(self.output)
 
 if __name__ == "__main__":
     from labrad import util

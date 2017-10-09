@@ -8,7 +8,7 @@ import os
 from config.multiplexerclient_config import multiplexer_config
 from common.lib.clients.qtui.q_custom_text_changing_button import \
     TextChangingButton
-
+from common.lib.clients.qtui.QCustomSlideIndicator import SlideIndicator
 
 SIGNALID1 = 445567
 
@@ -47,7 +47,7 @@ class single_channel_wm(QtGui.QWidget):
         self.wavelength.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=70))
         self.wavelength.setAlignment(QtCore.Qt.AlignCenter)
         self.wavelength.setStyleSheet('color: blue')
-        subLayout.addWidget(self.wavelength, 1,0, 5, 2)
+        subLayout.addWidget(self.wavelength, 1,0, 7, 2)
         shell_font = 'MS Shell Dlg 2'
 
         # Create lock button
@@ -59,7 +59,7 @@ class single_channel_wm(QtGui.QWidget):
         lockName = QtGui.QLabel('Lock Frequency')
         lockName.setFont(QtGui.QFont(shell_font, pointSize=16))
         lockName.setAlignment(QtCore.Qt.AlignCenter)
-        subLayout.addWidget(lockName, 6, 0, 1, 1)
+        subLayout.addWidget(lockName, 8, 0, 1, 1)
 
         # frequency
         self.spinFreq1 = QtGui.QDoubleSpinBox()
@@ -69,7 +69,7 @@ class single_channel_wm(QtGui.QWidget):
         self.spinFreq1.setRange(0, 1e4)
         self.spinFreq1.setKeyboardTracking(False)
 
-        subLayout.addWidget(self.spinFreq1, 7, 0, 1, 1)
+        subLayout.addWidget(self.spinFreq1, 9, 0, 1, 1)
 
         init_freq1 = yield self.lock_server.get_lock_frequency()
         self.spinFreq1.setValue(init_freq1)
@@ -80,7 +80,7 @@ class single_channel_wm(QtGui.QWidget):
         exposureName = QtGui.QLabel('Exposure')
         exposureName.setFont(QtGui.QFont(shell_font, pointSize=16))
         exposureName.setAlignment(QtCore.Qt.AlignCenter)
-        subLayout.addWidget(exposureName, 6, 1, 1, 1)
+        subLayout.addWidget(exposureName, 8, 1, 1, 1)
 
         # exposure
         self.spinExposure = QtGui.QDoubleSpinBox()
@@ -90,7 +90,7 @@ class single_channel_wm(QtGui.QWidget):
         self.spinExposure.setRange(0, 2000)
         self.spinExposure.setKeyboardTracking(False)
 
-        subLayout.addWidget(self.spinExposure, 7, 1, 1, 1)
+        subLayout.addWidget(self.spinExposure, 9, 1, 1, 1)
 
         init_exp = yield self.wm.get_exposure(multiplexer_config.info['455nm'][0])
         self.spinExposure.setValue(init_exp)
@@ -99,7 +99,7 @@ class single_channel_wm(QtGui.QWidget):
 
 
         #gain  label
-        gainName = QtGui.QLabel('Gain')
+        gainName = QtGui.QLabel('Gain (V/MHz)')
         gainName.setFont(QtGui.QFont(shell_font, pointSize=16))
         gainName.setAlignment(QtCore.Qt.AlignCenter)
         subLayout.addWidget(gainName, 2, 3, 1, 1)
@@ -156,6 +156,19 @@ class single_channel_wm(QtGui.QWidget):
         self.spinHighRail.setValue(init_rails[1])
         self.spinHighRail.valueChanged.connect(lambda : self.railsChanged())
 
+        # Too lazy to add signals to the server so
+        # will update and display dac voltage every time
+        # frequency updates
+        self.dacLabel = QtGui.QLabel('Dac Voltage')
+        self.dacLabel.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=30))
+        self.dacLabel.setAlignment(QtCore.Qt.AlignCenter)
+        subLayout.addWidget(self.dacLabel, 8,3, 1, 1)
+
+        self.dacVoltage = QtGui.QLabel('0.0')
+        self.dacVoltage.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=30))
+        self.dacVoltage.setAlignment(QtCore.Qt.AlignCenter)
+        subLayout.addWidget(self.dacVoltage, 9,3, 1, 1)
+
         self.setLayout(layout)
 
 
@@ -176,9 +189,12 @@ class single_channel_wm(QtGui.QWidget):
         yield self.lock_server.set_low_rail(self.spinLowRail.value())
         yield self.lock_server.set_high_rail(self.spinHighRail.value())
 
+    @inlineCallbacks
     def updateFrequency(self, c, signal):
         if signal[0] == multiplexer_config.info['455nm'][0]:
             self.wavelength.setText(str(signal[1])[0:10])
+            voltage = yield self.lock_server.get_dac_voltage()
+            self.dacVoltage.setText(str(voltage))
 
     def set_lock(self, state):
         self.lock_server.toggle(state)

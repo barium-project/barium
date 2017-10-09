@@ -25,6 +25,7 @@ class BARIUM_GUI(QtGui.QMainWindow):
 	    #create subwidgets to be added to tabs
         script_scanner = self.makeScriptScannerWidget(reactor, cxn)
         wavemeter = self.makeWavemeterWidget(reactor)
+        single_wm = self.makeSingleChannelLockWidget(reactor)
         control = self.makeControlWidget(reactor)
         frequency = self.makeFrequencyWidget(reactor)
         switch = self.makePMTCameraSwitchWidget(reactor)
@@ -32,7 +33,7 @@ class BARIUM_GUI(QtGui.QMainWindow):
         # add tabs
         self.tabWidget = QtGui.QTabWidget()
         self.tabWidget.addTab(wavemeter, '&Wavemeter')
-        #self.tabWidget.addTab(M2, '&M2')
+        self.tabWidget.addTab(single_wm, '&Single Lock')
         self.tabWidget.addTab(script_scanner, '&Script Scanner')
         self.tabWidget.addTab(control, '&Trap Control')
         self.tabWidget.addTab(frequency, '&Oscillators')
@@ -76,6 +77,11 @@ class BARIUM_GUI(QtGui.QMainWindow):
         from common.lib.clients.Multiplexer.multiplexerclient import wavemeterclient
         wavemeter = wavemeterclient(reactor)
         return wavemeter
+
+    def makeSingleChannelLockWidget(self, reactor):
+        from barium.lib.clients.Single_Channel_Lock_Client.single_channel_wm import single_channel_wm
+        control = single_channel_wm(reactor)
+        return control
 
     def makeControlWidget(self, reactor):
         from barium.lib.clients.TrapControl_client.TrapControl_client import TrapControlClient

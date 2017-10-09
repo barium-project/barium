@@ -217,7 +217,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinAmp.setValue(self.default['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
         self.setRFHP8673(False)
-
+        '''
         self.GPIB6spinFreq.setValue(self.default['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.default['GPIB0::6'][1])
         self.GPIB6switch.setChecked(False)
@@ -228,7 +228,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
 
-        '''
+
         self.GPIB8spinFreq.setValue(self.default['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.default['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
@@ -254,7 +254,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinAmp.setValue(self.cool_130['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
         self.setRFHP8673(False)
-
+        '''
         self.GPIB6spinFreq.setValue(self.cool_130['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_130['GPIB0::6'][1])
         self.GPIB6switch.setChecked(False)
@@ -264,7 +264,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_130['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
-        '''
+
         self.GPIB8spinFreq.setValue(self.cool_130['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_130['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
@@ -294,7 +294,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinAmp.setValue(self.cool_132['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
         self.setRFHP8673(False)
-
+        '''
         self.GPIB6spinFreq.setValue(self.cool_132['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_132['GPIB0::6'][1])
         self.GPIB6switch.setChecked(False)
@@ -304,7 +304,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_132['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
-        '''
+
         self.GPIB8spinFreq.setValue(self.cool_132['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_132['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
@@ -333,7 +333,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinAmp.setValue(self.cool_133['GPIB0::1'][1])
         self.GPIB1switch.setChecked(True)
         self.setRFHP8673(True)
-
+        '''
         self.GPIB6spinFreq.setValue(self.cool_133['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_133['GPIB0::6'][1])
         self.GPIB6switch.setChecked(True)
@@ -348,7 +348,7 @@ class FrequencyControlClient(Frequency_Ui):
         yield self.pulser.switch_auto('TTL2',True)
         yield self.pulser.switch_auto('TTL3',True)
 
-        '''
+
         self.GPIB8spinFreq.setValue(self.cool_133['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_133['GPIB0::8'][1])
         self.GPIB8switch.setChecked(True)
@@ -374,7 +374,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinAmp.setValue(self.cool_134['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
         self.setRFHP8673(False)
-
+        '''
         self.GPIB6spinFreq.setValue(self.cool_134['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_134['GPIB0::6'][1])
         self.GPIB6switch.setChecked(False)
@@ -384,7 +384,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_134['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
-        '''
+
         self.GPIB8spinFreq.setValue(self.cool_134['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_134['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
@@ -414,7 +414,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinAmp.setValue(self.cool_135['GPIB0::1'][1])
         self.GPIB1switch.setChecked(True)
         self.setRFHP8673(True)
-
+        '''
         self.GPIB6spinFreq.setValue(self.cool_135['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_135['GPIB0::6'][1])
         self.GPIB6switch.setChecked(True)
@@ -424,7 +424,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_135['GPIB0::7'][1])
         self.GPIB7switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[1],True)
-        '''
+
         self.GPIB8spinFreq.setValue(self.cool_135['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_135['GPIB0::8'][1])
         self.GPIB8switch.setChecked(True)
@@ -451,7 +451,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinAmp.setValue(self.cool_136['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
         self.setRFHP8673(False)
-
+        '''
         self.GPIB6spinFreq.setValue(self.cool_136['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_136['GPIB0::6'][1])
         self.GPIB6switch.setChecked(False)
@@ -461,7 +461,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_136['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
-        '''
+
         self.GPIB8spinFreq.setValue(self.cool_136['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_136['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
@@ -491,7 +491,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinAmp.setValue(self.cool_137['GPIB0::1'][1])
         self.GPIB1switch.setChecked(True)
         self.setRFHP8673(True)
-
+        '''
         self.GPIB6spinFreq.setValue(self.cool_137['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_137['GPIB0::6'][1])
         self.GPIB6switch.setChecked(True)
@@ -501,7 +501,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_137['GPIB0::7'][1])
         self.GPIB7switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[1],True)
-        '''
+
         self.GPIB8spinFreq.setValue(self.cool_137['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_137['GPIB0::8'][1])
         self.GPIB8switch.setChecked(True)
@@ -523,7 +523,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinAmp.setValue(self.cool_138['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
         self.setRFHP8673(False)
-
+        '''
         self.GPIB6spinFreq.setValue(self.cool_138['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_138['GPIB0::6'][1])
         self.GPIB6switch.setChecked(False)
@@ -533,7 +533,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7spinAmp.setValue(self.cool_138['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
-        '''
+
         self.GPIB8spinFreq.setValue(self.cool_138['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_138['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)
