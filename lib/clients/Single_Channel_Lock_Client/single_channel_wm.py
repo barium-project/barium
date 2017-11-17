@@ -194,7 +194,7 @@ class single_channel_wm(QtGui.QWidget):
         if signal[0] == multiplexer_config.info['455nm'][0]:
             self.wavelength.setText(str(signal[1])[0:10])
             voltage = yield self.lock_server.get_dac_voltage()
-            self.dacVoltage.setText(str(voltage))
+            self.dacVoltage.setText(str(voltage)[0:5])
 
     def set_lock(self, state):
         self.lock_server.toggle(state)

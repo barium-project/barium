@@ -33,11 +33,13 @@ class Single_Channel_Lock_Server(LabradServer):
     def initServer(self):
         self.password = os.environ['LABRADPASSWORD']
         self.name = socket.gethostname() + ' Single Channel Lock Server'
-        self.set_frequency = 658.117000
+        self.set_frequency = 658.116220
         self.timer = 0.1
         self.low_rail = 0
-        self.high_rail =10.0
-        self.gain = 1e-3
+        self.high_rail =30.0
+        self.p_gain = 1e-3 # Gain of piezo controller is 15V/V
+        self.i_gain = 1e-5 # Not using now since lock is pretty good
+        self.integral = 0 # to use for I
         self.prev_output = 0.0
         self.dac_chan = 7
         self.lasers = multiplexer_config.info
@@ -62,7 +64,8 @@ class Single_Channel_Lock_Server(LabradServer):
     def loop(self):
             freq = yield self.wm.get_frequency(self.lasers[self.laser_chan][0])
             error = (self.set_frequency - freq)*1e6 # gives me diff in MHz
-            self.output = error*self.gain + self.prev_output
+            self.integral = self.integral + error*self.timer
+            self.output = error*self.p_gain  + self.prev_output
             if self.output >= self.high_rail:
                 self.output = self.high_rail
             elif self.output <= self.low_rail:
@@ -89,7 +92,7 @@ class Single_Channel_Lock_Server(LabradServer):
 
     @setting(15, gain = 'v')
     def set_gain(self, c, gain):
-        self.gain = gain
+        self.p_gain = gain
 
     @setting(16, setpoint = 'v')
     def set_point(self, c, setpoint):
@@ -110,7 +113,7 @@ class Single_Channel_Lock_Server(LabradServer):
 
     @setting(20, returns = 'v')
     def get_gain(self, c):
-        return(self.gain)
+        return(self.p_gain)
 
     @setting(21, returns = '*v')
     def get_rails(self, c):
