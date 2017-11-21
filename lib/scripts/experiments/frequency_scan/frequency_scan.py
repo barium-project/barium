@@ -21,6 +21,7 @@ class frequency_scan(experiment):
     exp_parameters.append(('Frequency_Scan', 'Time_Step'))
     exp_parameters.append(('Frequency_Scan', 'Center_Frequency_493'))
     exp_parameters.append(('Frequency_Scan', 'Center_Frequency_650'))
+    exp_parameters.append(('Frequency_Scan', 'Center_Frequency_455'))
     exp_parameters.append(('Frequency_Scan', 'Return'))
     exp_parameters.append(('Frequency_Scan', 'Return_Frequency'))
     exp_parameters.append(('Frequency_Scan', 'Source'))
@@ -33,7 +34,7 @@ class frequency_scan(experiment):
     def initialize(self, cxn, context, ident):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Frequency Scan')
-        self.cxnwlm = labrad.connect('10.97.111.8', name = 'Frequency Scan', password = 'lab')
+        self.cxnwlm = labrad.connect('wavemeter', name = 'Frequency Scan', password = 'lab')
         #self.cxn = labrad.connect('bender', name = 'Frequency Scan', password = 'lab')
 
         self.HPA = self.cxn.hp8672a_server
@@ -43,6 +44,7 @@ class frequency_scan(experiment):
         self.grapher = self.cxn.grapher
         self.dv = self.cxn.data_vault
         self.cam = self.cxn.andor_server
+        self.single_lock = self.cxn.single_channel_lock_server
 
         # Need to map the gpib address to the labrad context number
         self.device_mapA = {}
@@ -53,6 +55,7 @@ class frequency_scan(experiment):
 
         self.frequency_493 = self.parameters.Frequency_Scan.Center_Frequency_493
         self.frequency_650 = self.parameters.Frequency_Scan.Center_Frequency_650
+        self.frequency_455 = self.parameters.Frequency_Scan.Center_Frequency_455
         self.frequency = self.parameters.Frequency_Scan.Frequency
         self.start_frequency = self.parameters.Frequency_Scan.Frequency_Start
         self.stop_frequency = self.parameters.Frequency_Scan.Frequency_Stop
@@ -123,6 +126,27 @@ class frequency_scan(experiment):
 
             if int(self.return_bool) == 1:
                 self.set_wm_frequency(self.frequency_650['THz'] , self.wm_p['650nm'][5])
+
+        if self.frequency == '455':
+            print '455'
+            self.single_lock.set_point(self.frequency_455['THz'] + freq[0])
+            time.sleep(5)
+            for i in range(len(freq)):
+                if self.pause_or_stop():
+                    break
+                self.single_lock.set_point(self.frequency_455['THz'] + freq[i])
+                time.sleep(self.time_step['s'])
+                frequency = self.wm.get_frequency(self.wm_p['455nm'][0]) - self.frequency_455['THz']
+                if self.source == 'pmt':
+                    counts = self.pmt.get_next_counts('ON', 1, False)
+                else:
+                    image = self.cam.get_most_recent_image(None)
+                    image_data = np.reshape(image, (self.pixels_y, self.pixels_x))
+                    counts = np.sum(np.sum(image_data))
+                self.dv.add(frequency*1e6,counts)
+
+            if int(self.return_bool) == 1:
+                self.single_lock.set_point(self.frequency_455['THz'])
 
         if self.frequency == 'GPIB0::19':
             self.HPA.select_device(self.device_mapA['GPIB0::19'])
