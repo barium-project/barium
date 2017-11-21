@@ -405,20 +405,22 @@ class TrapControlClient(QtGui.QWidget):
         a3 = self.ARampGUI.spinDC3.value()
         a4 = self.ARampGUI.spinDC4.value()
 
+
+
         self.ARampGUI.ARamp.setStyleSheet("background-color: red")
         # Add the a-ramp
         yield self.server.set_dc_rod(oldRod1+a1, self.rods['1'])
-        yield self.server.set_dc_rod(oldRod1+a2, self.rods['2'])
-        yield self.server.set_dc_rod(oldRod1+a3, self.rods['3'])
-        yield self.server.set_dc_rod(oldRod1+a4, self.rods['4'])
+        yield self.server.set_dc_rod(oldRod2+a2, self.rods['2'])
+        yield self.server.set_dc_rod(oldRod3+a3, self.rods['3'])
+        yield self.server.set_dc_rod(oldRod4+a4, self.rods['4'])
 
         yield time.sleep(int(self.ARampGUI.waitTime.value()))
 
         # Return to current settings
         yield self.server.set_dc_rod(oldRod1, self.rods['1'])
-        yield self.server.set_dc_rod(oldRod1, self.rods['2'])
-        yield self.server.set_dc_rod(oldRod1, self.rods['3'])
-        yield self.server.set_dc_rod(oldRod1, self.rods['4'])
+        yield self.server.set_dc_rod(oldRod2, self.rods['2'])
+        yield self.server.set_dc_rod(oldRod3, self.rods['3'])
+        yield self.server.set_dc_rod(oldRod4, self.rods['4'])
 
         self.ARampGUI.ARamp.setStyleSheet("background-color: green")
 
