@@ -50,7 +50,7 @@ class frequency_sweep(experiment):
 
     def run(self, cxn, context):
 
-        self.HPB.select_device(self.device_mapB['GPIB0::7'])
+        self.HPB.select_device(self.device_mapB['GPIB0::6'])
         self.HPB.set_frequency(self.d.LO_freq)
         self.HPB.set_amplitude(self.d.LO_amp)
 

@@ -15,11 +15,13 @@ class frequency_sweep(pulse_sequence):
                            ('FrequencySweep', 'time_per_freq'),
                            ('FrequencySweep', 'b_field'),
                            ('FrequencySweep', 'hyperfine_freq'),
-                           ('FrequencySweep', 'cycles')
+                           ('FrequencySweep', 'frequency_start'),
+                           ('FrequencySweep', 'frequency_stop'),
+                           ('FrequencySweep', 'frequency_step'),
                            ]
 
     def sequence(self):
-        self.start = WithUnit(10.0,'us')
+        #self.start = WithUnit(10.0,'us')
 
         self.p = self.parameters.FrequencySweep
 
@@ -31,20 +33,6 @@ class frequency_sweep(pulse_sequence):
         self.advance = WithUnit(0.85,'us')
 
 
-
-        for i in range(int(self.cycles - 1)):
-            # Add the scan frequencies
-            self.addDDS(self.scan_channel, self.t0, self.time_per_freq, self.p.freq_1, self.scan_amp)
-            self.t0 = self.t0 + self.time_per_freq
-
-            self.addDDS(self.scan_channel, self.t0, self.time_per_freq, self.p.freq_2, self.scan_amp)
-            self.t0 = self.t0 + self.time_per_freq
-
-            self.addDDS(self.scan_channel, self.t0, self.time_per_freq , self.p.freq_3, self.scan_amp)
-            self.t0 = self.t0 + self.time_per_freq
-            #self.addTTL('ReadoutCount', self.start, 3*self.time_per_freq + 3*self.freq_advance_duration)
-
-        # The final pulse needs to add .85us. For some reason pulse cuts the last one off
         self.addDDS(self.scan_channel, self.t0, self.time_per_freq, self.p.freq_1, self.scan_amp)
         self.t0 = self.t0 + self.time_per_freq
 

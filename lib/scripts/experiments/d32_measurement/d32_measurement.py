@@ -43,6 +43,7 @@ class d32_measurement(experiment):
         self.f = self.parameters.FrequencySweep
         self.d = self.parameters.D32Measurement
 
+
         self.cycles = self.d.Sequences_Per_Point
         self.c_prob = self.cxn.context()
         self.c_hist = self.cxn.context()
@@ -59,35 +60,68 @@ class d32_measurement(experiment):
         t = np.linspace(self.d.Start_Time['us'],self.d.Stop_Time['us'],\
                     int((abs(self.d.Stop_Time['us']-self.d.Start_Time['us'])/self.d.Time_Step['us']) +1))
 
-        self.HPB.select_device(self.device_mapB['GPIB0::7'])
+        self.HPB.select_device(self.device_mapB['GPIB0::6'])
         self.HPB.set_frequency(self.f.LO_freq)
         self.HPB.set_amplitude(self.f.LO_amp)
 
         # set the frequencies based on b-field and hyperfine splitting
-        self.f.FrequencySweep.freq_1 = WithUnit(self.pi1,'MHz')
-        self.f.FrequencySweep.freq_2 = WithUnit(self.pi2,'MHz')
-        self.f.FrequencySweep.freq_3 = WithUnit(self.pi3,'MHz')
+        self.f.freq_1 = WithUnit(self.pi1,'MHz')
+        self.f.freq_2 = WithUnit(self.pi2,'MHz')
+        self.f.freq_3 = WithUnit(self.pi3,'MHz')
 
-        for i in range(len(t)):
-            if self.pause_or_stop():
-                break
+        if self.d.Scan == 'time':
 
-            self.f.time_per_freq = WithUnit(t[i],'us')
-            self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-            pulse_sequence = main_sequence(self.p)
-            pulse_sequence.programSequence(self.pulser)
-            self.pulser.start_number(int(self.cycles))
-            self.pulser.wait_sequence_done()
-            self.pulser.stop_sequence()
+            for i in range(len(t)):
+                if self.pause_or_stop():
+                    break
 
-            counts = self.pulser.get_readout_counts()
-            self.pulser.reset_readout_counts()
-            bright = np.where(counts >= self.disc)
-            fid = float(len(bright[0]))/len(counts)
-            self.dv.add(3*t[i] , fid, context = self.c_prob)
-            data = np.column_stack((np.arange(self.cycles),counts))
-            self.dv.add(data, context = self.c_hist)
-            self.dv.add_parameter('hist'+str(i), True, context = self.c_hist)
+                self.f.time_per_freq = WithUnit(t[i],'us')
+                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+                pulse_sequence = main_sequence(self.p)
+                pulse_sequence.programSequence(self.pulser)
+                self.pulser.start_number(int(self.cycles))
+                self.pulser.wait_sequence_done()
+                self.pulser.stop_sequence()
+
+                counts = self.pulser.get_readout_counts()
+                self.pulser.reset_readout_counts()
+                bright = np.where(counts >= self.disc)
+                fid = float(len(bright[0]))/len(counts)
+                self.dv.add(t[i] , fid, context = self.c_prob)
+                data = np.column_stack((np.arange(self.cycles),counts))
+                self.dv.add(data, context = self.c_hist)
+                self.dv.add_parameter('hist'+str(i), True, context = self.c_hist)
+
+        elif self.d.Scan == 'frequency':
+
+            freq = np.linspace(self.f.frequency_start['MHz'],self.f.frequency_stop['MHz'],\
+                    int((abs(self.f.frequency_start['MHz']-self.f.frequency_stop['MHz'])/self.f.frequency_step['MHz']) +1))
+
+            for i in range(len(freq)):
+                if self.pause_or_stop():
+                    break
+
+                self.f.hyperfine_freq = WithUnit(freq[i],'MHz')
+                self.get_transitions()
+                # set the frequencies based on b-field and hyperfine splitting
+                self.f.freq_1 = WithUnit(self.pi1,'MHz')
+                self.f.freq_2 = WithUnit(self.pi2,'MHz')
+                self.f.freq_3 = WithUnit(self.pi3,'MHz')
+                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+                pulse_sequence = main_sequence(self.p)
+                pulse_sequence.programSequence(self.pulser)
+                self.pulser.start_number(int(self.cycles))
+                self.pulser.wait_sequence_done()
+                self.pulser.stop_sequence()
+
+                counts = self.pulser.get_readout_counts()
+                self.pulser.reset_readout_counts()
+                bright = np.where(counts >= self.disc)
+                fid = float(len(bright[0]))/len(counts)
+                self.dv.add(freq[i] , fid, context = self.c_prob)
+                data = np.column_stack((np.arange(self.cycles),counts))
+                self.dv.add(data, context = self.c_hist)
+                self.dv.add_parameter('hist'+str(i), True, context = self.c_hist)
 
         self.HPB.rf_state(False)
 

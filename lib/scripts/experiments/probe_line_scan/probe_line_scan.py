@@ -150,11 +150,12 @@ class probe_line_scan(experiment):
         if self.cooling_oscillator == 'GPIB::1':
             self.HP8673.set_frequency(self.cool_sb)
             self.HP8673.rf_state(True)
+        '''
         else:
             self.HPB.select_device(self.device_mapB['GPIB0::6'])
             self.HPB.set_frequency(self.cool_sb)
             self.HPB.rf_state(True)
-
+        '''
 
         # set probe oscillator
 

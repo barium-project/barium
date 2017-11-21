@@ -18,7 +18,7 @@ class D32_measurement(pulse_sequence):
                            ('D32Measurement', 'state_detection_duration'),
                            ('D32Measurement', 'TTL_493'),
                            ('D32Measurement', 'TTL_650'),
-                           ('D32Measurement', 'TTL_prep'),
+                           ('D32Measurement', 'Scan'),
                            ('D32Measurement', 'Sequences_Per_Point'),
                            ('D32Measurement', 'Start_Time'),
                            ('D32Measurement', 'Stop_Time'),
@@ -44,6 +44,9 @@ class D32_measurement(pulse_sequence):
         self.ttl_650 = self.p.TTL_650
         self.ttl_prep = self.p.TTL_prep
 
+        self.scan_channel = self.f.scan_dds_channel
+        self.scan_amp = self.f.scan_dds_amplitude
+        self.time_per_freq = self.f.time_per_freq
 
         self.cool_time = self.p.doppler_cooling_duration
         self.prep_time_s = self.p.state_prep_duration_s
@@ -73,15 +76,25 @@ class D32_measurement(pulse_sequence):
                     self.switch_time + self.sd_time)
 
         # Next we need to apply the microwave pulse using the frequency sweep pulse sequence.
-        # This sequentially hits all three pi transitions for a specified number of transitions. We need to subtract
-        # the start time of the frequency sweep sequence which is 10 usec
-        self.addSequence(frequency_sweep, position = self.start + self.cool_time + self.prep_time_d + self.switch_time - WithUnit(10.0,'us'))
+        # This sequentially hits all three pi transitions for a specified number of transitions.
+
+        self.addDDS(self.scan_channel, self.start + self.cool_time + self.prep_time_d + self.switch_time - WithUnit(1.0,'us') , self.time_per_freq + \
+                    WithUnit(1.0, 'us'), self.f.freq_1, self.scan_amp)
+
+        self.addDDS(self.scan_channel, self.start + self.cool_time + self.prep_time_d + self.switch_time + \
+                    self.time_per_freq, self.time_per_freq, self.f.freq_2, self.scan_amp)
+
+        self.addDDS(self.scan_channel, self.start + self.cool_time + self.prep_time_d + self.switch_time + \
+                    2*self.time_per_freq, self.time_per_freq, self.f.freq_3, self.scan_amp)
+
+
 
         # Wait for the microwaves and then do state detection
 
         # Turn the 650 dds back on for state detection
-        self.addDDS(self.channel_650, self.start + self.cool_time  + self.prep_time_d + self.switch_time + self.microwave_time \
+        self.addDDS(self.channel_650, self.start + self.cool_time  + self.prep_time_d + self.switch_time + 3*self.time_per_freq \
                     , self.switch_time + self.sd_time , self.freq_650, self.amp_650)
+
 
         self.addTTL('ReadoutCount', self.start + self.cool_time + self.prep_time_d + self.switch_time + self.microwave_time \
                     , self.switch_time + self.sd_time)
