@@ -49,7 +49,8 @@ class laser_stability_monitor(experiment):
         '''
 
         self.inittime = time.time()
-        self.initfreq = float(self.wm_p[self.laser][1])
+        self.initfreq = self.wlm.get_frequency(self.wm_p[self.laser][0])
+        self.dv.add_parameter('Initial Frequency',self.initfreq)
         while (time.time() - self.inittime) <= self.p.LaserMonitor.Measure_Time['s']:
             should_stop = self.pause_or_stop()
             if should_stop:
