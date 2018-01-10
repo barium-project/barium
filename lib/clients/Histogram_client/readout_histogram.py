@@ -219,15 +219,18 @@ class readout_histogram(QtGui.QWidget):
 
     @inlineCallbacks
     def on_new_dataset(self, x, y):
+    	# To only plot the latest histogram, the string in the added datavault param
+    	# has the number of cycles for that experiment at the end
     	if y[3][:4] == 'hist':
             dv = yield self.cxn.get_server('Data Vault')
+            ind = y[3].index('c')
+            num = int(y[3][(ind+1):])
             dataset = y[0]
             directory = y[2]
             yield dv.cd(directory, context = self.context)
             yield dv.open(dataset, context = self.context)
             data = yield dv.get(context = self.context)
-          	#data = data.asarray
-            #data = np.asarray(data)
+            data = data[-num:]
             yield deferToThread(self.on_new_data, data)
             yield dv.cd([''], context = self.context)
 

@@ -42,6 +42,8 @@ class Single_Channel_Lock_Server(LabradServer):
         self.integral = 0 # to use for I
         self.prev_output = 0.0
         self.dac_chan = 7
+        self.ff_chan = 6
+        self.ff_gain = 1
         self.lasers = multiplexer_config.info
         self.laser_chan = '455nm'
         self.lc = LoopingCall(self.loop)
@@ -106,7 +108,6 @@ class Single_Channel_Lock_Server(LabradServer):
     def set_low_rail(self, c, lower):
         self.low_rail = lower
 
-
     @setting(19, returns = 'v')
     def get_lock_frequency(self, c):
         return(self.set_frequency)
@@ -122,6 +123,12 @@ class Single_Channel_Lock_Server(LabradServer):
     @setting(22, returns = 'v')
     def get_dac_voltage(self, c):
         return(self.output)
+
+    @setting(23)
+    def reset_lock(self, c):
+        self.prev_output = 0
+        self.output = 0
+        yield self.trap.set_dc(0.0, int(self.dac_chan))
 
 if __name__ == "__main__":
     from labrad import util

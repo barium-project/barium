@@ -344,16 +344,16 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB7switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[1],True)
 
-        # Switch the sidebands on
-        yield self.pulser.switch_auto('TTL2',True)
-        yield self.pulser.switch_auto('TTL3',True)
-
-
         self.GPIB8spinFreq.setValue(self.cool_133['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_133['GPIB0::8'][1])
         self.GPIB8switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[2],True)
         '''
+        # Switch the sidebands on
+        yield self.pulser.switch_auto('TTL2',True)
+        yield self.pulser.switch_auto('TTL3',True)
+        # Make sure microwave switch is on
+        yield self.pulser.switch_auto('TTL4',False)
     @inlineCallbacks
     def cool_ba134(self):
 

@@ -47,7 +47,7 @@ class single_channel_wm(QtGui.QWidget):
         self.wavelength.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=70))
         self.wavelength.setAlignment(QtCore.Qt.AlignCenter)
         self.wavelength.setStyleSheet('color: blue')
-        subLayout.addWidget(self.wavelength, 1,0, 7, 2)
+        subLayout.addWidget(self.wavelength, 2,0, 6, 2)
         shell_font = 'MS Shell Dlg 2'
 
         # Create lock button
@@ -156,6 +156,7 @@ class single_channel_wm(QtGui.QWidget):
         self.spinHighRail.setValue(init_rails[1])
         self.spinHighRail.valueChanged.connect(lambda : self.railsChanged())
 
+
         # Too lazy to add signals to the server so
         # will update and display dac voltage every time
         # frequency updates
@@ -168,6 +169,13 @@ class single_channel_wm(QtGui.QWidget):
         self.dacVoltage.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=30))
         self.dacVoltage.setAlignment(QtCore.Qt.AlignCenter)
         subLayout.addWidget(self.dacVoltage, 9,3, 1, 1)
+
+        # clear lock button for voltage stuck too high
+        self.clear_lock = QtGui.QPushButton('Clear Lock Voltage')
+        self.clear_lock.setMaximumHeight(30)
+        self.clear_lock.setFont(QtGui.QFont('MS Shell Dlg 2', pointSize=12))
+        self.clear_lock.clicked.connect(lambda : self.reset_lock())
+        subLayout.addWidget(self.clear_lock, 1, 0, 1, 1)
 
         self.setLayout(layout)
 
@@ -196,8 +204,13 @@ class single_channel_wm(QtGui.QWidget):
             voltage = yield self.lock_server.get_dac_voltage()
             self.dacVoltage.setText(str(voltage)[0:5])
 
+    @inlineCallbacks
     def set_lock(self, state):
-        self.lock_server.toggle(state)
+        yield self.lock_server.toggle(state)
+
+    @inlineCallbacks
+    def reset_lock(self):
+        yield self.lock_server.reset_lock()
 
 
 if __name__ == "__main__":
