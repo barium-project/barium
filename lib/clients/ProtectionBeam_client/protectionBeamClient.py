@@ -126,6 +126,7 @@ class protectionBeamClient(QtGui.QFrame):
         if self.protection_state and running:
             counts = yield self.pmt.get_next_counts('ON',1)
             if counts < self.threshold:
+                self.protection_state = True
                 if self.inverted:
                     self.widget.TTLswitch.setChecked(True)
 

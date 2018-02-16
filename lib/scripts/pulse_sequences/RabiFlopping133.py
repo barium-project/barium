@@ -34,6 +34,10 @@ class rabi_flopping(pulse_sequence):
                            ('RabiFlopping133', 'Stop_Time'),
                            ('RabiFlopping133', 'Time_Step'),
                            ('RabiFlopping133', 'State_Detection'),
+                           ('RabiFlopping133', 'channel_650'),
+                           ('RabiFlopping133', 'frequency_650'),
+                           ('RabiFlopping133', 'amplitude_650'),
+                           ('RabiFlopping133', 'amplitude_650_shelving'),
                            ]
 
     def sequence(self):
@@ -43,6 +47,11 @@ class rabi_flopping(pulse_sequence):
         self.channel_493 = self.p.channel_493
         self.freq_493 = self.p.frequency_493
         self.amp_493 = self.p.amplitude_493
+
+        self.channel_650 = self.p.channel_650
+        self.freq_650 = self.p.frequency_650
+        self.amp_650 = self.p.amplitude_650
+        self.amp_650_shelve = self.p.amplitude_650_shelving
 
         self.channel_455 = self.p.channel_455
         self.freq_455 = self.p.frequency_455
@@ -91,6 +100,7 @@ class rabi_flopping(pulse_sequence):
 
         if self.state_detection == 'shelving':
             self.addDDS(self.channel_493, self.start,  self.cool_time + self.prep_time , self.freq_493, self.amp_493)
+            self.addDDS(self.channel_650, self.start,  self.cool_time + self.prep_time , self.freq_650, self.amp_650)
             # First Doppler cool which is doing nothing
             # Next optically pump by turning off 5.8GHz and 1.84GHz on
             self.addTTL(self.ttl_493, self.start + self.cool_time, self.prep_time + self.switch_time + self.microwave_time + \
@@ -104,12 +114,21 @@ class rabi_flopping(pulse_sequence):
             # Turn on shelving laser and microwaves to drive the D3/2 transition
             self.addDDS(self.channel_455, self.start + self.cool_time + self.prep_time + self.switch_time + \
                         self.microwave_time + self.switch_time, self.shelving_time, self.freq_455, self.amp_455)
+            #Turn on low power 650
+            self.addDDS(self.channel_650, self.start +  self.cool_time + self.prep_time + self.switch_time + \
+                        self.microwave_time + self.swith_time, self.shelving_time , self.freq_650, self.amp_650_shelving)
+            # Add ttl for rf switch
+            self.addTTL('TTL8', self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time + \
+                        self.switch_time, self.shelving_time)
             self.addDDS(self.channel_d32, self.start + self.cool_time + self.prep_time + self.switch_time + \
                         self.microwave_time + self.switch_time, self.shelving_time, self.freq_d32, self.amp_d32)
+
 
             # Turn the dds back on for state detection
             self.addDDS(self.channel_493, self.start + self.cool_time + self.prep_time + self.switch_time + \
                          self.microwave_time + self.switch_time + self.shelving_time, self.sd_time + self.deshelving_time, self.freq_493, self.amp_493)
+            self.addDDS(self.channel_650, self.start + self.cool_time + self.prep_time + self.switch_time + \
+                         self.microwave_time + self.switch_time + self.shelving_time, self.sd_time + self.deshelving_time, self.freq_650, self.amp_650)
             # Turn on photon counting for state detection
             self.addTTL('ReadoutCount', self.start + self.cool_time + self.prep_time + self.switch_time + \
                          self.microwave_time + self.switch_time + self.shelving_time, self.sd_time)

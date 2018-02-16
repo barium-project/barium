@@ -40,6 +40,7 @@ class rabi_flopping(experiment):
         self.HPA = self.cxn.hp8672a_server
         self.HPB = self.cxn.hp8657b_server
         self.pv = self.cxn.parametervault
+        self.shutter = self.cxn.arduinottl
 
         # Define variables to be used
         self.p = self.parameters
@@ -76,6 +77,10 @@ class rabi_flopping(experiment):
         self.HPB.set_amplitude(self.LO_amp)
         time.sleep(.3) # time to switch frequencies
 
+        if self.state_detection == 'shelving':
+            self.shutter.ttl_output(10, True)
+            time.sleep(.5)
+            self.pulser.switch_auto('TTL7',False)
 
         for i in range(len(t)):
             if self.pause_or_stop():
@@ -106,6 +111,8 @@ class rabi_flopping(experiment):
             # only plots the most recent point.
             self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
                                    True, context = self.c_hist)
+        self.pulser.switch_manual('TTL7',True)
+        self.shutter.ttl_output(10, False)
 
     def set_up_datavault(self):
         # set up folder

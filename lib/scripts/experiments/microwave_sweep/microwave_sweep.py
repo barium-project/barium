@@ -39,6 +39,7 @@ class microwave_sweep(experiment):
         self.dv = self.cxn.data_vault
         self.HPA = self.cxn.hp8672a_server
         self.pv = self.cxn.parametervault
+        self.shutter = self.cxn.arduinottl
 
         # Define variables to be used
         self.p = self.parameters
@@ -46,7 +47,9 @@ class microwave_sweep(experiment):
         self.start_frequency = self.p.MicrowaveSweep133.Start_Frequency
         self.stop_frequency = self.p.MicrowaveSweep133.Stop_Frequency
         self.step_frequency = self.p.MicrowaveSweep133.Frequency_Step
-
+        self.state_detection = self.p.MicrowaveSweep133.State_Detection
+        self.LO_freq = self.p.MicrowaveSweep133.LO_freq
+        self.LO_amp = self.p.MicrowaveSweepg133.LO_amp
         # Get contexts for saving the data sets
         self.c_prob = self.cxn.context()
         self.c_hist = self.cxn.context()
@@ -68,10 +71,13 @@ class microwave_sweep(experiment):
         pulse_sequence = main_sequence(self.p)
         pulse_sequence.programSequence(self.pulser)
 
+        if self.state_detection == 'shelving':
+            self.shutter.ttl_output(10, True)
+            time.sleep(.5)
+            self.pulser.switch_auto('TTL7',False)
         for i in range(len(freq)):
             if self.pause_or_stop():
                 break
-            print "started"
             self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
             self.HPA.set_frequency(WithUnit(freq[i],'MHz'))
             time.sleep(.3) # time to switch frequencies
@@ -81,13 +87,20 @@ class microwave_sweep(experiment):
             self.pulser.stop_sequence()
             counts = self.pulser.get_readout_counts()
             self.pulser.reset_readout_counts()
-            bright = np.where(counts >= self.disc)
-            fid = float(len(bright[0]))/len(counts)
+            # 1 state is bright for standard state detection
+            if self.state_detection == 'spin-1/2':
+                bright = np.where(counts >= self.disc)
+                fid = float(len(bright[0]))/len(counts)
+            # 1 state is dark for shelving state detection
+            elif self.state_detection == 'shelving':
+                dark = np.where(counts <= self.disc)
+                fid = float(len(dark[0]))/len(counts)
             self.dv.add(freq[i] , fid, context = self.c_prob)
             data = np.column_stack((np.arange(self.cycles),counts))
             self.dv.add(data, context = self.c_hist)
-            self.dv.add_parameter('hist'+str(i), True, context = self.c_hist)
-
+            self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
+        self.pulser.switch_manual('TTL7',True)
+        self.shutter.ttl_output(10, False)
 
     def set_up_datavault(self):
         # set up folder

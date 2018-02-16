@@ -268,6 +268,9 @@ class shelving_133(experiment):
         self.pi3 = -1*np.sqrt(1 + (1.25491*self.b_field['G']**2/self.hyperfine_freq['MHz']**2) - \
                               (1.12023*self.b_field['G']/self.hyperfine_freq['MHz']))*self.hyperfine_freq['MHz'] - self.LO_freq['MHz']
 
+        self.pi1 = abs(self.pi1)
+        self.pi2 = abs(self.pi2)
+        self.pi3 = abs(self.pi3)
         print self.pi1, self.pi2, self.pi3
 
 

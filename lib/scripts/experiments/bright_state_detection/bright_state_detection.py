@@ -57,7 +57,7 @@ class bright_state_detection(experiment):
         self.pulser.reset_readout_counts()
         data = np.column_stack((np.arange(self.cycles),counts))
         self.dv.add(data)
-        self.dv.add_parameter('hist', True)
+        self.dv.add_parameter('hist'+str(1) + 'c' + str(int(self.cycles)), True)
 
     def set_up_datavault(self):
         # set up folder
