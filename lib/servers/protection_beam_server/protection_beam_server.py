@@ -1,10 +1,10 @@
 """
 ### BEGIN NODE INFO
 [info]
-name = Oven_Server
+name = ProtectionBeamServer
 version = 1.0
 description =
-instancename = OvenServer
+instancename = ProtectionBeamServer
 
 [startup]
 cmdline = %PYTHON% %FILE%
@@ -22,7 +22,7 @@ from twisted.internet.task import LoopingCall
 import os
 import socket
 from labrad.units import WithUnit as U
-
+from config.shutter_client_config import shutter_config
 
 class ProtectionBeamServer(LabradServer):
 
@@ -32,63 +32,68 @@ class ProtectionBeamServer(LabradServer):
         self.password = os.environ['LABRADPASSWORD']
         self.name = socket.gethostname() + ' Protection Beam Server'
         self.threshold = 2 #kcounts/sec
+        self.enable_protection = False
         self.protection_state = False
+        self.shutter_config = shutter_config.info['Protection Beam']
+        self.port = self.shutter_config[0]
+        self.inverted = self.shutter_config[2]
+        self.enable = self.shutter_config[3]
+        self.enable_protection_shutter()
         self.connect()
 
     @inlineCallbacks
     def connect(self):
-        """Creates an Asynchronous connection to arduinottl and
-        connects incoming signals to relavent functions
-
+        """
+        Creates an Asynchronous connection labrad
         """
         from labrad.wrappers import connectAsync
         self.cxn = yield connectAsync(name='Protection_Beam_Server')
         self.arduino = self.cxn.arduinottl
         self.pmt = self.cxn.normalpmtflow
+        self.protection_loop()
 
 
-    @inlineCallbacks
-    def protectionLoop(self):
+    def protection_loop(self):
+        self.reactor.callLater(.1, self.protection_loop)
         running = yield self.pmt.isrunning()
-        if self.protection_state and running:
+        if self.enable_protection and running:
             counts = yield self.pmt.get_next_counts('ON',1)
             if counts < self.threshold:
-                if self.inverted:
-                    self.widget.TTLswitch.setChecked(True)
+                self.change_shutter_state(True)
+                self.protection_state = True
 
-                else:
-                    #self.arduino.ttl_output(self.port,True)
-                    self.widget.TTLswitch.setChecked(False)
-            '''
-            else:
-                if self.inverted:
-                    self.widget.TTLswitch.setChecked(False)
-                else:
-                    self.widget.TTLswitch.setChecked(True)
-                    print 'greater'
-            '''
-        self.reactor.callLater(.1, self.protectionLoop)
 
-    @setting(16, value='v[A]')
-    def oven_current(self, c, value):
-        if value <= self.max_current:
-            yield self.server.current(3, value)
-        else:
-            returnValue('Current above max allowed')
+    @setting(1, "change_shutter_state")
+    def change_shutter_state(self, c, state = 'b'):
+        if self.inverted:
+            state = not state
+        yield self.arduino.ttl_output(self.port, state)
 
-    @setting(17, output='b')
-    def oven_output(self, c, output):
-        yield self.server.output(3, output)
+    @setting(2, "enable_shutter")
+    def enable_protection_shutter(self, c):
+        """
+        Allows current to run through the shutter
+        """
+        yield self.arduino.ttl_output(self.enable, True)
 
-    @setting(18, returns='v[A]')
-    def get_current(self, c):
-        current = yield self.server.output(3)
-        returnValue(current)
+    @setting(3, "disable_protection")
+    def disable_protection(self, c, attempts = 'w', returns = 'b'):
+        """
+        Closes the shutter and then looks to see if it stays closed. Will try specified number
+        of times and return true if successful or false if it failed.
+        """
+        for i in range(attempts):
+            self.protection_state = False
+            self.change_shutter_state(False)
+            time.sleep(.2)
+            if self.protection_state == False:
+                returnValue(True)
+                break
+        returnValue(False)
 
-    @inlineCallbacks
-    def stopServer(self):
-        yield self.server.output(3, False)
+
+
 
 if __name__ == "__main__":
     from labrad import util
-    util.runServer(OvenServer())
+    util.runServer(ProtectionBeamServer())
