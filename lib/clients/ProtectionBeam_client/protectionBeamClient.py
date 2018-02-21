@@ -4,7 +4,6 @@ from common.lib.clients.connection import connection
 from PyQt4 import QtGui, QtCore
 import os,socket
 import time
-from config.shutter_client_config import shutter_config
 
 
 class protectionBeamClient(QtGui.QFrame):
@@ -22,20 +21,16 @@ class protectionBeamClient(QtGui.QFrame):
         self.cxn = cxn
         self.d = {}
         self.connect()
-        self.threshold = 1000
+        self.threshold = 0.0
         self.protection_state = False
 
     @inlineCallbacks
     def connect(self):
 
-        if self.cxn is None:
-            self.cxn = connection(name="Protection Beam Client")
-            yield self.cxn.connect()
+        from labrad.wrappers import connectAsync
 
-        self.arduino = yield self.cxn.get_server('arduinottl')
-        self.pmt = yield self.cxn.get_server('normalpmtflow')
-
-        self.chaninfo = shutter_config.info
+        self.cxn = yield connectAsync()
+        self.server = self.cxn.protectionbeamserver
         self.initializeGUI()
 
     @inlineCallbacks
@@ -48,25 +43,16 @@ class protectionBeamClient(QtGui.QFrame):
         qBox.setLayout(subLayout)
         layout.addWidget(qBox, 0, 0)
 
-        for chan in self.chaninfo:
-            if 'Protection Beam' == chan:
-                self.port = self.chaninfo[chan][0]
-                position = self.chaninfo[chan][1]
-                self.inverted = self.chaninfo[chan][2]
-                self.enable = self.chaninfo[chan][3]
 
-                self.widget = QCustomSwitchChannel(chan, ('Closed', 'Open'))
-                self.widget.TTLswitch.setChecked(False)
-                self.widget.TTLswitch.toggled.connect(lambda state=self.widget.TTLswitch.isDown(),
-                                             port = self.port, chan=chan, inverted= self.inverted:
-                                             self.changeState(state, port, chan, inverted))
 
-                self.widget.enableSwitch.clicked.connect(lambda state=self.widget.enableSwitch.isChecked(),
-                                             port=self.enable, chan=chan, inverted=self.inverted:
-                                             self.enableState(state, port, chan, inverted))
+        self.widget = QCustomSwitchChannel('Protection Beam', ('Open', 'Closed'))
+        self.widget.TTLswitch.setChecked(False)
+        self.widget.TTLswitch.toggled.connect(lambda state=self.widget.TTLswitch.isDown() : self.changeState(state))
+        self.widget.enableSwitch.clicked.connect(lambda state=self.widget.enableSwitch.isChecked():self.enableShutter(state))
 
-                self.d[self.port] = self.widget
-                subLayout.addWidget(self.d[self.port], position[0], position[1])
+        init_state = yield self.server.get_shutter_enabled()
+        self.widget.enableSwitch.setCheckState(init_state)
+        subLayout.addWidget(self.widget, 0, 0)
 
 
 
@@ -82,14 +68,15 @@ class protectionBeamClient(QtGui.QFrame):
         self.spinThreshold.setSingleStep(1)
         self.spinThreshold.setRange(0, 500e6)
         self.spinThreshold.setKeyboardTracking(False)
+
+        self.threshold = yield self.server.get_threshold()
         self.spinThreshold.setValue(self.threshold)
 
         self.enableProtection = QtGui.QCheckBox('Enable Protection')
         self.enableProtection.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=16))
 
-        init  = yield self.arduino.ttl_read(self.enable)
-
-        self.enableProtection.setCheckState(init)
+        init_state = yield self.server.get_protection_enabled()
+        self.enableProtection.setCheckState(init_state)
 
         layout.addWidget(self.spinThreshold, 3,0)
         layout.addWidget(thresholdName, 2,0)
@@ -99,49 +86,24 @@ class protectionBeamClient(QtGui.QFrame):
         ### Connect to functions
         self.spinThreshold.valueChanged.connect(self.thresholdChanged)
         self.enableProtection.clicked.connect(self.protection)
-        from twisted.internet.reactor import callLater
+
         self.setLayout(layout)
-        self.protectionLoop()
-        yield None
 
     @inlineCallbacks
-    def changeState(self, state, port, chan, inverted):
-        if inverted:
-            state = not state
-        yield self.arduino.ttl_output(port, state)
+    def changeState(self, state):
+        yield self.server.change_shutter_state(state)
 
     @inlineCallbacks
-    def enableState(self, state, port, chan, inverted):
-        yield self.arduino.ttl_output(port, state)
+    def enableShutter(self, state):
+        yield self.server.enable_protection_shutter(state)
 
+    @inlineCallbacks
     def thresholdChanged(self, threshold):
-        self.threshold = threshold
-
-    def protection(self, state):
-        self.protection_state = bool(state)
+        yield self.server.set_threshold(threshold)
 
     @inlineCallbacks
-    def protectionLoop(self):
-        running = yield self.pmt.isrunning()
-        if self.protection_state and running:
-            counts = yield self.pmt.get_next_counts('ON',1)
-            if counts < self.threshold:
-                self.protection_state = True
-                if self.inverted:
-                    self.widget.TTLswitch.setChecked(True)
-
-                else:
-                    #self.arduino.ttl_output(self.port,True)
-                    self.widget.TTLswitch.setChecked(False)
-            '''
-            else:
-                if self.inverted:
-                    self.widget.TTLswitch.setChecked(False)
-                else:
-                    self.widget.TTLswitch.setChecked(True)
-                    print 'greater'
-            '''
-        self.reactor.callLater(.1, self.protectionLoop)
+    def protection(self, state):
+        yield self.server.set_protection_enabled(state)
 
 
     def closeEvent(self, x):
