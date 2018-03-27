@@ -49,7 +49,7 @@ class shelving(pulse_sequence):
         self.deshelve_time = self.p.deshelving_duration
         self.shelve_time = self.p.shelving_duration
         self.detection_time = self.p.detection_duration
-        self.clean_out_time = WithUnit(50.0,'us')
+        self.clean_out_time = WithUnit(20.0,'ms')
         # If we're scanning frequency or time while shelving
         if self.p.Scan != 'deshelve':
             # Turn on doppler cooling DDSs for entire experiment
@@ -79,8 +79,9 @@ class shelving(pulse_sequence):
             # Turn on 455 DDS for shelving
             self.addDDS(self.channel_455, self.t0 + self.cool_time, self.shelve_time, self.freq_455, self.amp_455)
 
-            # Turn on deshelving LED
-            self.addTTL('TTL7', self.t0 + self.cool_time + self.shelve_time, self.deshelve_time)
+            if self.deshelve_time != 0:
+                # Turn on deshelving LED
+                self.addTTL('TTL7', self.t0 + self.cool_time + self.shelve_time, self.deshelve_time)
 
             # Count photons during detection time
             self.addTTL('ReadoutCount', self.t0 + self.cool_time + self.shelve_time + self.deshelve_time, self.detection_time)

@@ -105,6 +105,7 @@ class ProtectionBeamServer(LabradServer):
         """
         Close shutter to block protection beam
         """
+        self.protection_state = False
         self.change_shutter_state(self, False)
 
     # Define get functions
