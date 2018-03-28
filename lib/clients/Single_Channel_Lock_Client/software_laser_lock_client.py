@@ -81,10 +81,12 @@ class software_laser_lock_client(QtGui.QWidget):
 
             init_rails = yield self.lock_server.get_rails(chan)
             laser.spinLowRail.setValue(init_rails[0])
-            laser.spinLowRail.valueChanged.connect(lambda  : self.railsChanged(chan))
+            laser.spinLowRail.valueChanged.connect(lambda rail = laser.spinLowRail.value(), \
+                                                   chan = chan  : self.lowRailChanged(rail, chan))
 
             laser.spinHighRail.setValue(init_rails[1])
-            laser.spinHighRail.valueChanged.connect(lambda : self.railsChanged(chan))
+            laser.spinHighRail.valueChanged.connect(lambda rail = laser.spinHighRail.value(), \
+                                                    chan = chan : self.highRailChanged(rail, chan))
 
             laser.clear_lock.clicked.connect(lambda : self.reset_lock(chan))
 
@@ -106,9 +108,13 @@ class software_laser_lock_client(QtGui.QWidget):
         yield self.lock_server.set_gain(gain, chan)
 
     @inlineCallbacks
-    def railsChanged(self, chan):
-        yield self.lock_server.set_low_rail(self.spinLowRail.value(), chan)
-        yield self.lock_server.set_high_rail(self.spinHighRail.value(), chan)
+    def lowRailChanged(self, value, chan):
+        yield self.lock_server.set_low_rail(value, chan)
+
+
+    @inlineCallbacks
+    def highRailChanged(self, value, chan):
+        yield self.lock_server.set_high_rail(value, chan)
 
     @inlineCallbacks
     def updateFrequency(self, c, signal):

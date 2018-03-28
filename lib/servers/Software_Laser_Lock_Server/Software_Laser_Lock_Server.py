@@ -97,8 +97,6 @@ class Software_Laser_Lock_Server(LabradServer):
         '''
         Turn lock on or off
         '''
-        print state, type(chan)
-        print self.lasers[chan][6]
         self.lasers[chan][6] = int(state)
 
     @setting(14, value = 'v')
