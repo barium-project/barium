@@ -8,16 +8,18 @@ import os
 from config.multiplexerclient_config import multiplexer_config
 from common.lib.clients.qtui.q_custom_text_changing_button import \
     TextChangingButton
-from common.lib.clients.qtui.QCustomSlideIndicator import SlideIndicator
+from barium.lib.clients.gui.software_laser_lock_gui import software_laser_lock_channel
 
 SIGNALID1 = 445567
 
 
-class single_channel_wm(QtGui.QWidget):
+class software_laser_lock_client(QtGui.QWidget):
     def __init__(self, reactor, parent=None):
-        super(single_channel_wm, self).__init__()
+        super(software_laser_lock_client, self).__init__()
         self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         self.reactor = reactor
+        self.lasers = {}
+        self.channel_GUIs = {}
         self.connect()
 
     @inlineCallbacks
@@ -30,9 +32,18 @@ class single_channel_wm(QtGui.QWidget):
         self.wm_cxn = yield connectAsync(multiplexer_config.ip, name = socket.gethostname() + ' Single Channel Lock', password=self.password)
         self.wm = yield self.wm_cxn.multiplexerserver
         self.cxn = yield connectAsync('bender', name = socket.gethostname() + ' Single Channel Lock', password=self.password)
-        self.lock_server = yield self.cxn.single_channel_lock_server
+        self.lock_server = yield self.cxn.software_laser_lock_server
+        self.registry = self.cxn.registry
+
+        # Get lasers to lock
+        yield self.registry.cd(['Servers','software_laser_lock'])
+        lasers_to_lock = yield self.registry.get('lasers')
+        for chan in lasers_to_lock:
+            self.lasers[chan] = yield self.registry.get(chan)
+
         yield self.wm.signal__frequency_changed(SIGNALID1)
         yield self.wm.addListener(listener = self.updateFrequency, source = None, ID = SIGNALID1)
+
         self.initializeGUI()
 
     @inlineCallbacks
@@ -42,175 +53,80 @@ class single_channel_wm(QtGui.QWidget):
         subLayout = QtGui.QGridLayout()
         qBox.setLayout(subLayout)
         layout.addWidget(qBox, 0, 0), returnValue
-        self.centralwidget = QtGui.QWidget(self)
-        self.wavelength = QtGui.QLabel('freq')
-        self.wavelength.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=70))
-        self.wavelength.setAlignment(QtCore.Qt.AlignCenter)
-        self.wavelength.setStyleSheet('color: blue')
-        subLayout.addWidget(self.wavelength, 2,0, 6, 2)
-        shell_font = 'MS Shell Dlg 2'
 
-        # Create lock button
-        self.lockSwitch = TextChangingButton(('Locked','Unlocked'))
-        self.lockSwitch.toggled.connect(self.set_lock)
-        subLayout.addWidget(self.lockSwitch, 1, 3, 1, 1)
+        for chan in self.lasers:
+            laser = software_laser_lock_channel(chan)
 
-        #frequency switch label
-        lockName = QtGui.QLabel('Lock Frequency')
-        lockName.setFont(QtGui.QFont(shell_font, pointSize=16))
-        lockName.setAlignment(QtCore.Qt.AlignCenter)
-        subLayout.addWidget(lockName, 8, 0, 1, 1)
+            init_freq1 = yield self.lock_server.get_lock_frequency(chan)
+            laser.spinFreq1.setValue(init_freq1)
+            laser.spinFreq1.valueChanged.connect(lambda freq = laser.spinFreq1.value(), chan = chan \
+                                            : self.freqChanged(freq, chan))
 
-        # frequency
-        self.spinFreq1 = QtGui.QDoubleSpinBox()
-        self.spinFreq1.setFont(QtGui.QFont(shell_font, pointSize=16))
-        self.spinFreq1.setDecimals(6)
-        self.spinFreq1.setSingleStep(1e-6)
-        self.spinFreq1.setRange(0, 1e4)
-        self.spinFreq1.setKeyboardTracking(False)
-
-        subLayout.addWidget(self.spinFreq1, 9, 0, 1, 1)
-
-        init_freq1 = yield self.lock_server.get_lock_frequency()
-        self.spinFreq1.setValue(init_freq1)
-        self.spinFreq1.valueChanged.connect(lambda freq = self.spinFreq1.value(), \
-                                            : self.freqChanged(freq))
-
-        #exposure label
-        exposureName = QtGui.QLabel('Exposure')
-        exposureName.setFont(QtGui.QFont(shell_font, pointSize=16))
-        exposureName.setAlignment(QtCore.Qt.AlignCenter)
-        subLayout.addWidget(exposureName, 8, 1, 1, 1)
-
-        # exposure
-        self.spinExposure = QtGui.QDoubleSpinBox()
-        self.spinExposure.setFont(QtGui.QFont(shell_font, pointSize=16))
-        self.spinExposure.setDecimals(0)
-        self.spinExposure.setSingleStep(1)
-        self.spinExposure.setRange(0, 2000)
-        self.spinExposure.setKeyboardTracking(False)
-
-        subLayout.addWidget(self.spinExposure, 9, 1, 1, 1)
-
-        init_exp = yield self.wm.get_exposure(multiplexer_config.info['455nm'][0])
-        self.spinExposure.setValue(init_exp)
-        self.spinExposure.valueChanged.connect(lambda exp = self.spinExposure.value(), \
-                                            : self.expChanged(exp))
+            state = yield self.lock_server.get_lock_state(chan)
+            laser.lockSwitch.setChecked(state)
+            laser.lockSwitch.toggled.connect(lambda state = laser.lockSwitch.isDown(), chan = chan  \
+                                             : self.set_lock(state, chan))
 
 
-        #gain  label
-        gainName = QtGui.QLabel('Gain (V/MHz)')
-        gainName.setFont(QtGui.QFont(shell_font, pointSize=16))
-        gainName.setAlignment(QtCore.Qt.AlignCenter)
-        subLayout.addWidget(gainName, 2, 3, 1, 1)
+            init_exp = yield self.wm.get_exposure(self.lasers[chan][0])
+            laser.spinExposure.setValue(init_exp)
+            laser.spinExposure.valueChanged.connect(lambda exp = laser.spinExposure.value(), \
+                                            chan = chan, : self.expChanged(exp, chan))
 
-        # frequency
-        self.spinGain = QtGui.QDoubleSpinBox()
-        self.spinGain.setFont(QtGui.QFont(shell_font, pointSize=16))
-        self.spinGain.setDecimals(3)
-        self.spinGain.setSingleStep(1e-3)
-        self.spinGain.setRange(1e-3, 1)
-        self.spinGain.setKeyboardTracking(False)
-        subLayout.addWidget(self.spinGain, 3, 3, 1, 1)
-
-        init_gain = yield self.lock_server.get_gain()
-        self.spinGain.setValue(init_gain)
-        self.spinGain.valueChanged.connect(lambda gain = self.spinGain.value(), \
-                                            : self.gainChanged(gain))
-
-        #rails  label
-        lowRail = QtGui.QLabel('Low Rail')
-        lowRail.setFont(QtGui.QFont(shell_font, pointSize=16))
-        lowRail.setAlignment(QtCore.Qt.AlignCenter)
-        subLayout.addWidget(lowRail, 4, 3, 1, 1)
-
-        # low rail
-        self.spinLowRail = QtGui.QDoubleSpinBox()
-        self.spinLowRail.setFont(QtGui.QFont(shell_font, pointSize=16))
-        self.spinLowRail.setDecimals(0)
-        self.spinLowRail.setSingleStep(1)
-        self.spinLowRail.setRange(0 , 50)
-        self.spinLowRail.setKeyboardTracking(False)
-        subLayout.addWidget(self.spinLowRail, 5, 3, 1, 1)
-
-        init_rails = yield self.lock_server.get_rails()
-        self.spinLowRail.setValue(init_rails[0])
-        self.spinLowRail.valueChanged.connect(lambda : self.railsChanged())
-
-        #high rails  label
-        highRail = QtGui.QLabel('High Rail')
-        highRail.setFont(QtGui.QFont(shell_font, pointSize=16))
-        highRail.setAlignment(QtCore.Qt.AlignCenter)
-        subLayout.addWidget(highRail, 6, 3, 1, 1)
-
-        # high rail
-        self.spinHighRail = QtGui.QDoubleSpinBox()
-        self.spinHighRail.setFont(QtGui.QFont(shell_font, pointSize=16))
-        self.spinHighRail.setDecimals(0)
-        self.spinHighRail.setSingleStep(1)
-        self.spinHighRail.setRange(0 , 50)
-        self.spinHighRail.setKeyboardTracking(False)
-        subLayout.addWidget(self.spinHighRail, 7, 3, 1, 1)
-
-        init_rails = yield self.lock_server.get_rails()
-        self.spinHighRail.setValue(init_rails[1])
-        self.spinHighRail.valueChanged.connect(lambda : self.railsChanged())
+            init_gain = yield self.lock_server.get_gain(chan)
+            laser.spinGain.setValue(init_gain)
+            laser.spinGain.valueChanged.connect(lambda gain = laser.spinGain.value(), \
+                                            chan = chan : self.gainChanged(gain, chan))
 
 
-        # Too lazy to add signals to the server so
-        # will update and display dac voltage every time
-        # frequency updates
-        self.dacLabel = QtGui.QLabel('Dac Voltage')
-        self.dacLabel.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=30))
-        self.dacLabel.setAlignment(QtCore.Qt.AlignCenter)
-        subLayout.addWidget(self.dacLabel, 8,3, 1, 1)
+            init_rails = yield self.lock_server.get_rails(chan)
+            laser.spinLowRail.setValue(init_rails[0])
+            laser.spinLowRail.valueChanged.connect(lambda  : self.railsChanged(chan))
 
-        self.dacVoltage = QtGui.QLabel('0.0')
-        self.dacVoltage.setFont(QtGui.QFont('MS Shell Dlg 2',pointSize=30))
-        self.dacVoltage.setAlignment(QtCore.Qt.AlignCenter)
-        subLayout.addWidget(self.dacVoltage, 9,3, 1, 1)
+            laser.spinHighRail.setValue(init_rails[1])
+            laser.spinHighRail.valueChanged.connect(lambda : self.railsChanged(chan))
 
-        # clear lock button for voltage stuck too high
-        self.clear_lock = QtGui.QPushButton('Clear Lock Voltage')
-        self.clear_lock.setMaximumHeight(30)
-        self.clear_lock.setFont(QtGui.QFont('MS Shell Dlg 2', pointSize=12))
-        self.clear_lock.clicked.connect(lambda : self.reset_lock())
-        subLayout.addWidget(self.clear_lock, 1, 0, 1, 1)
+            laser.clear_lock.clicked.connect(lambda : self.reset_lock(chan))
 
-        self.setLayout(layout)
+            self.channel_GUIs[chan] = laser
+            subLayout.addWidget(laser, self.lasers[chan][2][0], self.lasers[chan][2][1] , 1, 1)
+            self.setLayout(layout)
 
 
     @inlineCallbacks
-    def freqChanged(self, freq):
-        yield self.lock_server.set_point(freq)
+    def freqChanged(self, freq, chan):
+        yield self.lock_server.set_lock_frequency(freq, chan)
 
     @inlineCallbacks
-    def expChanged(self, exp):
-        yield self.wm.set_exposure_time(multiplexer_config.info['455nm'][0],int(exp))
+    def expChanged(self, exp, chan):
+        yield self.wm.set_exposure_time(self.lasers[chan][0],int(exp))
 
     @inlineCallbacks
-    def gainChanged(self, gain):
-        yield self.lock_server.set_gain(gain)
+    def gainChanged(self, gain, chan):
+        yield self.lock_server.set_gain(gain, chan)
 
     @inlineCallbacks
-    def railsChanged(self):
-        yield self.lock_server.set_low_rail(self.spinLowRail.value())
-        yield self.lock_server.set_high_rail(self.spinHighRail.value())
+    def railsChanged(self, chan):
+        yield self.lock_server.set_low_rail(self.spinLowRail.value(), chan)
+        yield self.lock_server.set_high_rail(self.spinHighRail.value(), chan)
 
     @inlineCallbacks
     def updateFrequency(self, c, signal):
-        if signal[0] == multiplexer_config.info['455nm'][0]:
-            self.wavelength.setText(str(signal[1])[0:10])
-            voltage = yield self.lock_server.get_dac_voltage()
-            self.dacVoltage.setText(str(voltage)[0:5])
+        for chan in self.lasers:
+            if signal[0] == self.lasers[chan][0]:
+
+                laser = self.channel_GUIs[chan]
+                laser.wavelength.setText(str(signal[1])[0:10])
+                voltage = yield self.lock_server.get_dac_voltage(chan)
+                laser.dacVoltage.setText(str(voltage)[0:5])
 
     @inlineCallbacks
-    def set_lock(self, state):
-        yield self.lock_server.toggle(state)
+    def set_lock(self, state, chan):
+        yield self.lock_server.lock_channel(state, chan)
 
     @inlineCallbacks
-    def reset_lock(self):
-        yield self.lock_server.reset_lock()
+    def reset_lock(self, chan):
+        yield self.lock_server.reset_lock(chan)
 
 
 if __name__ == "__main__":
@@ -218,6 +134,6 @@ if __name__ == "__main__":
     import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
-    single_chan_Widget = single_channel_wm(reactor)
-    single_chan_Widget.show()
+    software_lock = software_laser_lock_client(reactor)
+    software_lock.show()
     reactor.run()
