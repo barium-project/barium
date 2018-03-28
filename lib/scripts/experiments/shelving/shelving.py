@@ -50,6 +50,7 @@ class shelving(experiment):
         self.stop_freq = self.parameters.Shelving.Frequency_Stop
         self.step_freq = self.parameters.Shelving.Frequency_Step
         self.scan = self.parameters.Shelving.Scan
+        self.scan_laser = self.parameters.Shelving.Scan_Laser
         self.wm_p = multiplexer_config.info
         # Need to map the gpib address to the labrad connection
 
@@ -140,7 +141,7 @@ class shelving(experiment):
                 time.sleep(.5)
                 self.pulser.switch_auto('TTL7',False)
                 while True:
-                    frequency = self.wm.get_frequency(self.wm_p['455nm'][0])
+                    frequency = self.wm.get_frequency(self.wm_p[self.scan_laser][0])
                     self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                     self.run_pulse_sequence()
                     # First check if the protection was enabled, do nothing if not

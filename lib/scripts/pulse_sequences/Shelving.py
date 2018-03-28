@@ -14,6 +14,9 @@ class shelving(pulse_sequence):
                            ('Shelving', 'channel_455'),
                            ('Shelving', 'frequency_455'),
                            ('Shelving', 'amplitude_455'),
+                           ('Shelving', 'channel_585'),
+                           ('Shelving', 'frequency_585'),
+                           ('Shelving', 'amplitude_585'),
                            ('Shelving', 'doppler_cooling_duration'),
                            ('Shelving', 'shelving_duration'),
                            ('Shelving', 'deshelving_duration'),
@@ -25,6 +28,7 @@ class shelving(pulse_sequence):
                            ('Shelving', 'Frequency_Stop'),
                            ('Shelving', 'Frequency_Step'),
                            ('Shelving', 'Scan'),
+                           ('Shelving', 'Scan_Laser'),
                            ('Shelving', 'detection_duration'),
                            ]
 
@@ -42,6 +46,9 @@ class shelving(pulse_sequence):
         self.channel_455 = self.p.channel_455
         self.freq_455 = self.p.frequency_455
         self.amp_455 = self.p.amplitude_455
+        self.channel_585 = self.p.channel_585
+        self.freq_585 = self.p.frequency_585
+        self.amp_585 = self.p.amplitude_585
         self.cycles = self.p.cycles
         self.t0 = self.start - WithUnit(1.0,'us') # takes 1us to switch frequencies. This way actually turns on at 10us
         self.advance = WithUnit(0.85,'us')
@@ -60,6 +67,8 @@ class shelving(pulse_sequence):
 
             # Turn on 455 DDS for shelving
             self.addDDS(self.channel_455, self.t0 + self.cool_time, self.shelve_time, self.freq_455, self.amp_455)
+            # Turn on 585 DDS for shelving
+            self.addDDS(self.channel_585, self.t0 + self.cool_time, self.shelve_time, self.freq_585, self.amp_585)
 
             # Count photons during detection time
             self.addTTL('ReadoutCount', self.t0 + self.cool_time + self.shelve_time, self.detection_time)
@@ -78,6 +87,9 @@ class shelving(pulse_sequence):
 
             # Turn on 455 DDS for shelving
             self.addDDS(self.channel_455, self.t0 + self.cool_time, self.shelve_time, self.freq_455, self.amp_455)
+            # Turn on 585 DDS for shelving
+            self.addDDS(self.channel_585, self.t0 + self.cool_time, self.shelve_time, self.freq_585, self.amp_585)
+
 
             if self.deshelve_time != 0:
                 # Turn on deshelving LED
