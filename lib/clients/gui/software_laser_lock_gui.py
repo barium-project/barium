@@ -62,7 +62,7 @@ class software_laser_lock_channel(QtGui.QFrame):
         self.spinExposure.setKeyboardTracking(False)
 
         #gain  label
-        gainName = QtGui.QLabel('Gain (V/MHz)')
+        gainName = QtGui.QLabel('Gain')
         gainName.setFont(QtGui.QFont(shell_font, pointSize=16))
         gainName.setAlignment(QtCore.Qt.AlignCenter)
 

@@ -227,10 +227,10 @@ class TrapControlClient(QtGui.QWidget):
         self.subLayout.addWidget(self.hvGUI, 2, 5, 1, 1)
 
         # Add current controler
-        self.HP = HP6033A_Client(self.reactor)
-        self.HP.self_connect('bender',"HP6033A Client",0)
+        #self.HP = HP6033A_Client(self.reactor)
+        #self.HP.self_connect('bender',"HP6033A Client",0)
 
-        self.subLayout.addWidget(self.HP, 2, 2, 1, 2)
+        #self.subLayout.addWidget(self.HP, 2, 2, 1, 2)
 
         self.ARampGUI = QCustomARampGui()
         self.ARampGUI.ARamp.clicked.connect(lambda: self.a_ramp())

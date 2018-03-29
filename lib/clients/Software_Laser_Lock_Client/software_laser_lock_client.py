@@ -55,7 +55,15 @@ class software_laser_lock_client(QtGui.QWidget):
         layout.addWidget(qBox, 0, 0), returnValue
 
         for chan in self.lasers:
+
             laser = software_laser_lock_channel(chan)
+
+            from common.lib.clients.qtui import RGBconverter as RGB
+            RGB = RGB.RGBconverter()
+            color = int(2.998e8/(float(self.lasers[chan][0])*1e3))
+            color = RGB.wav2RGB(color)
+            color = tuple(color)
+            laser.wavelength.setStyleSheet('color: rgb' + str(color))
 
             init_freq1 = yield self.lock_server.get_lock_frequency(chan)
             laser.spinFreq1.setValue(init_freq1)
