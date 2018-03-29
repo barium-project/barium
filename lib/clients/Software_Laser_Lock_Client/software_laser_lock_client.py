@@ -68,7 +68,7 @@ class software_laser_lock_client(QtGui.QWidget):
                                              : self.set_lock(state, chan))
 
 
-            init_exp = yield self.wm.get_exposure(self.lasers[chan][0])
+            init_exp = yield self.wm.get_exposure(self.lasers[chan][1])
             laser.spinExposure.setValue(init_exp)
             laser.spinExposure.valueChanged.connect(lambda exp = laser.spinExposure.value(), \
                                             chan = chan, : self.expChanged(exp, chan))
@@ -101,7 +101,7 @@ class software_laser_lock_client(QtGui.QWidget):
 
     @inlineCallbacks
     def expChanged(self, exp, chan):
-        yield self.wm.set_exposure_time(self.lasers[chan][0],int(exp))
+        yield self.wm.set_exposure_time(self.lasers[chan][1],int(exp))
 
     @inlineCallbacks
     def gainChanged(self, gain, chan):
@@ -119,7 +119,7 @@ class software_laser_lock_client(QtGui.QWidget):
     @inlineCallbacks
     def updateFrequency(self, c, signal):
         for chan in self.lasers:
-            if signal[0] == self.lasers[chan][0]:
+            if signal[0] == self.lasers[chan][1]:
 
                 laser = self.channel_GUIs[chan]
                 laser.wavelength.setText(str(signal[1])[0:10])

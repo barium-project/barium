@@ -60,7 +60,7 @@ class Software_Laser_Lock_Server(LabradServer):
         a key called 'lasers', which is a list of the keys for each set of laser
         parameters. i.e. lasers = ['455nm','585nm'], where '455nm' is a registry key
         which identifies a list of the laser locking parameters for the 455nm laser:
-        (Multiplexer Channel, lock frequency (THz), display_location (column,row), gain,
+        (lock frequency (THz), Multiplexer Channel, display_location (column,row), gain,
         DAC Channel (0 unassigned)), Rail Volatages [low,high], locked, output voltage)
         """
 
@@ -77,8 +77,8 @@ class Software_Laser_Lock_Server(LabradServer):
         for laser in self.lasers:
             if self.lasers[laser][6] == True:
                 # Get the frequency
-                freq = yield self.wm.get_frequency(self.lasers[laser][0])
-                error = (self.lasers[laser][1] - freq)*1e6 # gives me diff in MHz
+                freq = yield self.wm.get_frequency(self.lasers[laser][1])
+                error = (self.lasers[laser][0] - freq)*1e6 # gives me diff in MHz
                 # Multiply error by the gain and add the previous output
                 output = error*self.lasers[laser][3]  + self.lasers[laser][7]
                 # Check against the rails
@@ -98,6 +98,7 @@ class Software_Laser_Lock_Server(LabradServer):
         Turn lock on or off
         '''
         self.lasers[chan][6] = int(state)
+        self.update_registry(chan)
 
     @setting(14, value = 'v')
     def offset(self, c, value):
@@ -107,22 +108,26 @@ class Software_Laser_Lock_Server(LabradServer):
     @setting(15, gain = 'v', chan = 's')
     def set_gain(self, c, gain, chan):
         self.lasers[chan][3] = gain
+        self.update_registry(chan)
 
     @setting(16, setpoint = 'v', chan = 's')
     def set_lock_frequency(self, c, setpoint, chan):
-        self.lasers[chan][1] = setpoint
+        self.lasers[chan][0] = setpoint
+        self.update_registry(chan)
 
     @setting(17, high = 'v', chan = 's')
     def set_high_rail(self, c, high, chan):
         self.lasers[chan][5][1] = high
+        self.update_registry(chan)
 
     @setting(18, lower = 'v', chan = 's')
     def set_low_rail(self, c, lower, chan):
         self.lasers[chan][5][0] = lower
+        self.update_registry(chan)
 
     @setting(19, chan = 's', returns = 'v')
     def get_lock_frequency(self, c, chan):
-        return(self.lasers[chan][1])
+        return(self.lasers[chan][0])
 
     @setting(20, chan = 's', returns = 'v')
     def get_gain(self, c, chan):
@@ -140,11 +145,15 @@ class Software_Laser_Lock_Server(LabradServer):
     def reset_lock(self, c, chan):
         self.lasers[chan][7] = 0
         yield self.trap.set_dc(0.0, int(self.lasers[chan][4]))
+        self.update_registry(chan)
 
     @setting(24, chan  = 's', returns = 'b')
     def get_lock_state(self, c, chan):
         return(bool(self.lasers[chan][6]))
 
+    @inlineCallbacks
+    def update_registry(self, chan):
+        yield self.reg.set(chan, tuple(self.lasers[chan]))
 
 if __name__ == "__main__":
     from labrad import util
