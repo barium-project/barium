@@ -1,6 +1,7 @@
 from PyQt4 import QtGui
 from twisted.internet.defer import inlineCallbacks, returnValue
 import sys
+from barium.lib.clients.gui.detachable_tab import DetachableTabWidget
 
 class BARIUM_GUI(QtGui.QMainWindow):
     def __init__(self, reactor, clipboard, parent=None):
@@ -31,7 +32,7 @@ class BARIUM_GUI(QtGui.QMainWindow):
         switch = self.makePMTCameraSwitchWidget(reactor)
 
         # add tabs
-        self.tabWidget = QtGui.QTabWidget()
+        self.tabWidget = DetachableTabWidget()
         self.tabWidget.addTab(wavemeter, '&Wavemeter')
         self.tabWidget.addTab(software_lock, '&Software Lock')
         self.tabWidget.addTab(script_scanner, '&Script Scanner')
