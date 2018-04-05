@@ -7,14 +7,16 @@ class rabi_flopping(pulse_sequence):
                            ('RabiFlopping133', 'channel_493'),
                            ('RabiFlopping133', 'frequency_493'),
                            ('RabiFlopping133', 'amplitude_493'),
+                           ('RabiFlopping133', 'channel_650'),
+                           ('RabiFlopping133', 'frequency_650'),
+                           ('RabiFlopping133', 'amplitude_650'),
+                           ('RabiFlopping133', 'amplitude_650_shelving'),
                            ('RabiFlopping133', 'channel_455'),
                            ('RabiFlopping133', 'frequency_455'),
                            ('RabiFlopping133', 'amplitude_455'),
-                           ('RabiFlopping133', 'LO_freq'),
-                           ('RabiFlopping133', 'LO_amp'),
-                           ('RabiFlopping133', 'amplitude_d32'),
-                           ('RabiFlopping133', 'channel_d32'),
-                           ('RabiFlopping133', 'frequency_d32'),
+                           ('RabiFlopping133', 'channel_585'),
+                           ('RabiFlopping133', 'frequency_585'),
+                           ('RabiFlopping133', 'amplitude_585'),
                            ('RabiFlopping133', 'doppler_cooling_duration'),
                            ('RabiFlopping133', 'state_prep_duration'),
                            ('RabiFlopping133', 'state_detection_duration'),
@@ -34,10 +36,6 @@ class rabi_flopping(pulse_sequence):
                            ('RabiFlopping133', 'Stop_Time'),
                            ('RabiFlopping133', 'Time_Step'),
                            ('RabiFlopping133', 'State_Detection'),
-                           ('RabiFlopping133', 'channel_650'),
-                           ('RabiFlopping133', 'frequency_650'),
-                           ('RabiFlopping133', 'amplitude_650'),
-                           ('RabiFlopping133', 'amplitude_650_shelving'),
                            ]
 
     def sequence(self):
@@ -51,15 +49,15 @@ class rabi_flopping(pulse_sequence):
         self.channel_650 = self.p.channel_650
         self.freq_650 = self.p.frequency_650
         self.amp_650 = self.p.amplitude_650
-        self.amp_650_shelve = self.p.amplitude_650_shelving
+        self.amp_650_shelving = self.p.amplitude_650_shelving
 
         self.channel_455 = self.p.channel_455
         self.freq_455 = self.p.frequency_455
         self.amp_455 = self.p.amplitude_455
 
-        self.channel_d32 = self.p.channel_d32
-        self.freq_d32  = self.p.frequency_d32
-        self.amp_d32 = self.p.amplitude_d32
+        self.channel_585 = self.p.channel_585
+        self.freq_585  = self.p.frequency_585
+        self.amp_585 = self.p.amplitude_585
 
         self.ttl_493 = self.p.TTL_493
         self.ttl_650 = self.p.TTL_650
@@ -111,17 +109,14 @@ class rabi_flopping(pulse_sequence):
             self.addTTL(self.ttl_650, self.start + self.cool_time + self.prep_time, self.switch_time + self.microwave_time + \
                          self.switch_time + self.shelving_time)
             self.addTTL(self.ttl_microwave, self.start + self.cool_time + self.prep_time + self.switch_time , self.microwave_time)
-            # Turn on shelving laser and microwaves to drive the D3/2 transition
+            # Turn on shelving lasers
             self.addDDS(self.channel_455, self.start + self.cool_time + self.prep_time + self.switch_time + \
                         self.microwave_time + self.switch_time, self.shelving_time, self.freq_455, self.amp_455)
             #Turn on low power 650
             self.addDDS(self.channel_650, self.start +  self.cool_time + self.prep_time + self.switch_time + \
-                        self.microwave_time + self.swith_time, self.shelving_time , self.freq_650, self.amp_650_shelving)
-            # Add ttl for rf switch
-            self.addTTL('TTL8', self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time + \
-                        self.switch_time, self.shelving_time)
-            self.addDDS(self.channel_d32, self.start + self.cool_time + self.prep_time + self.switch_time + \
-                        self.microwave_time + self.switch_time, self.shelving_time, self.freq_d32, self.amp_d32)
+                        self.microwave_time + self.switch_time, self.shelving_time , self.freq_650, self.amp_650_shelving)
+            self.addDDS(self.channel_585, self.start + self.cool_time + self.prep_time + self.switch_time + \
+                        self.microwave_time + self.switch_time, self.shelving_time, self.freq_585, self.amp_585)
 
 
             # Turn the dds back on for state detection

@@ -41,6 +41,7 @@ class rabi_flopping(experiment):
         self.HPB = self.cxn.hp8657b_server
         self.pv = self.cxn.parametervault
         self.shutter = self.cxn.arduinottl
+        self.pb = self.cxn.protectionbeamserver
 
         # Define variables to be used
         self.p = self.parameters
@@ -51,8 +52,7 @@ class rabi_flopping(experiment):
         self.freq = self.p.RabiFlopping133.microwave_frequency
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
         self.state_detection = self.p.RabiFlopping133.State_Detection
-        self.LO_freq = self.p.RabiFlopping133.LO_freq
-        self.LO_amp = self.p.RabiFlopping133.LO_amp
+
 
         # Define contexts for saving data sets
         self.c_prob = self.cxn.context()
@@ -72,9 +72,6 @@ class rabi_flopping(experiment):
                     int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
 
         self.HPA.set_frequency(self.freq)
-        self.HPB.select_device(self.device_mapB['GPIB0::6'])
-        self.HPB.set_frequency(self.LO_freq)
-        self.HPB.set_amplitude(self.LO_amp)
         time.sleep(.3) # time to switch frequencies
 
         if self.state_detection == 'shelving':
@@ -84,33 +81,57 @@ class rabi_flopping(experiment):
 
         for i in range(len(t)):
             if self.pause_or_stop():
-                break
-            # set the microwave duration
-            self.p.RabiFlopping133.microwave_duration = WithUnit(t[i],'us')
-            self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-            pulse_sequence = main_sequence(self.p)
-            pulse_sequence.programSequence(self.pulser)
-            self.pulser.start_number(int(self.cycles))
-            self.pulser.wait_sequence_done()
-            self.pulser.stop_sequence()
-            counts = self.pulser.get_readout_counts()
-            self.pulser.reset_readout_counts()
-            # 1 state is bright for standard state detection
-            if self.state_detection == 'spin-1/2':
-                bright = np.where(counts >= self.disc)
-                fid = float(len(bright[0]))/len(counts)
-            # 1 state is dark for shelving state detection
-            elif self.state_detection == 'shelving':
-                dark = np.where(counts <= self.disc)
-                fid = float(len(dark[0]))/len(counts)
+                # Turn on LED if aborting experiment
+                self.pulser.switch_manual('TTL7',True)
+                return
+            # for the protection beam we start a while loop and break it if we got the data,
+            # continue if we didn't
+            while True:
+                if self.pause_or_stop():
+                    # Turn on LED if aborting experiment
+                    self.pulser.switch_manual('TTL7',True)
+                    return
 
-            self.dv.add(t[i] , fid, context = self.c_prob)
-            data = np.column_stack((np.arange(self.cycles),counts))
-            self.dv.add(data, context = self.c_hist)
-            # Adding the character c and the number of cycles so plotting the histogram
-            # only plots the most recent point.
-            self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
-                                   True, context = self.c_hist)
+                # set the microwave duration
+                self.p.RabiFlopping133.microwave_duration = WithUnit(t[i],'us')
+                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+                self.run_pulse_sequence()
+
+                # First check if the protection was enabled, do nothing if not
+                if not self.pb.get_protection_state():
+                        pass
+                # if it was enabled, try to fix, continue if successful
+                # otherwise call return to break out of function
+                else:
+                    # Should turn on deshelving LED while trying
+                    self.pulser.switch_manual('TTL7',True)
+                    if self.remove_protection_beam():
+                        # If successful switch off LED and return to top of loop
+                        self.pulser.switch_auto('TTL7',False)
+                        continue
+                    else:
+                        # Failed, abort experiment
+                        return
+
+
+                counts = self.pulser.get_readout_counts()
+                # 1 state is bright for standard state detection
+                if self.state_detection == 'spin-1/2':
+                    bright = np.where(counts >= self.disc)
+                    fid = float(len(bright[0]))/len(counts)
+                # 1 state is dark for shelving state detection
+                elif self.state_detection == 'shelving':
+                    dark = np.where(counts <= self.disc)
+                    fid = float(len(dark[0]))/len(counts)
+
+                self.dv.add(t[i] , fid, context = self.c_prob)
+                data = np.column_stack((np.arange(self.cycles),counts))
+                self.dv.add(data, context = self.c_hist)
+                # Adding the character c and the number of cycles so plotting the histogram
+                # only plots the most recent point.
+                self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
+                                      True, context = self.c_hist)
+                break
         self.pulser.switch_manual('TTL7',True)
         self.shutter.ttl_output(10, False)
 
@@ -159,6 +180,25 @@ class rabi_flopping(experiment):
                 if devices[j][1].find(gpib_listB[i]) > 0:
                     self.device_mapB[gpib_listB[i]] = devices[j][0]
                     break
+
+    def remove_protection_beam(self):
+        for i in range(5):
+            self.pb.protection_off()
+            time.sleep(.3)
+            print "trying to remove " + str(i)
+            print self.pb.get_protection_state()
+            if not self.pb.get_protection_state():
+                return True
+        print 'failed to remove protection beam'
+        return False
+
+    def run_pulse_sequence(self):
+        pulse_sequence = main_sequence(self.p)
+        pulse_sequence.programSequence(self.pulser)
+        self.pulser.reset_readout_counts()
+        self.pulser.start_number(int(self.cycles))
+        self.pulser.wait_sequence_done()
+        self.pulser.stop_sequence()
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()
