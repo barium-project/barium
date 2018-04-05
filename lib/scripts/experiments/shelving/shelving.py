@@ -35,10 +35,11 @@ class shelving(experiment):
         self.pulser = self.cxn.pulser
         self.dv = self.cxn.data_vault
         self.grapher = self.cxn.grapher
-        self.single_lock = self.cxn.single_channel_lock_server
+        self.single_lock = self.cxn.software_laser_lock_server
         self.pv = self.cxn.parametervault
         self.shutter = self.cxn.arduinottl
         self.pb = self.cxn.protectionbeamserver
+        self.reg = self.cxn.registry
 
         # Define variables to be used
         self.p = self.parameters
@@ -51,9 +52,13 @@ class shelving(experiment):
         self.step_freq = self.parameters.Shelving.Frequency_Step
         self.scan = self.parameters.Shelving.Scan
         self.scan_laser = self.parameters.Shelving.Scan_Laser
-        self.wm_p = multiplexer_config.info
-        # Need to map the gpib address to the labrad connection
 
+        # Get software laser lock info
+        self.reg.cd(['Servers','software_laser_lock'])
+        laser = self.reg.get(self.scan_laser)
+        # Returns tuple which is not iterable
+        laser = list(laser)
+        self.scan_laser_chan = laser[1]
 
         # Get context for saving probability and histograms
         self.c_prob = self.cxn.context()
@@ -135,13 +140,13 @@ class shelving(experiment):
                     return
                 # for the protection beam we start a while loop and break it if we got the data,
                 # continue if we didn't
-                self.single_lock.set_point(freq[i])
+                self.single_lock.set_lock_frequency(freq[i], self.scan_laser)
                 time.sleep(5)
                 self.shutter.ttl_output(10, True)
                 time.sleep(.5)
                 self.pulser.switch_auto('TTL7',False)
                 while True:
-                    frequency = self.wm.get_frequency(self.wm_p[self.scan_laser][0])
+                    frequency = self.wm.get_frequency(self.scan_laser_chan)
                     self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                     self.run_pulse_sequence()
                     # First check if the protection was enabled, do nothing if not
