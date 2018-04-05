@@ -40,6 +40,7 @@ class microwave_sweep(experiment):
         self.HPA = self.cxn.hp8672a_server
         self.pv = self.cxn.parametervault
         self.shutter = self.cxn.arduinottl
+        self.pb = self.cxn.protectionbeamserver
 
         # Define variables to be used
         self.p = self.parameters
@@ -48,8 +49,7 @@ class microwave_sweep(experiment):
         self.stop_frequency = self.p.MicrowaveSweep133.Stop_Frequency
         self.step_frequency = self.p.MicrowaveSweep133.Frequency_Step
         self.state_detection = self.p.MicrowaveSweep133.State_Detection
-        self.LO_freq = self.p.MicrowaveSweep133.LO_freq
-        self.LO_amp = self.p.MicrowaveSweepg133.LO_amp
+
         # Get contexts for saving the data sets
         self.c_prob = self.cxn.context()
         self.c_hist = self.cxn.context()
@@ -67,38 +67,63 @@ class microwave_sweep(experiment):
         freq = np.linspace(self.start_frequency['MHz'],self.stop_frequency['MHz'],\
                     int((abs(self.stop_frequency['MHz']-self.start_frequency['MHz'])/self.step_frequency['MHz']) +1))
 
-        # program sequence to be repeated
-        pulse_sequence = main_sequence(self.p)
-        pulse_sequence.programSequence(self.pulser)
 
         if self.state_detection == 'shelving':
             self.shutter.ttl_output(10, True)
             time.sleep(.5)
             self.pulser.switch_auto('TTL7',False)
+
         for i in range(len(freq)):
             if self.pause_or_stop():
-                break
+                # Turn on LED if aborting experiment
+                self.pulser.switch_manual('TTL7',True)
+                return
+            # for the protection beam we start a while loop and break it if we got the data,
+            # continue if we didn't
             self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
             self.HPA.set_frequency(WithUnit(freq[i],'MHz'))
             time.sleep(.3) # time to switch frequencies
-            counts = 0
-            self.pulser.start_number(int(self.cycles))
-            self.pulser.wait_sequence_done()
-            self.pulser.stop_sequence()
-            counts = self.pulser.get_readout_counts()
-            self.pulser.reset_readout_counts()
-            # 1 state is bright for standard state detection
-            if self.state_detection == 'spin-1/2':
-                bright = np.where(counts >= self.disc)
-                fid = float(len(bright[0]))/len(counts)
-            # 1 state is dark for shelving state detection
-            elif self.state_detection == 'shelving':
-                dark = np.where(counts <= self.disc)
-                fid = float(len(dark[0]))/len(counts)
-            self.dv.add(freq[i] , fid, context = self.c_prob)
-            data = np.column_stack((np.arange(self.cycles),counts))
-            self.dv.add(data, context = self.c_hist)
-            self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
+            while True:
+                if self.pause_or_stop():
+                    # Turn on LED if aborting experiment
+                    self.pulser.switch_manual('TTL7',True)
+                    return
+
+                self.run_pulse_sequence()
+
+                # First check if the protection was enabled, do nothing if not
+                if not self.pb.get_protection_state():
+                        pass
+                # if it was enabled, try to fix, continue if successful
+                # otherwise call return to break out of function
+                else:
+                    # Should turn on deshelving LED while trying
+                    self.pulser.switch_manual('TTL7',True)
+                    if self.remove_protection_beam():
+                        # If successful switch off LED and return to top of loop
+                        self.pulser.switch_auto('TTL7',False)
+                        continue
+                    else:
+                        # Failed, abort experiment
+                        return
+
+                counts = self.pulser.get_readout_counts()
+                # 1 state is bright for standard state detection
+                if self.state_detection == 'spin-1/2':
+                    bright = np.where(counts >= self.disc)
+                    fid = float(len(bright[0]))/len(counts)
+                # 1 state is dark for shelving state detection
+                elif self.state_detection == 'shelving':
+                    dark = np.where(counts <= self.disc)
+                    fid = float(len(dark[0]))/len(counts)
+                self.dv.add(freq[i] , fid, context = self.c_prob)
+                data = np.column_stack((np.arange(self.cycles),counts))
+                self.dv.add(data, context = self.c_hist)
+                # Adding the character c and the number of cycles so plotting the histogram
+                # only plots the most recent point.
+                self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
+                break
+        # Close shutter and turn LED on after experiment
         self.pulser.switch_manual('TTL7',True)
         self.shutter.ttl_output(10, False)
 
@@ -112,13 +137,13 @@ class microwave_sweep(experiment):
 
         # Open new data sets for prob and saving histogram data
         self.dv.cd(['',year,month,trunk],True, context = self.c_prob)
-        dataset = self.dv.new('MicrowaveSweep_prob',[('run', 'arb u')], [('Counts', 'Counts', 'num')], context = self.c_prob)
+        dataset = self.dv.new('MicrowaveSweep_prob',[('freq', 'MHz')], [('Probability', 'Probability', 'num')], context = self.c_prob)
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
 
         self.dv.cd(['',year,month,trunk],True, context = self.c_hist)
-        dataset1 = self.dv.new('MicrowaveSweep_hist',[('run', 'arb u')], [('Counts', 'Counts', 'num')], context = self.c_hist)
+        dataset1 = self.dv.new('MicrowaveSweep_hist',[('freq', 'MHz')], [('Counts', 'Counts', 'num')], context = self.c_hist)
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_hist)
@@ -141,7 +166,24 @@ class microwave_sweep(experiment):
                     self.device_mapA[gpib_listA[i]] = devices[j][0]
                     break
 
+    def remove_protection_beam(self):
+        for i in range(5):
+            self.pb.protection_off()
+            time.sleep(.3)
+            print "trying to remove " + str(i)
+            print self.pb.get_protection_state()
+            if not self.pb.get_protection_state():
+                return True
+        print 'failed to remove protection beam'
+        return False
 
+    def run_pulse_sequence(self):
+        pulse_sequence = main_sequence(self.p)
+        pulse_sequence.programSequence(self.pulser)
+        self.pulser.reset_readout_counts()
+        self.pulser.start_number(int(self.cycles))
+        self.pulser.wait_sequence_done()
+        self.pulser.stop_sequence()
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()
