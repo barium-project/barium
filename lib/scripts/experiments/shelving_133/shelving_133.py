@@ -30,16 +30,18 @@ class shelving_133(experiment):
     def initialize(self, cxn, context, ident):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Shelving_133')
-        self.cxnwlm = labrad.connect('wavemeter', name = 'Frequency Scan', password = 'lab')
+        self.cxnwlm = labrad.connect('wavemeter', name = 'shelving 133', password = 'lab')
         self.wm = self.cxnwlm.multiplexerserver
         self.pulser = self.cxn.pulser
         self.dv = self.cxn.data_vault
         self.grapher = self.cxn.grapher
         self.HPA = self.cxn.hp8672a_server
         self.HPB = self.cxn.hp8657b_server
-        self.single_lock = self.cxn.single_channel_lock_server
+        self.single_lock = self.cxn.software_laser_lock_server
         self.pv = self.cxn.parametervault
         self.shutter = self.cxn.arduinottl
+        self.pb = self.cxn.protectionbeamserver
+        self.reg = self.cxn.registry
 
         # Define variables to be used
         self.p = self.parameters
@@ -51,12 +53,14 @@ class shelving_133(experiment):
         self.stop_freq = self.parameters.Shelving133.Frequency_Stop
         self.step_freq = self.parameters.Shelving133.Frequency_Step
         self.scan = self.parameters.Shelving133.Scan
-        self.LO_freq = self.p.Shelving133.LO_freq
-        self.LO_amp = self.p.Shelving133.LO_amp
-        self.b_field = self.p.Shelving133.b_field
-        self.hyperfine_freq = self.p.Shelving133.hyperfine_freq
+        self.scan_laser = self.parameters.Shelving133.Scan_Laser
 
-        self.wm_p = multiplexer_config.info
+        # Get software laser lock info
+        self.reg.cd(['Servers','software_laser_lock'])
+        laser = self.reg.get(self.scan_laser)
+        # Returns tuple which is not iterable
+        laser = list(laser)
+        self.scan_laser_chan = laser[1]
 
         # Get context for saving probability and histograms
         self.c_prob = self.cxn.context()
@@ -69,8 +73,7 @@ class shelving_133(experiment):
         self.get_device_map()
         # Setup data saving
         self.set_up_datavault()
-        # get the pi transitions in the d32
-        self.get_transitions()
+
 
     def run(self, cxn, context):
         '''
@@ -81,137 +84,116 @@ class shelving_133(experiment):
         '''
 
         if self.scan == 'time':
-            # Set the frequencies and powers or the d32 microwaves
-            # This sets the local oscillator
-            self.HPB.select_device(self.device_mapB['GPIB0::6'])
-            self.HPB.set_frequency(self.LO_freq)
-            self.HPB.set_amplitude(self.LO_amp)
-
-            # set the frequencies based on b-field and hyperfine splitting
-            self.p.Shelving133.hf_freq_1 = WithUnit(self.pi1,'MHz')
-            self.p.Shelving133.hf_freq_2 = WithUnit(self.pi2,'MHz')
-            self.p.Shelving133.hf_freq_3 = WithUnit(self.pi3,'MHz')
-
             t = np.linspace(self.start_time['us'],self.stop_time['us'],\
                     int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
+            # Open shelving laser shutting and turn LED off
             self.shutter.ttl_output(10, True)
             time.sleep(.5)
             self.pulser.switch_auto('TTL7',False)
             for i in range(len(t)):
                 if self.pause_or_stop():
+                    # Turn on LED if aborting experiment
+                    self.pulser.switch_manual('TTL7',True)
+                    return
+                # for the protection beam we start a while loop and break it if we got the data,
+                # continue if we didn't
+                while True:
+                    if self.pause_or_stop():
+                        # Turn on LED if aborting experiment
+                        self.pulser.switch_manual('TTL7',True)
+                        return
+
+                    self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+                    self.p.Shelving133.shelving_duration = WithUnit(t[i], 'us')
+                    self.run_pulse_sequence()
+
+                    # First check if the protection was enabled, do nothing if not
+                    if not self.pb.get_protection_state():
+                        pass
+                    # if it was enabled, try to fix, continue if successful
+                    # otherwise call return to break out of function
+                    else:
+                        # Should turn on deshelving LED while trying
+                        self.pulser.switch_manual('TTL7',True)
+                        if self.remove_protection_beam():
+                            # If successful switch off LED and return to top of loop
+                            self.pulser.switch_auto('TTL7',False)
+                            continue
+                        else:
+                            # Failed, abort experiment
+                            return
+
+                    sd_counts = self.pulser.get_readout_counts()
+                    # Dark state is the |1> state (mf = 1), plot that prob
+                    dark = np.where(sd_counts <= self.disc)
+                    fid = float(len(dark[0]))/len(sd_counts)
+                    self.dv.add(t[i] , fid, context = self.c_prob)
+                    # Save histogram
+                    data = np.column_stack((np.arange(self.cycles),sd_counts))
+                    self.dv.add(data, context = self.c_hist)
+                    # Adding the character c and the number of cycles so plotting the histogram
+                    # only plots the most recent point.
+                    self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
                     break
-                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-                self.p.Shelving133.shelving_duration = WithUnit(t[i], 'us')
-                pulse_sequence = main_sequence(self.p)
-                pulse_sequence.programSequence(self.pulser)
-                self.pulser.reset_readout_counts()
-                self.pulser.start_number(int(self.cycles))
-                self.pulser.wait_sequence_done()
-                self.pulser.stop_sequence()
-                sd_counts = self.pulser.get_readout_counts()
-                # Dark state is the |1> state (mf = 1), plot that prob
-                dark = np.where(sd_counts <= self.disc)
-                fid = float(len(dark[0]))/len(sd_counts)
-                self.dv.add(t[i] , fid, context = self.c_prob)
-                # Save histogram
-                data = np.column_stack((np.arange(self.cycles),sd_counts))
-                self.dv.add(data, context = self.c_hist)
-                # Adding the character c and the number of cycles so plotting the histogram
-                # only plots the most recent point.
-                self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
             self.pulser.switch_manual('TTL7',True)
             self.shutter.ttl_output(10, False)
 
         if self.scan == 'frequency':
-            # Set the frequencies and powers or the d32 microwaves
-            # This sets the local oscillator
-            self.HPB.select_device(self.device_mapB['GPIB0::6'])
-            self.HPB.set_frequency(self.LO_freq)
-            self.HPB.set_amplitude(self.LO_amp)
-
-            # set the frequencies based on b-field and hyperfine splitting
-            self.p.Shelving133.hf_freq_1 = WithUnit(self.pi1,'MHz')
-            self.p.Shelving133.hf_freq_2 = WithUnit(self.pi2,'MHz')
-            self.p.Shelving133.hf_freq_3 = WithUnit(self.pi3,'MHz')
 
             freq = np.linspace(self.start_freq['THz'],self.stop_freq['THz'],\
                     int((abs(self.stop_freq['THz']-self.start_freq['THz'])/self.step_freq['THz']) +1))
 
             for i in range(len(freq)):
                 if self.pause_or_stop():
-                    break
-                self.single_lock.set_point(freq[i])
-                self.shutter.ttl_output(10, True)
-                # Time to change the frequency
+                    # Turn on LED if aborting experiment
+                    self.pulser.switch_manual('TTL7',True)
+                    return
+                # for the protection beam we start a while loop and break it if we got the data,
+                # continue if we didn't
+                self.single_lock.set_lock_frequency(freq[i], self.scan_laser)
                 time.sleep(5)
+                self.shutter.ttl_output(10, True)
+                time.sleep(.5)
                 self.pulser.switch_auto('TTL7',False)
-                frequency = self.wm.get_frequency(self.wm_p['455nm'][0])
-                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-                pulse_sequence = main_sequence(self.p)
-                pulse_sequence.programSequence(self.pulser)
-                self.pulser.reset_readout_counts()
-                self.pulser.start_number(int(self.cycles))
-                self.pulser.wait_sequence_done()
-                self.pulser.stop_sequence()
-                sd_counts = self.pulser.get_readout_counts()
-                dark = np.where(sd_counts <= self.disc)
-                fid = float(len(dark[0]))/len(sd_counts)
-                self.dv.add(freq[i] , fid, context = self.c_prob)
-                # Save histogram
-                data = np.column_stack((np.arange(self.cycles),sd_counts))
-                self.dv.add(data, context = self.c_hist)
-                # Adding the character c and the number of cycles so plotting the histogram
-                # only plots the most recent point.
-                self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
+                # for the protection beam we start a while loop and break it if we got the data,
+                # continue if we didn't
+                while True:
+                    frequency = self.wm.get_frequency(self.scan_laser_chan)
+                    self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+                    self.run_pulse_sequence()
+                    # First check if the protection was enabled, do nothing if not
+                    if not self.pb.get_protection_state():
+                        pass
+                    # if it was enabled, try to fix, continue if successful
+                    # otherwise call return to break out of function
+                    else:
+                        # Should turn on deshelving LED while trying
+                        self.pulser.switch_manual('TTL7',True)
+                        if self.remove_protection_beam():
+                            # If successful switch off LED and return to top of loop
+                            self.pulser.switch_auto('TTL7',False)
+                            continue
+                        else:
+                            # Failed, abort experiment
+                            return
+                    sd_counts = self.pulser.get_readout_counts()
+                    dark = np.where(sd_counts <= self.disc)
+                    fid = float(len(dark[0]))/len(sd_counts)
+                    self.dv.add(freq[i] , fid, context = self.c_prob)
+                    # Save histogram
+                    data = np.column_stack((np.arange(self.cycles),sd_counts))
+                    self.dv.add(data, context = self.c_hist)
+                    # Adding the character c and the number of cycles so plotting the histogram
+                    # only plots the most recent point.
+                    self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
+                    break
+                # since switching frequencies is slow, close shutter and turn LED on while waiting
                 self.pulser.switch_manual('TTL7',True)
                 self.shutter.ttl_output(10, False)
+            # experiment is over so turn the led back on and close the shutter
             self.pulser.switch_manual('TTL7',True)
             self.shutter.ttl_output(10, False)
 
-        if self.scan == 'd32':
-            # Set the frequencies and powers or the d32 microwaves
-            # This sets the local oscillator
-            self.HPB.select_device(self.device_mapB['GPIB0::6'])
-            self.HPB.set_frequency(self.LO_freq)
-            self.HPB.set_amplitude(self.LO_amp)
-
-            freq = np.linspace(self.start_freq['THz'],self.stop_freq['THz'],\
-                    int((abs(self.stop_freq['THz']-self.start_freq['THz'])/self.step_freq['THz']) +1))
-
-            self.shutter.ttl_output(10, True)
-            time.sleep(.5)
-            self.pulser.switch_auto('TTL7',False)
-            for i in range(len(freq)):
-                if self.pause_or_stop():
-                    break
-
-                self.hyperfine_freq = WithUnit(freq[i],'THz')
-                self.get_transitions()
-
-                # set the frequencies based on b-field and hyperfine splitting
-                self.p.Shelving133.hf_freq_1 = WithUnit(self.pi1,'MHz')
-                self.p.Shelving133.hf_freq_2 = WithUnit(self.pi2,'MHz')
-                self.p.Shelving133.hf_freq_3 = WithUnit(self.pi3,'MHz')
-
-                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-                pulse_sequence = main_sequence(self.p)
-                pulse_sequence.programSequence(self.pulser)
-                self.pulser.reset_readout_counts()
-                self.pulser.start_number(int(self.cycles))
-                self.pulser.wait_sequence_done()
-                self.pulser.stop_sequence()
-                sd_counts = self.pulser.get_readout_counts()
-                dark = np.where(sd_counts <= self.disc)
-                fid = float(len(dark[0]))/len(sd_counts)
-                self.dv.add(freq[i] , fid, context = self.c_prob)
-                # Save histogram
-                data = np.column_stack((np.arange(self.cycles),sd_counts))
-                self.dv.add(data, context = self.c_hist)
-                # Adding the character c and the number of cycles so plotting the histogram
-                # only plots the most recent point.
-                self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
-            self.pulser.switch_manual('TTL7',True)
-            self.shutter.ttl_output(10, False)
 
     def get_device_map(self):
         gpib_listA = FrequencyControl_config.gpibA
@@ -230,6 +212,25 @@ class shelving_133(experiment):
                 if devices[j][1].find(gpib_listB[i]) > 0:
                     self.device_mapB[gpib_listB[i]] = devices[j][0]
                     break
+
+    def remove_protection_beam(self):
+        for i in range(5):
+            self.pb.protection_off()
+            time.sleep(.3)
+            print "trying to remove " + str(i)
+            print self.pb.get_protection_state()
+            if not self.pb.get_protection_state():
+                return True
+        print 'failed to remove protection beam'
+        return False
+
+    def run_pulse_sequence(self):
+        pulse_sequence = main_sequence(self.p)
+        pulse_sequence.programSequence(self.pulser)
+        self.pulser.reset_readout_counts()
+        self.pulser.start_number(int(self.cycles))
+        self.pulser.wait_sequence_done()
+        self.pulser.stop_sequence()
 
     def set_up_datavault(self):
         # set up folder
@@ -250,28 +251,8 @@ class shelving_133(experiment):
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_hist)
 
-        self.dv.cd(['',year,month,trunk],True, context = self.c_deshelve)
-        dataset2 = self.dv.new('deshelving',[('time', 'us')], [('Counts', 'Counts', 'num')], context = self.c_deshelve)
-        # add dv params
-        for parameter in self.p:
-            self.dv.add_parameter(parameter, self.p[parameter], context = self.c_deshelve)
-
         # Set live plotting
         self.grapher.plot(dataset, 'shelving', False)
-
-    def get_transitions(self):
-        # this function returns the three pi transitions in the D32 state
-        # based on the b-field and hyperfine splitting entered
-        self.pi1 = -1*np.sqrt(1 + (1.25491*self.b_field['G']**2/self.hyperfine_freq['MHz']**2) + \
-                              (1.12023*self.b_field['G']/self.hyperfine_freq['MHz']))*self.hyperfine_freq['MHz'] - self.LO_freq['MHz']
-        self.pi2 = -1*np.sqrt(1 + (1.25491*self.b_field['G']**2/self.hyperfine_freq['MHz']**2))*self.hyperfine_freq['MHz'] - self.LO_freq['MHz']
-        self.pi3 = -1*np.sqrt(1 + (1.25491*self.b_field['G']**2/self.hyperfine_freq['MHz']**2) - \
-                              (1.12023*self.b_field['G']/self.hyperfine_freq['MHz']))*self.hyperfine_freq['MHz'] - self.LO_freq['MHz']
-
-        self.pi1 = abs(self.pi1)
-        self.pi2 = abs(self.pi2)
-        self.pi3 = abs(self.pi3)
-        print self.pi1, self.pi2, self.pi3
 
 
     def finalize(self, cxn, context):
