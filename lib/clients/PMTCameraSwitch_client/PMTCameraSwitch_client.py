@@ -3,6 +3,8 @@ from PyQt4 import QtGui
 from common.lib.clients.PMT_Control.PMT_CONTROL import pmtWidget
 from common.lib.clients.Pulser2_DDS.DDS_CONTROL import DDS_CONTROL
 from barium.lib.clients.ProtectionBeam_client.protectionBeamClient import protectionBeamClient
+from barium.lib.clients.Shutter_client.shutterClient import shutterclient
+
 
 import socket
 import os
@@ -41,41 +43,59 @@ class PMTCameraSwitchClient(QtGui.QWidget):
     #@inlineCallbacks
     def initializeGUI(self):
 
+        # initialize main Gui
         self.layout = QtGui.QGridLayout()
-        self.qBox = QtGui.QGroupBox('PMT/Camera Switch')
+        self.qBox = QtGui.QGroupBox('Switches')
         self.subLayout = QtGui.QGridLayout()
         self.qBox.setLayout(self.subLayout)
         self.layout.addWidget(self.qBox, 0, 0)
 
-        # initialize main Gui
-        self.switch = QtGui.QPushButton('PMT/Camera')
-        self.switch.setMinimumHeight(100)
-        self.switch.setMinimumWidth(100)
-        self.switch.setMaximumWidth(100)
-        self.switch.clicked.connect(self.switchState)
-
-
         # Add PMT control
         pmt = pmtWidget(self.reactor)
-        self.subLayout.addWidget(pmt, 0,0)
-        self.subLayout.addWidget(self.switch, 0,1)
+        self.subLayout.addWidget(pmt, 0,0, 1, 2)
+
+        # Add camera switch
+        self.cam_switch = QtGui.QPushButton('PMT/Camera')
+        self.cam_switch.setMinimumHeight(100)
+        self.cam_switch.setMinimumWidth(100)
+        self.cam_switch.setMaximumWidth(100)
+        self.cam_switch.clicked.connect(self.switchCamera)
+        self.subLayout.addWidget(self.cam_switch, 1,0)
+
+        # Add deshelving LED
+        self.led_switch = QtGui.QPushButton('Deshelve LED')
+        self.led_switch.setMinimumHeight(100)
+        self.led_switch.setMinimumWidth(100)
+        self.led_switch.setMaximumWidth(100)
+        self.led_switch.setCheckable(True)
+        self.led_switch.toggled.connect(lambda  state = self.led_switch.isDown() , chan = 'TTL7',\
+                                         :self.switchState(state, chan))
+
+        self.subLayout.addWidget(self.led_switch, 1,1)
 
         # Add Protection Beam Control
         prot = protectionBeamClient(self.reactor)
-        self.subLayout.addWidget(prot ,1,0)
+        self.subLayout.addWidget(prot ,2,0,1,2)
+
+        # Add shutter control
+        shutters = shutterclient(self.reactor)
+        self.subLayout.addWidget(shutters,0,2)
 
         # Add DDS Controls
         dds = DDS_CONTROL(self.reactor)
-        self.subLayout.addWidget(dds,1,1)
+        self.subLayout.addWidget(dds,1,2,2,1)
 
         self.setLayout(self.layout)
 
 
     @inlineCallbacks
-    def switchState(self,state):
+    def switchCamera(self,state):
         yield self.server.switch_auto('PMT/Camera', True)
         yield self.server.switch_auto('PMT/Camera', False)
 
+    @inlineCallbacks
+    def switchState(self,state, chan):
+        yield self.server.switch_auto('TTL7', state)
 
 
 if __name__ == "__main__":
