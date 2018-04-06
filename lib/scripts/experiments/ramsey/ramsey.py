@@ -39,6 +39,9 @@ class ramsey(experiment):
         self.dv = self.cxn.data_vault
         self.HPA = self.cxn.hp8672a_server
         self.pv = self.cxn.parametervault
+        self.shutter = self.cxn.arduinottl
+        self.pb = self.cxn.protectionbeamserver
+
 
         # Define variables to be used
         self.p = self.parameters
@@ -48,6 +51,7 @@ class ramsey(experiment):
         self.step_time = self.p.Ramsey133.Time_Step
         self.freq = self.p.Ramsey133.microwave_frequency
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+        self.state_detection = self.p.Ramsey133.State_Detection
 
         # Define contexts for saving different data sets
         self.c_prob = self.cxn.context()
@@ -68,26 +72,49 @@ class ramsey(experiment):
         self.HPA.set_frequency(self.freq)
         time.sleep(.3) # time to switch frequencies
 
+        if self.state_detection == 'shelving':
+            self.shutter.ttl_output(10, True)
+            time.sleep(.5)
+            self.pulser.switch_auto('TTL7',False)
 
         for i in range(len(t)):
             if self.pause_or_stop():
+                # Turn on LED if aborting experiment
+                self.pulser.switch_manual('TTL7',True)
+                return
+            # for the protection beam we start a while loop and break it if we got the data,
+            # continue if we didn't
+            while True:
+                if self.pause_or_stop():
+                    # Turn on LED if aborting experiment
+                    self.pulser.switch_manual('TTL7',True)
+                    return
+
+                # set ramsey delay
+                self.p.Ramsey133.Ramsey_Delay = WithUnit(t[i],'us')
+                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+                self.run_pulse_sequence()
+
+                counts = self.pulser.get_readout_counts()
+                # 1 state is bright for standard state detection
+                if self.state_detection == 'spin-1/2':
+                    bright = np.where(counts >= self.disc)
+                    fid = float(len(bright[0]))/len(counts)
+                # 1 state is dark for shelving state detection
+                elif self.state_detection == 'shelving':
+                    dark = np.where(counts <= self.disc)
+                    fid = float(len(dark[0]))/len(counts)
+
+                self.dv.add(t[i] , fid, context = self.c_prob)
+                data = np.column_stack((np.arange(self.cycles),counts))
+                self.dv.add(data, context = self.c_hist)
+                # Adding the character c and the number of cycles so plotting the histogram
+                # only plots the most recent point.
+                self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
+                                      True, context = self.c_hist)
                 break
-            # set the microwave duration
-            self.p.Ramsey133.Ramsey_Delay = WithUnit(t[i],'us')
-            self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-            pulse_sequence = main_sequence(self.p)
-            pulse_sequence.programSequence(self.pulser)
-            self.pulser.start_number(int(self.cycles))
-            self.pulser.wait_sequence_done()
-            self.pulser.stop_sequence()
-            counts = self.pulser.get_readout_counts()
-            self.pulser.reset_readout_counts()
-            bright = np.where(counts >= self.disc)
-            fid = float(len(bright[0]))/len(counts)
-            self.dv.add(t[i] , fid, context = self.c_prob)
-            data = np.column_stack((np.arange(self.cycles),counts))
-            self.dv.add(data, context = self.c_hist)
-            self.dv.add_parameter('hist'+str(i), True, context = self.c_hist)
+        self.pulser.switch_manual('TTL7',True)
+        self.shutter.ttl_output(10, False)
 
     def set_up_datavault(self):
         # set up folder
@@ -128,7 +155,24 @@ class ramsey(experiment):
                     self.device_mapA[gpib_listA[i]] = devices[j][0]
                     break
 
+    def remove_protection_beam(self):
+        for i in range(5):
+            self.pb.protection_off()
+            time.sleep(.3)
+            print "trying to remove " + str(i)
+            print self.pb.get_protection_state()
+            if not self.pb.get_protection_state():
+                return True
+        print 'failed to remove protection beam'
+        return False
 
+    def run_pulse_sequence(self):
+        pulse_sequence = main_sequence(self.p)
+        pulse_sequence.programSequence(self.pulser)
+        self.pulser.reset_readout_counts()
+        self.pulser.start_number(int(self.cycles))
+        self.pulser.wait_sequence_done()
+        self.pulser.stop_sequence()
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()
