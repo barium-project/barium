@@ -34,8 +34,6 @@ class ramsey(pulse_sequence):
                            ('Ramsey133', 'Stop_Time'),
                            ('Ramsey133', 'Time_Step'),
                            ('Ramsey133', 'State_Detection'),
-
-
                            # Ramsey Delay is the parameter that's changed and passed to the pulser for each
                            # pulse sequence.
                            ('Ramsey133', 'Ramsey_Delay'),
