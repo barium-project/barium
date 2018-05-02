@@ -96,7 +96,7 @@ class software_laser_lock_client(QtGui.QWidget):
             laser.spinHighRail.valueChanged.connect(lambda rail = laser.spinHighRail.value(), \
                                                     chan = chan : self.highRailChanged(rail, chan))
 
-            laser.clear_lock.clicked.connect(lambda : self.reset_lock(chan))
+            laser.clear_lock.clicked.connect(lambda state = laser.clear_lock.isDown(), chan = chan : self.reset_lock(chan))
 
             self.channel_GUIs[chan] = laser
             subLayout.addWidget(laser, self.lasers[chan][2][0], self.lasers[chan][2][1] , 1, 1)
@@ -136,6 +136,7 @@ class software_laser_lock_client(QtGui.QWidget):
 
     @inlineCallbacks
     def set_lock(self, state, chan):
+        print state, chan
         yield self.lock_server.lock_channel(state, chan)
 
     @inlineCallbacks

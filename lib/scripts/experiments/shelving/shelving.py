@@ -141,7 +141,7 @@ class shelving(experiment):
                 # for the protection beam we start a while loop and break it if we got the data,
                 # continue if we didn't
                 self.single_lock.set_lock_frequency(freq[i], self.scan_laser)
-                time.sleep(5)
+                time.sleep(10)
                 self.shutter.ttl_output(10, True)
                 time.sleep(.5)
                 self.pulser.switch_auto('TTL7',False)
