@@ -26,7 +26,7 @@ class BARIUM_GUI(QtGui.QMainWindow):
 	    #create subwidgets to be added to tabs
         script_scanner = self.makeScriptScannerWidget(reactor, cxn)
         wavemeter = self.makeWavemeterWidget(reactor)
-        software_lock = self.makeSoftwareLockWidget(reactor)
+        laser_control = self.makeLaserControlWidget(reactor)
         control = self.makeControlWidget(reactor)
         frequency = self.makeFrequencyWidget(reactor)
         switch = self.makePMTCameraSwitchWidget(reactor)
@@ -34,7 +34,7 @@ class BARIUM_GUI(QtGui.QMainWindow):
         # add tabs
         self.tabWidget = DetachableTabWidget()
         self.tabWidget.addTab(wavemeter, '&Wavemeter')
-        self.tabWidget.addTab(software_lock, '&Software Lock')
+        self.tabWidget.addTab(laser_control, '&Laser Control')
         self.tabWidget.addTab(script_scanner, '&Script Scanner')
         self.tabWidget.addTab(control, '&Trap Control')
         self.tabWidget.addTab(frequency, '&Oscillators')
@@ -79,9 +79,9 @@ class BARIUM_GUI(QtGui.QMainWindow):
         wavemeter = wavemeterclient(reactor)
         return wavemeter
 
-    def makeSoftwareLockWidget(self, reactor):
-        from barium.lib.clients.Software_Laser_Lock_Client.software_laser_lock_client import software_laser_lock_client
-        control = software_laser_lock_client(reactor)
+    def makeLaserControlWidget(self, reactor):
+        from barium.lib.clients.Software_Laser_Lock_Client.laser_control_client import laser_control_client
+        control = laser_control_client(reactor)
         return control
 
     def makeControlWidget(self, reactor):
