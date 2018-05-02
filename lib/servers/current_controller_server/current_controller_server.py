@@ -1,7 +1,7 @@
 """
 ### BEGIN NODE INFO
 [info]
-name = dac8718
+name = current_controller
 version = 1.0
 description =
 instancename = current_controller
@@ -67,6 +67,8 @@ class current_controller_server(DeviceServer):
 
     @inlineCallbacks
     def initServer(self):
+        self.output = None
+        self.current = None
         print 'loading config info...',
         self.reg = self.client.registry()
         yield self.loadConfigInfo()
@@ -77,13 +79,27 @@ class current_controller_server(DeviceServer):
     def loadConfigInfo(self):
         """Load configuration information from the registry."""
         reg = self.reg
-        yield reg.cd(['', 'Servers', 'dac8718', 'Links'], True)
+        yield reg.cd(['', 'Servers', 'current_controller', 'Links'], True)
         dirs, keys = yield reg.dir()
         p = reg.packet()
         for k in keys:
             p.get(k, key=k)
         ans = yield p.send()
         self.serialLinks = dict((k, ans[k]) for k in keys)
+        # Get output state and last value of current set
+        yield reg.cd(['', 'Servers', 'current_controller', 'parameters'], True)
+        dirs, keys = yield reg.dir()
+        p = reg.packet()
+        for k in keys:
+            p.get(k, key=k)
+        ans = yield p.send()
+        self.params = dict((k, ans[k]) for k in keys)
+        try:
+            self.output = bool(self.params['state'])
+            self.current = self.params['current']
+        except:
+            print "Failed to load current controller state. Check Registry"
+
 
     @inlineCallbacks
     def findDevices(self):
@@ -100,12 +116,49 @@ class current_controller_server(DeviceServer):
             devs += [(devName, (server, port))]
         returnValue(devs)
 
-    @setting(100, value='v')
+    @setting(100, value='v[mA]')
     def set_current(self, c, value):
-
+        '''
+        Sets the value of the current. Accepts mA.
+        '''
         dev = self.selectDevice(c)
-        yield dev.write(str(value)+'\r\n')
+        yield dev.write('iout.w ' + str(int(value['uA']))+ '\r\n')
+        yield self.reg.set('current',value)
+        
+    @setting(101, value='b')
+    def set_output_state(self, c, value):
+        '''
+        Turn the current on or off
+        '''
+        self.output = value
+        dev = self.selectDevice(c)
+        yield dev.write('out.w ' + str(int(value))+ '\r\n')
+        yield self.reg.set('state',int(value))
 
+    @setting(200, returns='b')
+    def get_output_state(self, c, value):
+        '''
+        Get the output state of the current controller. State is unkown when
+        server is first started or restarted.
+        '''
+        try:
+            if self.output == None:
+                raise ValueError('Unknown output state')
+        except ValueError as e:
+                print e
+            
+        return self.output
+
+    @setting(201, returns='v[mA]')
+    def get_current(self, c):
+        
+        try:
+            if self.current == None:
+                raise ValueError('Unknown value of current')
+        except ValueError as e:
+                print e
+        
+        return self.current
 
 TIMEOUT = Value(1, 's')
 
