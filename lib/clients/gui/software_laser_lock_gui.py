@@ -69,9 +69,9 @@ class software_laser_lock_channel(QtGui.QFrame):
         # gain
         self.spinGain = QtGui.QDoubleSpinBox()
         self.spinGain.setFont(QtGui.QFont(shell_font, pointSize=16))
-        self.spinGain.setDecimals(3)
-        self.spinGain.setSingleStep(1e-3)
-        self.spinGain.setRange(1e-3, 1)
+        self.spinGain.setDecimals(5)
+        self.spinGain.setSingleStep(1e-5)
+        self.spinGain.setRange(1e-5, 1)
         self.spinGain.setKeyboardTracking(False)
 
         #rails  label

@@ -80,12 +80,13 @@ class shelving133(pulse_sequence):
             # Turn off 904 for shelving
             self.addTTL(self.ttl_650, self.t0 + self.cool_time, self.shelve_time)
             # Turn on 493 if we want to scan the 585nm line. Will turn off 455nm to do this
-            self.addDDS(self.channel_493, self.t0 + self.cool_time,  self.shelve_time, self.freq_493, self.amp_493_shelve)
+            #self.addDDS(self.channel_493, self.t0 + self.cool_time,  self.shelve_time, self.freq_493, self.amp_493_shelve)
             # Turn on 650 with low power for shelving
             self.addDDS(self.channel_650, self.t0 + self.cool_time,  self.shelve_time, self.freq_650, self.amp_650_shelve)
             # Turn on shelving laser
             self.addDDS(self.channel_455, self.t0 + self.cool_time, self.shelve_time, self.freq_455, self.amp_455)
 
+            self.addDDS(self.channel_585, self.t0 + self.cool_time, self.shelve_time, self.freq_585, self.amp_585)
 
         # Turn back on 493 and 650 for state detection
         self.addDDS(self.channel_493, self.t0 + self.cool_time + self.shelve_time, \
