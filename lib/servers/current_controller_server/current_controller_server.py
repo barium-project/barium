@@ -121,6 +121,7 @@ class current_controller_server(DeviceServer):
         '''
         Sets the value of the current. Accepts mA.
         '''
+        self.current = value
         dev = self.selectDevice(c)
         yield dev.write('iout.w ' + str(int(value['uA']))+ '\r\n')
         yield self.reg.set('current',value)
