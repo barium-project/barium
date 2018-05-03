@@ -63,7 +63,7 @@ class shelving133(pulse_sequence):
 
 
         self.t0 = self.start - WithUnit(1.0,'us') # takes 1us to switch frequencies. This way actually turns on at 10us
-        self.advance = WithUnit(0.85,'us')
+        self.switch_time = WithUnit(1.0,'us')
         self.cool_time = self.p.doppler_cooling_duration
         self.deshelve_time = self.p.deshelving_duration
         self.shelve_time = self.p.shelving_duration
@@ -78,24 +78,24 @@ class shelving133(pulse_sequence):
 
         if self.shelve_time != 0:
             # Turn off 904 for shelving
-            self.addTTL(self.ttl_650, self.t0 + self.cool_time, self.shelve_time)
+            self.addTTL(self.ttl_650, self.start + self.cool_time, self.shelve_time + self.switch_time)
             # Turn on 493 if we want to scan the 585nm line. Will turn off 455nm to do this
             #self.addDDS(self.channel_493, self.t0 + self.cool_time,  self.shelve_time, self.freq_493, self.amp_493_shelve)
             # Turn on 650 with low power for shelving
-            self.addDDS(self.channel_650, self.t0 + self.cool_time,  self.shelve_time, self.freq_650, self.amp_650_shelve)
+            self.addDDS(self.channel_650, self.t0 + self.cool_time + self.switch_time,  self.shelve_time, self.freq_650, self.amp_650_shelve)
             # Turn on shelving laser
-            self.addDDS(self.channel_455, self.t0 + self.cool_time, self.shelve_time, self.freq_455, self.amp_455)
+            self.addDDS(self.channel_455, self.t0 + self.cool_time + self.switch_time, self.shelve_time, self.freq_455, self.amp_455)
 
-            self.addDDS(self.channel_585, self.t0 + self.cool_time, self.shelve_time, self.freq_585, self.amp_585)
+            self.addDDS(self.channel_585, self.t0 + self.cool_time + self.switch_time, self.shelve_time, self.freq_585, self.amp_585)
 
         # Turn back on 493 and 650 for state detection
-        self.addDDS(self.channel_493, self.t0 + self.cool_time + self.shelve_time, \
+        self.addDDS(self.channel_493, self.t0 + self.cool_time + self.switch_time + self.shelve_time, \
                     self.detection_time + self.deshelve_time, self.freq_493, self.amp_493)
-        self.addDDS(self.channel_650, self.t0 + self.cool_time + self.shelve_time,  self.detection_time + \
+        self.addDDS(self.channel_650, self.t0 + self.cool_time + self.switch_time + self.shelve_time,  self.detection_time + \
                     self.deshelve_time, self.freq_650, self.amp_650)
         # Count photons during detection time
-        self.addTTL('ReadoutCount', self.t0 + self.cool_time + self.shelve_time , self.detection_time)
+        self.addTTL('ReadoutCount', self.t0 + self.cool_time + self.shelve_time + self.switch_time , self.detection_time)
 
         # Turn on deshelving LED
-        self.addTTL('TTL7', self.t0 + self.cool_time  + self.shelve_time  + self.detection_time, self.deshelve_time)
+        self.addTTL('TTL7', self.t0 + self.cool_time  + self.shelve_time  + self.switch_time + self.detection_time, self.deshelve_time)
 
