@@ -35,29 +35,106 @@ class optical_pumping(experiment):
 
         self.wm = self.cxnwlm.multiplexerserver
         self.pulser = self.cxn.pulser
-        #self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.grapher
         self.dv = self.cxn.data_vault
-
+        self.pb = self.cxn.protectionbeamserver
+        self.shutter = self.cxn.arduinottl
         # Define variables to be used
         self.p = self.parameters
         self.cycles = self.p.OpticalPumping133.Cycles
-        self.wm_p = multiplexer_config.info
+        self.start_time = self.p.OpticalPumping133.Start_Time
+        self.stop_time = self.p.OpticalPumping133.Stop_Time
+        self.step_time = self.p.OpticalPumping133.Time_Step
+        self.state_detection = self.p.OpticalPumping133.State_Detection
+        self.mode = self.p.OpticalPumping133.Mode
+
+        self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+        # Define contexts for saving data sets
+        self.c_prob = self.cxn.context()
+        self.c_hist = self.cxn.context()
 
         self.set_up_datavault()
 
     def run(self, cxn, context):
 
-        # program sequence to be repeated
-        pulse_sequence = main_sequence(self.p)
-        pulse_sequence.programSequence(self.pulser)
-        self.pulser.start_number(int(self.cycles))
-        self.pulser.wait_sequence_done()
-        self.pulser.stop_sequence()
-        counts = self.pulser.get_readout_counts()
-        self.pulser.reset_readout_counts()
-        data = np.column_stack((np.arange(self.cycles),counts))
-        self.dv.add(data)
-        self.dv.add_parameter('hist'+str(1) + 'c' + str(int(self.cycles)), True)
+        t = np.linspace(self.start_time['us'],self.stop_time['us'],\
+                    int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
+
+        if self.state_detection == 'shelving':
+            self.shutter.ttl_output(10, True)
+            time.sleep(.5)
+            self.pulser.switch_auto('TTL7',False)
+
+        for i in range(len(t)):
+            if self.pause_or_stop():
+                # Turn on LED if aborting experiment
+                self.pulser.switch_manual('TTL7',True)
+                return
+
+            # set the optical pumping duration. If optimizing leave it as set
+            if self.mode == 'Normal':
+                self.p.OpticalPumping133.state_prep_duration = WithUnit(t[i],'us')
+            self.program_pulse_sequence()
+            # for the protection beam we start a while loop and break it if we got the data,
+            # continue if we didn't
+            while True:
+                if self.pause_or_stop():
+                    # Turn on LED if aborting experiment
+                    self.pulser.switch_manual('TTL7',True)
+                    return
+
+                self.pulser.reset_readout_counts()
+                self.pulser.start_number(int(self.cycles))
+                self.pulser.wait_sequence_done()
+
+                # First check if the protection was enabled, do nothing if not
+                if not self.pb.get_protection_state():
+                        pass
+                # if it was enabled, try to fix, continue if successful
+                # otherwise call return to break out of function
+                else:
+                    # Should turn on deshelving LED while trying
+                    self.pulser.switch_manual('TTL7',True)
+                    if self.remove_protection_beam():
+                        # If successful switch off LED and return to top of loop
+                        self.pulser.switch_auto('TTL7',False)
+                        continue
+                    else:
+                        # Failed, abort experiment
+                        return
+
+
+
+                counts = self.pulser.get_readout_counts()
+                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+                # 1 state is bright for standard state detection
+                if self.state_detection == 'spin-1/2':
+                    bright = np.where(counts >= self.disc)
+                    fid = float(len(bright[0]))/len(counts)
+                # 1 state is dark for shelving state detection
+                elif self.state_detection == 'shelving':
+                    dark = np.where(counts <= self.disc)
+                    fid = float(len(dark[0]))/len(counts)
+
+                # If we are optimizing save the data point and rerun the point in the while loop
+                if self.mode == 'Optimize':
+                    self.dv.add(i , fid, context = self.c_prob)
+                    self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
+                                      True, context = self.c_hist)
+                    i = i + 1
+                    continue
+                # If normal save time and prob and move on
+                self.dv.add(t[i] , fid, context = self.c_prob)
+                data = np.column_stack((np.arange(self.cycles),counts))
+                self.dv.add(data, context = self.c_hist)
+                # Adding the character c and the number of cycles so plotting the histogram
+                # only plots the most recent point.
+                self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
+                                      True, context = self.c_hist)
+
+                break
+        self.pulser.switch_manual('TTL7',True)
+        self.shutter.ttl_output(10, False)
 
     def set_up_datavault(self):
         # set up folder
@@ -66,19 +143,42 @@ class optical_pumping(experiment):
         month = '%02d' % date.month  # Padded with a zero if one digit
         day   = '%02d' % date.day    # Padded with a zero if one digit
         trunk = year + '_' + month + '_' + day
-        self.dv.cd(['',year,month,trunk],True)
-        dataset = self.dv.new('OpticalPumping',[('run', 'arb u')], [('Counts', 'Counts', 'num')])
+
+        # Define data sets for probability and the associated histograms
+        self.dv.cd(['',year,month,trunk],True, context = self.c_prob)
+        dataset = self.dv.new('Optical Pumping',[('run', 'arb u')], [('Probability', 'Probability', 'num')], context = self.c_prob)
         # add dv params
         for parameter in self.p:
-            self.dv.add_parameter(parameter, self.p[parameter])
+            self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
+
+        self.dv.cd(['',year,month,trunk],True, context = self.c_hist)
+        dataset1 = self.dv.new('Optical Pumping_hist',[('run', 'arb u')], [('Counts', 'Counts', 'num')], context = self.c_hist)
+        # add dv params
+        for parameter in self.p:
+            self.dv.add_parameter(parameter, self.p[parameter], context = self.c_hist)
+        self.dv.add_parameter('Readout Threshold', self.disc, context = self.c_hist)
 
         # Set live plotting
-        #self.grapher.plot(dataset, 'optical_pumping', False)
+        self.grapher.plot(dataset, 'bright/dark', False)
 
 
     def set_wm_frequency(self, freq, chan):
         self.wm.set_pid_course(chan, freq)
 
+    def program_pulse_sequence(self):
+        pulse_sequence = main_sequence(self.p)
+        pulse_sequence.programSequence(self.pulser)
+
+    def remove_protection_beam(self):
+        for i in range(5):
+            self.pb.protection_off()
+            time.sleep(.3)
+            print "trying to remove " + str(i)
+            print self.pb.get_protection_state()
+            if not self.pb.get_protection_state():
+                return True
+        print 'failed to remove protection beam'
+        return False
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()
