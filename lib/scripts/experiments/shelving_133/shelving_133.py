@@ -250,6 +250,7 @@ class shelving_133(experiment):
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_hist)
+        self.dv.add_parameter('Readout Threshold', self.disc, context = self.c_hist)
 
         # Set live plotting
         self.grapher.plot(dataset, 'shelving', False)

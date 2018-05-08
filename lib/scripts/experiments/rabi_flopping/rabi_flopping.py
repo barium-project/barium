@@ -73,7 +73,6 @@ class rabi_flopping(experiment):
 
         self.HPA.set_frequency(self.freq)
         time.sleep(.3) # time to switch frequencies
-
         if self.state_detection == 'shelving':
             self.shutter.ttl_output(10, True)
             time.sleep(.5)
@@ -84,18 +83,23 @@ class rabi_flopping(experiment):
                 # Turn on LED if aborting experiment
                 self.pulser.switch_manual('TTL7',True)
                 return
+
+            self.program_pulse_sequence()
+            # set the microwave duration
+            self.p.RabiFlopping133.microwave_duration = WithUnit(t[i],'us')
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't
             while True:
+
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL7',True)
                     return
 
-                # set the microwave duration
-                self.p.RabiFlopping133.microwave_duration = WithUnit(t[i],'us')
-                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-                self.run_pulse_sequence()
+
+                self.pulser.reset_readout_counts()
+                self.pulser.start_number(int(self.cycles))
+                self.pulser.wait_sequence_done()
 
                 # First check if the protection was enabled, do nothing if not
                 if not self.pb.get_protection_state():
@@ -113,8 +117,8 @@ class rabi_flopping(experiment):
                         # Failed, abort experiment
                         return
 
-
                 counts = self.pulser.get_readout_counts()
+                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                 # 1 state is bright for standard state detection
                 if self.state_detection == 'spin-1/2':
                     bright = np.where(counts >= self.disc)
@@ -131,6 +135,8 @@ class rabi_flopping(experiment):
                 # only plots the most recent point.
                 self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
                                       True, context = self.c_hist)
+
+
                 break
         self.pulser.switch_manual('TTL7',True)
         self.shutter.ttl_output(10, False)
@@ -155,6 +161,7 @@ class rabi_flopping(experiment):
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_hist)
+        self.dv.add_parameter('Readout Threshold', self.disc, context = self.c_hist)
 
         # Set live plotting
         self.grapher.plot(dataset, 'rabi_flopping', False)
@@ -192,13 +199,10 @@ class rabi_flopping(experiment):
         print 'failed to remove protection beam'
         return False
 
-    def run_pulse_sequence(self):
+    def program_pulse_sequence(self):
         pulse_sequence = main_sequence(self.p)
         pulse_sequence.programSequence(self.pulser)
-        self.pulser.reset_readout_counts()
-        self.pulser.start_number(int(self.cycles))
-        self.pulser.wait_sequence_done()
-        self.pulser.stop_sequence()
+
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()
