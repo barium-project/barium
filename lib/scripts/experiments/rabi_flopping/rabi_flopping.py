@@ -235,8 +235,8 @@ class rabi_flopping(experiment):
         pulse_sequence.programSequence(self.pulser)
 
     def set_mw_frequency(self, freq):
-        self.HPA.set_frequency(int(self.freq))
-        dds_freq = WithUnit(30.- freq['MHz']/2 + 10*int(freq['MHz']/20))
+        self.HPA.set_frequency(WithUnit(int(self.freq['MHz']),'MHz'))
+        dds_freq = WithUnit(30.- freq['MHz']/2 + 10*int(freq['MHz']/20),'MHz')
         self.pulser.frequency('LF DDS',dds_freq)
 
     def finalize(self, cxn, context):

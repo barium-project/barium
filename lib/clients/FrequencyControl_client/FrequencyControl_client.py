@@ -567,7 +567,7 @@ class FrequencyControlClient(Frequency_Ui):
         dds_freq = U(30.- freq/2 + 10*int(freq/20),'MHz')
         hp_freq = int(freq)
         hp_freq = U(hp_freq,'MHz')
-        yield p.frequency('LF DDS', dds_freq)
+        yield self.pulser.frequency('LF DDS', dds_freq)
         yield client.set_frequency(hp_freq)
 
 
