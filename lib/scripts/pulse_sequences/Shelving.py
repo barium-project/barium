@@ -67,6 +67,9 @@ class shelving(pulse_sequence):
 
             # Turn on 455 DDS for shelving
             self.addDDS(self.channel_455, self.t0 + self.cool_time, self.shelve_time, self.freq_455, self.amp_455)
+            if self.shelve_time != 0:
+                # Turn on RF swith for 455nm AOM
+                self.addTTL('TTL8', self.t0 + self.cool_time, self.shelve_time)
             # Turn on 585 DDS for shelving
             self.addDDS(self.channel_585, self.t0 + self.cool_time, self.shelve_time, self.freq_585, self.amp_585)
 
@@ -87,6 +90,8 @@ class shelving(pulse_sequence):
 
             # Turn on 455 DDS for shelving
             self.addDDS(self.channel_455, self.t0 + self.cool_time, self.shelve_time, self.freq_455, self.amp_455)
+            # Turn on RF swith for 455nm AOM
+            self.addTTL('TTL8', self.t0 + self.cool_time, self.shelve_time)
             # Turn on 585 DDS for shelving
             self.addDDS(self.channel_585, self.t0 + self.cool_time, self.shelve_time, self.freq_585, self.amp_585)
 
