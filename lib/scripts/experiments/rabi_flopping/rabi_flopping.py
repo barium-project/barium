@@ -52,11 +52,13 @@ class rabi_flopping(experiment):
         self.freq = self.p.RabiFlopping133.microwave_frequency
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
         self.state_detection = self.p.RabiFlopping133.State_Detection
-
+        self.dc_thresh = self.p.RabiFlopping133.dc_threshold
+        self.total_exps = 0
 
         # Define contexts for saving data sets
         self.c_prob = self.cxn.context()
         self.c_hist = self.cxn.context()
+        self.c_dc_hist = self.cxn.context()
 
         # Need to map the gpib address to the labrad conection
         self.device_mapA = {}
@@ -82,6 +84,7 @@ class rabi_flopping(experiment):
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
                 self.pulser.switch_manual('TTL7',True)
+                self.shutter.ttl_output(10, False)
                 return
 
             self.program_pulse_sequence()
@@ -94,12 +97,14 @@ class rabi_flopping(experiment):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL7',True)
+                    self.shutter.ttl_output(10, False)
                     return
 
 
                 self.pulser.reset_readout_counts()
                 self.pulser.start_number(int(self.cycles))
                 self.pulser.wait_sequence_done()
+                self.pulser.stop_sequence()
 
                 # First check if the protection was enabled, do nothing if not
                 if not self.pb.get_protection_state():
@@ -115,9 +120,20 @@ class rabi_flopping(experiment):
                         continue
                     else:
                         # Failed, abort experiment
+                        self.pulser.switch_manual('TTL7',True)
+                        self.shutter.ttl_output(10, False)
                         return
 
-                counts = self.pulser.get_readout_counts()
+                # Here we look to see if the doppler cooling counts were low,
+                # and throw out experiments that were below threshold
+                pmt_counts = self.pulser.get_readout_counts()
+                dc_counts = pmt_counts[::2]
+                sd_counts = pmt_counts[1::2]
+                ind = np.where(dc_counts < self.dc_thresh)
+                counts = np.delete(sd_counts,ind[0])
+                self.total_exps = self.total_exps + len(counts)
+                print len(counts), self.total_exps
+
                 self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                 # 1 state is bright for standard state detection
                 if self.state_detection == 'spin-1/2':
@@ -128,8 +144,16 @@ class rabi_flopping(experiment):
                     dark = np.where(counts <= self.disc)
                     fid = float(len(dark[0]))/len(counts)
 
+                # Save time vs prob
                 self.dv.add(t[i] , fid, context = self.c_prob)
-                data = np.column_stack((np.arange(self.cycles),counts))
+                # We want to save all the experimental data, include dc as sd counts
+                exp_list = np.arange(self.cycles)
+                data = np.column_stack((exp_list, dc_counts, sd_counts))
+                self.dv.add(data, context = self.c_dc_hist)
+
+                # Now the hist with the ones we threw away
+                exp_list = np.delete(exp_list,ind[0])
+                data = np.column_stack((exp_list,counts))
                 self.dv.add(data, context = self.c_hist)
                 # Adding the character c and the number of cycles so plotting the histogram
                 # only plots the most recent point.
@@ -151,13 +175,21 @@ class rabi_flopping(experiment):
 
         # Define data sets for probability and the associated histograms
         self.dv.cd(['',year,month,trunk],True, context = self.c_prob)
-        dataset = self.dv.new('RabiFlopping_prob',[('run', 'arb u')], [('Counts', 'Counts', 'num')], context = self.c_prob)
+        # prob
+        dataset = self.dv.new('RabiFlopping_prob',[('run', 'time')], [('num', 'prob', 'num')], context = self.c_prob)
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
-
+        #Hist with deleted data
         self.dv.cd(['',year,month,trunk],True, context = self.c_hist)
-        dataset1 = self.dv.new('RabiFlopping_hist',[('run', 'arb u')], [('Counts', 'Counts', 'num')], context = self.c_hist)
+        dataset1 = self.dv.new('RabiFlopping_hist',[('run', 'arb u')], [('Counts', 'Hist', 'num')], context = self.c_hist)
+
+        #Hist with dc counts and sd counts
+        self.dv.cd(['',year,month,trunk],True, context = self.c_dc_hist)
+        dataset2 = self.dv.new('RabiFlopping_dc_hist',[('run', 'arb u')],\
+                               [('Counts', 'DC_Hist', 'num'), ('Counts', 'SD_Hist', 'num')], context = self.c_dc_hist)
+
+
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_hist)
