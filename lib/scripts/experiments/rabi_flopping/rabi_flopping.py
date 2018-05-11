@@ -73,8 +73,7 @@ class rabi_flopping(experiment):
         t = np.linspace(self.start_time['us'],self.stop_time['us'],\
                     int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
 
-        self.HPA.set_frequency(self.freq)
-        time.sleep(.3) # time to switch frequencies
+        self.set_mw_frequency(self.freq)
         if self.state_detection == 'shelving':
             self.shutter.ttl_output(10, True)
             time.sleep(.5)
@@ -235,6 +234,10 @@ class rabi_flopping(experiment):
         pulse_sequence = main_sequence(self.p)
         pulse_sequence.programSequence(self.pulser)
 
+    def set_mw_frequency(self, freq):
+        self.HPA.set_frequency(int(self.freq))
+        dds_freq = WithUnit(30.- freq['MHz']/2 + 10*int(freq['MHz']/20))
+        self.pulser.frequency('LF DDS',dds_freq)
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()

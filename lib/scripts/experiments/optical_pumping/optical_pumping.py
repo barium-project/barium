@@ -86,7 +86,7 @@ class optical_pumping(experiment):
                 self.pulser.reset_readout_counts()
                 self.pulser.start_number(int(self.cycles))
                 self.pulser.wait_sequence_done()
-
+                self.pulser.stop_sequence()
                 # First check if the protection was enabled, do nothing if not
                 if not self.pb.get_protection_state():
                         pass
