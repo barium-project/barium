@@ -102,6 +102,7 @@ class FrequencyControlClient(Frequency_Ui):
                                       password=self.password)
 
         self.hp8673 = self.cxn1.hp8673server
+        self.pulser = self.cxn1.pulser
 
         self.clients_hpa = [self.hp8672a_19]
         self.clients_hpb = [self.hp8657b_6, self.hp8657b_7, self.hp8657b_8]
@@ -560,8 +561,15 @@ class FrequencyControlClient(Frequency_Ui):
     @inlineCallbacks
     def freqChangedHPA(self, freq, client):
         from labrad.units import WithUnit as U
-        frequency = U(freq,'MHz')
-        yield client.set_frequency(frequency)
+        # Now we use a DDS to set the freq. Need to calculate
+        # the DDS freq (always between 20-30 MHz) that puts us
+        # at the right spot. Use the HP freq manual to get formula
+        dds_freq = U(30.- freq/2 + 10*int(freq/20),'MHz')
+        hp_freq = int(freq)
+        hp_freq = U(hp_freq,'MHz')
+        yield p.frequency('LF DDS', dds_freq)
+        yield client.set_frequency(hp_freq)
+
 
     @inlineCallbacks
     def freqChangedHP8673(self, freq):
