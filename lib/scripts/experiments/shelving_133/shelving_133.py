@@ -54,6 +54,10 @@ class shelving_133(experiment):
         self.step_freq = self.parameters.Shelving133.Frequency_Step
         self.scan = self.parameters.Shelving133.Scan
         self.scan_laser = self.parameters.Shelving133.Scan_Laser
+        self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+        self.dc_thresh = self.p.Shelving133.dc_threshold
+        self.total_exps = 0
+
 
         # Get software laser lock info
         self.reg.cd(['Servers','software_laser_lock'])
@@ -65,7 +69,7 @@ class shelving_133(experiment):
         # Get context for saving probability and histograms
         self.c_prob = self.cxn.context()
         self.c_hist = self.cxn.context()
-        self.c_deshelve = self.cxn.context()
+        self.c_dc_hist = self.cxn.context()
 
         # Need to map the gpib address to the labrad connection
         self.device_mapA = {}
@@ -86,26 +90,35 @@ class shelving_133(experiment):
         if self.scan == 'time':
             t = np.linspace(self.start_time['us'],self.stop_time['us'],\
                     int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
-            # Open shelving laser shutting and turn LED off
+            # Open shelving laser shutter and turn LED off
             self.shutter.ttl_output(10, True)
             time.sleep(.5)
             self.pulser.switch_auto('TTL7',False)
+
             for i in range(len(t)):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL7',True)
+                    self.shutter.ttl_output(10, False)
                     return
+
+                # Program the pulser
+                self.p.Shelving133.shelving_duration = WithUnit(t[i], 'us')
+                self.program_pulse_sequence()
+
                 # for the protection beam we start a while loop and break it if we got the data,
                 # continue if we didn't
                 while True:
                     if self.pause_or_stop():
                         # Turn on LED if aborting experiment
                         self.pulser.switch_manual('TTL7',True)
+                        self.shutter.ttl_output(10, False)
                         return
 
-                    self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-                    self.p.Shelving133.shelving_duration = WithUnit(t[i], 'us')
-                    self.run_pulse_sequence()
+                    self.pulser.reset_readout_counts()
+                    self.pulser.start_number(int(self.cycles))
+                    self.pulser.wait_sequence_done()
+                    self.pulser.stop_sequence()
 
                     # First check if the protection was enabled, do nothing if not
                     if not self.pb.get_protection_state():
@@ -120,17 +133,37 @@ class shelving_133(experiment):
                             self.pulser.switch_auto('TTL7',False)
                             continue
                         else:
+                            self.pulser.switch_manual('TTL7',True)
+                            self.shutter.ttl_output(10, False)
                             # Failed, abort experiment
                             return
 
-                    sd_counts = self.pulser.get_readout_counts()
+                    # Here we look to see if the doppler cooling counts were low,
+                    # and throw out experiments that were below threshold
+                    pmt_counts = self.pulser.get_readout_counts()
+                    dc_counts = pmt_counts[::2]
+                    sd_counts = pmt_counts[1::2]
+                    ind = np.where(dc_counts < self.dc_thresh)
+                    counts = np.delete(sd_counts,ind[0])
+                    self.total_exps = self.total_exps + len(counts)
+                    print len(counts), self.total_exps
+
+                    self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                     # Dark state is the |1> state (mf = 1), plot that prob
-                    dark = np.where(sd_counts <= self.disc)
-                    fid = float(len(dark[0]))/len(sd_counts)
+                    dark = np.where(counts <= self.disc)
+                    fid = float(len(dark[0]))/len(counts)
                     self.dv.add(t[i] , fid, context = self.c_prob)
-                    # Save histogram
-                    data = np.column_stack((np.arange(self.cycles),sd_counts))
+
+                    # We want to save all the experimental data, include dc as sd counts
+                    exp_list = np.arange(self.cycles)
+                    data = np.column_stack((exp_list, dc_counts, sd_counts))
+                    self.dv.add(data, context = self.c_dc_hist)
+
+                    # Now the hist with the ones we threw away
+                    exp_list = np.delete(exp_list,ind[0])
+                    data = np.column_stack((exp_list,counts))
                     self.dv.add(data, context = self.c_hist)
+
                     # Adding the character c and the number of cycles so plotting the histogram
                     # only plots the most recent point.
                     self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
@@ -143,15 +176,18 @@ class shelving_133(experiment):
             freq = np.linspace(self.start_freq['THz'],self.stop_freq['THz'],\
                     int((abs(self.stop_freq['THz']-self.start_freq['THz'])/self.step_freq['THz']) +1))
 
+            self.program_pulse_sequence()
+
             for i in range(len(freq)):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL7',True)
+                    self.shutter.ttl_output(10, False)
                     return
                 # for the protection beam we start a while loop and break it if we got the data,
                 # continue if we didn't
                 self.single_lock.set_lock_frequency(freq[i], self.scan_laser)
-                time.sleep(5)
+                time.sleep(10)
                 self.shutter.ttl_output(10, True)
                 time.sleep(.5)
                 self.pulser.switch_auto('TTL7',False)
@@ -159,8 +195,11 @@ class shelving_133(experiment):
                 # continue if we didn't
                 while True:
                     frequency = self.wm.get_frequency(self.scan_laser_chan)
-                    self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-                    self.run_pulse_sequence()
+                    self.pulser.reset_readout_counts()
+                    self.pulser.start_number(int(self.cycles))
+                    self.pulser.wait_sequence_done()
+                    self.pulser.stop_sequence()
+
                     # First check if the protection was enabled, do nothing if not
                     if not self.pb.get_protection_state():
                         pass
@@ -174,15 +213,37 @@ class shelving_133(experiment):
                             self.pulser.switch_auto('TTL7',False)
                             continue
                         else:
+                            self.pulser.switch_manual('TTL7',True)
+                            self.shutter.ttl_output(10, False)
                             # Failed, abort experiment
                             return
-                    sd_counts = self.pulser.get_readout_counts()
-                    dark = np.where(sd_counts <= self.disc)
-                    fid = float(len(dark[0]))/len(sd_counts)
-                    self.dv.add(freq[i] , fid, context = self.c_prob)
-                    # Save histogram
-                    data = np.column_stack((np.arange(self.cycles),sd_counts))
+
+                    # Here we look to see if the doppler cooling counts were low,
+                    # and throw out experiments that were below threshold
+                    pmt_counts = self.pulser.get_readout_counts()
+                    dc_counts = pmt_counts[::2]
+                    sd_counts = pmt_counts[1::2]
+                    ind = np.where(dc_counts < self.dc_thresh)
+                    counts = np.delete(sd_counts,ind[0])
+                    self.total_exps = self.total_exps + len(counts)
+                    print len(counts), self.total_exps
+
+                    self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+                    # Dark state is the |1> state (mf = 1), plot that prob
+                    dark = np.where(counts <= self.disc)
+                    fid = float(len(dark[0]))/len(counts)
+                    self.dv.add(frequency , fid, context = self.c_prob)
+
+                    # We want to save all the experimental data, include dc as sd counts
+                    exp_list = np.arange(self.cycles)
+                    data = np.column_stack((exp_list, dc_counts, sd_counts))
+                    self.dv.add(data, context = self.c_dc_hist)
+
+                    # Now the hist with the ones we threw away
+                    exp_list = np.delete(exp_list,ind[0])
+                    data = np.column_stack((exp_list,counts))
                     self.dv.add(data, context = self.c_hist)
+
                     # Adding the character c and the number of cycles so plotting the histogram
                     # only plots the most recent point.
                     self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
@@ -224,13 +285,9 @@ class shelving_133(experiment):
         print 'failed to remove protection beam'
         return False
 
-    def run_pulse_sequence(self):
+    def program_pulse_sequence(self):
         pulse_sequence = main_sequence(self.p)
         pulse_sequence.programSequence(self.pulser)
-        self.pulser.reset_readout_counts()
-        self.pulser.start_number(int(self.cycles))
-        self.pulser.wait_sequence_done()
-        self.pulser.stop_sequence()
 
     def set_up_datavault(self):
         # set up folder
@@ -239,14 +296,22 @@ class shelving_133(experiment):
         month = '%02d' % date.month  # Padded with a zero if one digit
         day   = '%02d' % date.day    # Padded with a zero if one digit
         trunk = year + '_' + month + '_' + day
+
+        # Create data sets for fid and histograms
         self.dv.cd(['',year,month,trunk],True, context = self.c_prob)
-        dataset = self.dv.new('shelving133_prob',[('time', 'us')], [('Probability', 'Probability', 'num')], context = self.c_prob)
+        dataset = self.dv.new('shelving133_prob',[('time', 'us')], [('num', 'Probability', 'num')], context = self.c_prob)
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
 
         self.dv.cd(['',year,month,trunk],True, context = self.c_hist)
         dataset1 = self.dv.new('shelving_hist',[('time', 'us')], [('Probability', 'Probability', 'num')], context = self.c_hist)
+
+        #Hist with dc counts and sd counts
+        self.dv.cd(['',year,month,trunk],True, context = self.c_dc_hist)
+        dataset2 = self.dv.new('shelving133_dc_hist',[('run', 'arb u')],\
+                               [('Counts', 'DC_Hist', 'num'), ('Counts', 'SD_Hist', 'num')], context = self.c_dc_hist)
+
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_hist)

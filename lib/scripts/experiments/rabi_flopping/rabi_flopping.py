@@ -86,19 +86,17 @@ class rabi_flopping(experiment):
                 self.shutter.ttl_output(10, False)
                 return
 
-            self.program_pulse_sequence()
             # set the microwave duration
             self.p.RabiFlopping133.microwave_duration = WithUnit(t[i],'us')
+            self.program_pulse_sequence()
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't
             while True:
-
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL7',True)
                     self.shutter.ttl_output(10, False)
                     return
-
 
                 self.pulser.reset_readout_counts()
                 self.pulser.start_number(int(self.cycles))
