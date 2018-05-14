@@ -26,6 +26,7 @@ class microwave_sweep(pulse_sequence):
                            ('MicrowaveSweep133', 'microwave_duration'),
                            ('MicrowaveSweep133', 'TTL_493'),
                            ('MicrowaveSweep133', 'TTL_650'),
+                           ('MicrowaveSweep133', 'TTL_455'),
                            ('MicrowaveSweep133', 'TTL_prep'),
                            ('MicrowaveSweep133', 'TTL_microwaves'),
                            ('MicrowaveSweep133', 'TTL_deshelve'),
@@ -33,10 +34,12 @@ class microwave_sweep(pulse_sequence):
                            ('MicrowaveSweep133', 'Start_Frequency'),
                            ('MicrowaveSweep133', 'Stop_Frequency'),
                            ('MicrowaveSweep133', 'Frequency_Step'),
+                           ('MicrowaveSweep133', 'dc_threshold'),
                            ]
 
     def sequence(self):
         self.start = WithUnit(10.0,'us')
+        self.t0 = self.start - WithUnit(1.0,'us')
         self.p = self.parameters.MicrowaveSweep133
 
         self.channel_493 = self.p.channel_493
@@ -58,6 +61,7 @@ class microwave_sweep(pulse_sequence):
 
         self.ttl_493 = self.p.TTL_493
         self.ttl_650 = self.p.TTL_650
+        self.ttl_455 = self.p.TTL_455
         self.ttl_prep = self.p.TTL_prep
         self.ttl_microwave = self.p.TTL_microwaves
         self.ttl_deshelve = self.p.TTL_deshelve
@@ -73,7 +77,8 @@ class microwave_sweep(pulse_sequence):
         self.deshelving_time = self.p.deshelving_duration
 
         if self.state_detection == 'spin-1/2':
-            self.addDDS(self.channel_493, self.start,  self.cool_time + self.prep_time , self.freq_493, self.amp_493)
+            self.addDDS(self.channel_493, self.t0,  self.cool_time + self.prep_time , self.freq_493, self.amp_493)
+            self.addTTL('ReadoutCount', self.start, self.cool_time)
             # First Doppler cool which is doing nothing
             # Next optically pump by turning off 5.8GHz and 1.84GHz on
             self.addTTL(self.ttl_493, self.start + self.cool_time, self.prep_time + self.switch_time + self.microwave_time \
@@ -86,39 +91,43 @@ class microwave_sweep(pulse_sequence):
 
             self.addTTL(self.ttl_microwave, self.start + self.cool_time + self.prep_time + self.switch_time, self.microwave_time)
             # Turn the dds back on for state detection
-            self.addDDS(self.channel_493, self.start + self.cool_time + self.prep_time + self.switch_time + \
+            self.addDDS(self.channel_493, self.t0 + self.cool_time + self.prep_time + self.switch_time + \
                          self.microwave_time + self.switch_time,  self.sd_time, self.freq_493, self.amp_493)
             # grab counts
             self.addTTL('ReadoutCount', self.start + self.cool_time + self.prep_time +  self.switch_time  + \
                         self.microwave_time + self.switch_time, self.sd_time)
 
         if self.state_detection == 'shelving':
-
-            self.addDDS(self.channel_493, self.start,  self.cool_time + self.prep_time , self.freq_493, self.amp_493)
-            self.addDDS(self.channel_650, self.start,  self.cool_time + self.prep_time , self.freq_650, self.amp_650)
-            # First Doppler cool which is doing nothing
+            # First we doppler cool. We want to monitor counts during cooling in case something bad happens.
+            self.addTTL('ReadoutCount', self.start, self.cool_time)
+            self.addDDS(self.channel_493, self.t0,  self.cool_time + self.prep_time , self.freq_493, self.amp_493)
+            self.addDDS(self.channel_650, self.t0,  self.cool_time + self.prep_time , self.freq_650, self.amp_650)
             # Next optically pump by turning off 5.8GHz and 1.84GHz on
             self.addTTL(self.ttl_493, self.start + self.cool_time, self.prep_time + self.switch_time + self.microwave_time + \
                         self.switch_time + self.shelving_time)
             self.addTTL(self.ttl_prep, self.start + self.cool_time, self.prep_time)
             # Next apply microwaves and turn off everything else
-            # 650 doesn't have to be off, just 904MHz
             # DDS will turn off from above setting
             self.addTTL(self.ttl_650, self.start + self.cool_time + self.prep_time, self.switch_time + self.microwave_time + \
                          self.switch_time + self.shelving_time)
             self.addTTL(self.ttl_microwave, self.start + self.cool_time + self.prep_time + self.switch_time , self.microwave_time)
-            # Turn on shelving laser and microwaves to drive the D3/2 transition
-            self.addDDS(self.channel_455, self.start + self.cool_time + self.prep_time + self.switch_time + \
+
+            # Turn on shelving lasers
+            # Need to send 455 through an RF switch
+            if self.shelving_time != 0:
+                self.addTTL(self.ttl_455, self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time + \
+                         self.switch_time, self.shelving_time)
+            self.addDDS(self.channel_455, self.t0 + self.cool_time + self.prep_time + self.switch_time + \
                         self.microwave_time + self.switch_time, self.shelving_time, self.freq_455, self.amp_455)
-            self.addDDS(self.channel_650, self.start + self.cool_time + self.prep_time + self.switch_time + \
+            self.addDDS(self.channel_650, self.t0 + self.cool_time + self.prep_time + self.switch_time + \
                         self.microwave_time + self.switch_time, self.shelving_time, self.freq_650, self.amp_650_shelving)
-            self.addDDS(self.channel_585, self.start + self.cool_time + self.prep_time + self.switch_time + \
+            self.addDDS(self.channel_585, self.t0 + self.cool_time + self.prep_time + self.switch_time + \
                         self.microwave_time + self.switch_time, self.shelving_time, self.freq_585, self.amp_585)
 
             # Turn the dds back on for state detection
-            self.addDDS(self.channel_493, self.start + self.cool_time + self.prep_time + self.switch_time + \
+            self.addDDS(self.channel_493, self.t0 + self.cool_time + self.prep_time + self.switch_time + \
                          self.microwave_time + self.switch_time + self.shelving_time, self.sd_time + self.deshelving_time, self.freq_493, self.amp_493)
-            self.addDDS(self.channel_650, self.start + self.cool_time + self.prep_time + self.switch_time + \
+            self.addDDS(self.channel_650, self.t0 + self.cool_time + self.prep_time + self.switch_time + \
                          self.microwave_time + self.switch_time + self.shelving_time, self.sd_time + self.deshelving_time, self.freq_650, self.amp_650)
             # Turn on photon counting for state detection
             self.addTTL('ReadoutCount', self.start + self.cool_time + self.prep_time + self.switch_time + \

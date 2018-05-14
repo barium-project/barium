@@ -80,6 +80,7 @@ class rabi_flopping(pulse_sequence):
 
         if self.state_detection == 'spin-1/2':
             self.addDDS(self.channel_493, self.t0,  self.cool_time + self.prep_time , self.freq_493, self.amp_493)
+            self.addTTL('ReadoutCount', self.start, self.cool_time)
             # First Doppler cool which is doing nothing
             # Next optically pump by turning off 5.8GHz and 1.84GHz on
             self.addTTL(self.ttl_493, self.start + self.cool_time, self.prep_time + \
