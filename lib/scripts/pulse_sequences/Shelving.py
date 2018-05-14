@@ -30,6 +30,7 @@ class shelving(pulse_sequence):
                            ('Shelving', 'Scan'),
                            ('Shelving', 'Scan_Laser'),
                            ('Shelving', 'detection_duration'),
+                           ('Shelving', 'dc_threshold'),
                            ]
 
     def sequence(self):
@@ -64,20 +65,22 @@ class shelving(pulse_sequence):
                         self.deshelve_time, self.freq_493, self.amp_493)
             self.addDDS(self.channel_650, self.t0, self.cool_time + self.shelve_time + self.detection_time + \
                         + self.deshelve_time, self.freq_650, self.amp_650)
+            # Count photons during doppler cooling to monitor for dropouts
+            self.addTTL('ReadoutCount', self.start, self.cool_time)
 
             # Turn on 455 DDS for shelving
             self.addDDS(self.channel_455, self.t0 + self.cool_time, self.shelve_time, self.freq_455, self.amp_455)
             if self.shelve_time != 0:
                 # Turn on RF swith for 455nm AOM
-                self.addTTL('TTL8', self.t0 + self.cool_time, self.shelve_time)
+                self.addTTL('TTL8', self.start + self.cool_time, self.shelve_time)
             # Turn on 585 DDS for shelving
             self.addDDS(self.channel_585, self.t0 + self.cool_time, self.shelve_time, self.freq_585, self.amp_585)
 
             # Count photons during detection time
-            self.addTTL('ReadoutCount', self.t0 + self.cool_time + self.shelve_time, self.detection_time)
+            self.addTTL('ReadoutCount', self.start + self.cool_time + self.shelve_time, self.detection_time)
 
             # Turn on deshelving LED
-            self.addTTL('TTL7', self.t0 + self.cool_time + self.shelve_time + self.detection_time, self.deshelve_time)
+            self.addTTL('TTL7', self.start + self.cool_time + self.shelve_time + self.detection_time, self.deshelve_time)
 
 
         # If we're scanning deshelve time
@@ -88,10 +91,13 @@ class shelving(pulse_sequence):
             self.addDDS(self.channel_650, self.t0, self.cool_time + self.shelve_time + self.deshelve_time + \
                         + self.detection_time + self.clean_out_time, self.freq_650, self.amp_650)
 
+            # Count photons during doppler cooling to monitor for dropouts
+            #self.addTTL('ReadoutCount', self.t0, self.cool_time)
+
             # Turn on 455 DDS for shelving
             self.addDDS(self.channel_455, self.t0 + self.cool_time, self.shelve_time, self.freq_455, self.amp_455)
             # Turn on RF swith for 455nm AOM
-            self.addTTL('TTL8', self.t0 + self.cool_time, self.shelve_time)
+            self.addTTL('TTL8', self.start + self.cool_time, self.shelve_time)
             # Turn on 585 DDS for shelving
             self.addDDS(self.channel_585, self.t0 + self.cool_time, self.shelve_time, self.freq_585, self.amp_585)
 
