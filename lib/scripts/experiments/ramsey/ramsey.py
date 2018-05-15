@@ -52,10 +52,11 @@ class ramsey(experiment):
         self.freq = self.p.Ramsey133.microwave_frequency
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
         self.state_detection = self.p.Ramsey133.State_Detection
-
+        self.dc_thresh = self.p.Ramsey133.dc_threshold
         # Define contexts for saving different data sets
         self.c_prob = self.cxn.context()
         self.c_hist = self.cxn.context()
+        self.c_dc_hist = self.cxn.context()
         # Need to map the gpib address to the labrad conection
         self.device_mapA = {}
         self.device_mapB = {}
@@ -69,7 +70,7 @@ class ramsey(experiment):
         t = np.linspace(self.start_time['us'],self.stop_time['us'],\
                     int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
 
-        self.HPA.set_frequency(self.freq)
+        self.set_mw_frequency()
         time.sleep(.3) # time to switch frequencies
 
         if self.state_detection == 'shelving':
@@ -81,21 +82,53 @@ class ramsey(experiment):
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
                 self.pulser.switch_manual('TTL7',True)
+                self.shutter.ttl_output(10, False)
                 return
+
+            self.p.Ramsey133.Ramsey_Delay = WithUnit(t[i],'us')
+            self.program_pulse_sequence()
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't
             while True:
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL7',True)
+                    self.shutter.ttl_output(10, False)
                     return
 
-                # set ramsey delay
-                self.p.Ramsey133.Ramsey_Delay = WithUnit(t[i],'us')
-                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-                self.run_pulse_sequence()
+                self.pulser.reset_readout_counts()
+                self.pulser.start_number(int(self.cycles))
+                self.pulser.wait_sequence_done()
+                self.pulser.stop_sequence()
 
-                counts = self.pulser.get_readout_counts()
+                # First check if the protection was enabled, do nothing if not
+                if not self.pb.get_protection_state():
+                        pass
+                # if it was enabled, try to fix, continue if successful
+                # otherwise call return to break out of function
+                else:
+                    # Should turn on deshelving LED while trying
+                    self.pulser.switch_manual('TTL7',True)
+                    if self.remove_protection_beam():
+                        # If successful switch off LED and return to top of loop
+                        self.pulser.switch_auto('TTL7',False)
+                        continue
+                    else:
+                        # Failed, abort experiment
+                        self.pulser.switch_manual('TTL7',True)
+                        self.shutter.ttl_output(10, False)
+                        return
+
+                # Here we look to see if the doppler cooling counts were low,
+                # and throw out experiments that were below threshold
+                pmt_counts = self.pulser.get_readout_counts()
+                dc_counts = pmt_counts[::2]
+                sd_counts = pmt_counts[1::2]
+                ind = np.where(dc_counts < self.dc_thresh)
+                counts = np.delete(sd_counts,ind[0])
+                print len(counts)
+
+                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                 # 1 state is bright for standard state detection
                 if self.state_detection == 'spin-1/2':
                     bright = np.where(counts >= self.disc)
@@ -105,8 +138,16 @@ class ramsey(experiment):
                     dark = np.where(counts <= self.disc)
                     fid = float(len(dark[0]))/len(counts)
 
+                # Save time vs prob
                 self.dv.add(t[i] , fid, context = self.c_prob)
-                data = np.column_stack((np.arange(self.cycles),counts))
+                # We want to save all the experimental data, include dc as sd counts
+                exp_list = np.arange(self.cycles)
+                data = np.column_stack((exp_list, dc_counts, sd_counts))
+                self.dv.add(data, context = self.c_dc_hist)
+
+                # Now the hist with the ones we threw away
+                exp_list = np.delete(exp_list,ind[0])
+                data = np.column_stack((exp_list,counts))
                 self.dv.add(data, context = self.c_hist)
                 # Adding the character c and the number of cycles so plotting the histogram
                 # only plots the most recent point.
@@ -136,6 +177,12 @@ class ramsey(experiment):
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_hist)
+        self.dv.add_parameter('Readout Threshold', self.disc, context = self.c_hist)
+
+        #Hist with dc counts and sd counts
+        self.dv.cd(['',year,month,trunk],True, context = self.c_dc_hist)
+        dataset2 = self.dv.new('Ramsey_dc_hist',[('run', 'arb u')],\
+                               [('Counts', 'DC_Hist', 'num'), ('Counts', 'SD_Hist', 'num')], context = self.c_dc_hist)
 
         # Set live plotting
         self.grapher.plot(dataset, 'rabi_flopping', False)
@@ -166,13 +213,14 @@ class ramsey(experiment):
         print 'failed to remove protection beam'
         return False
 
-    def run_pulse_sequence(self):
+    def program_pulse_sequence(self):
         pulse_sequence = main_sequence(self.p)
         pulse_sequence.programSequence(self.pulser)
-        self.pulser.reset_readout_counts()
-        self.pulser.start_number(int(self.cycles))
-        self.pulser.wait_sequence_done()
-        self.pulser.stop_sequence()
+
+    def set_mw_frequency(self):
+        self.HPA.set_frequency(WithUnit(int(self.freq['MHz']),'MHz'))
+        dds_freq = WithUnit(30.- self.freq['MHz']/2 + 10*int(self.freq['MHz']/20),'MHz')
+        self.pulser.frequency('LF DDS',dds_freq)
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()

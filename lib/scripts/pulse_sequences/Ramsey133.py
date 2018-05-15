@@ -26,6 +26,7 @@ class ramsey(pulse_sequence):
                            ('Ramsey133', 'microwave_duration'),
                            ('Ramsey133', 'TTL_493'),
                            ('Ramsey133', 'TTL_650'),
+                           ('Ramsey133', 'TTL_455'),
                            ('Ramsey133', 'TTL_prep'),
                            ('Ramsey133', 'TTL_microwaves'),
                            ('Ramsey133', 'TTL_deshelve'),
@@ -34,6 +35,7 @@ class ramsey(pulse_sequence):
                            ('Ramsey133', 'Stop_Time'),
                            ('Ramsey133', 'Time_Step'),
                            ('Ramsey133', 'State_Detection'),
+                           ('Ramsey133', 'dc_threshold'),
                            # Ramsey Delay is the parameter that's changed and passed to the pulser for each
                            # pulse sequence.
                            ('Ramsey133', 'Ramsey_Delay'),
@@ -41,6 +43,8 @@ class ramsey(pulse_sequence):
 
     def sequence(self):
         self.start = WithUnit(10.0,'us')
+        self.t0 = self.start - WithUnit(1.0,'us')
+
         self.p = self.parameters.Ramsey133
 
         self.channel_493 = self.p.channel_493
@@ -62,6 +66,7 @@ class ramsey(pulse_sequence):
 
         self.ttl_493 = self.p.TTL_493
         self.ttl_650 = self.p.TTL_650
+        self.ttl_455 = self.p.TTL_455
         self.ttl_prep = self.p.TTL_prep
         self.ttl_microwave = self.p.TTL_microwaves
         self.ttl_deshelve = self.p.TTL_deshelve
@@ -77,8 +82,10 @@ class ramsey(pulse_sequence):
         self.ramsey_delay = self.p.Ramsey_Delay
 
         if self.state_detection == 'spin-1/2':
-            self.addDDS(self.channel_493, self.start,  self.cool_time + self.prep_time , self.freq_493, self.amp_493)
-            # First Doppler cool which is doing nothing
+            # First Doppler cool which is doing nothing and monitor counts during cooling
+            self.addDDS(self.channel_493, self.t0,  self.cool_time + self.prep_time , self.freq_493, self.amp_493)
+            self.addTTL('ReadoutCount', self.start, self.cool_time)
+
             # Next optically pump by turning off 5.8GHz and 1.84GHz on
             self.addTTL(self.ttl_493, self.start + self.cool_time, self.prep_time + self.switch_time + self.microwave_time + self.ramsey_delay + \
                      self.microwave_time  + self.switch_time + self.sd_time)
@@ -94,15 +101,17 @@ class ramsey(pulse_sequence):
                          + self.microwave_time + self.ramsey_delay , self.microwave_time)
 
             # Turn the dds back on for state detection
-            self.addDDS(self.channel_493, self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time + self.ramsey_delay + \
+            self.addDDS(self.channel_493, self.t0 + self.cool_time + self.prep_time + self.switch_time + self.microwave_time + self.ramsey_delay + \
                     + self.microwave_time + self.switch_time, self.sd_time , self.freq_493, self.amp_493)
 
             self.addTTL('ReadoutCount', self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time + self.ramsey_delay + \
                         + self.microwave_time + self.switch_time,self.sd_time)
 
         if self.state_detection == 'shelving':
-            self.addDDS(self.channel_493, self.start,  self.cool_time + self.prep_time , self.freq_493, self.amp_493)
-            self.addDDS(self.channel_650, self.start,  self.cool_time + self.prep_time , self.freq_650, self.amp_650)
+            # First we doppler cool. We want to monitor counts during cooling in case something bad happens.
+            self.addTTL('ReadoutCount', self.start, self.cool_time)
+            self.addDDS(self.channel_493, self.t0,  self.cool_time + self.prep_time , self.freq_493, self.amp_493)
+            self.addDDS(self.channel_650, self.t0,  self.cool_time + self.prep_time , self.freq_650, self.amp_650)
             # First Doppler cool which is doing nothing
             # Next optically pump by turning off 5.8GHz and 1.84GHz on
             self.addTTL(self.ttl_493, self.start + self.cool_time, self.prep_time + self.switch_time + self.microwave_time + self.ramsey_delay \
@@ -117,20 +126,27 @@ class ramsey(pulse_sequence):
             # Do another microwave pulse
             self.addTTL(self.ttl_microwave, self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time \
                         + self.ramsey_delay, self.microwave_time)
+
             # Turn on shelving lasers
-            self.addDDS(self.channel_455, self.start + self.cool_time + self.prep_time + self.switch_time + \
+            # Need to send 455 through an RF switch
+            if self.shelving_time != 0:
+                self.addTTL(self.ttl_455, self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time + self.ramsey_delay + \
+                         self.microwave_time + self.switch_time, self.shelving_time)
+            self.addDDS(self.channel_455, self.t0 + self.cool_time + self.prep_time + self.switch_time + \
                         self.microwave_time + self.ramsey_delay + self.microwave_time + self.switch_time, self.shelving_time, self.freq_455, self.amp_455)
             #Turn on low power 650
-            self.addDDS(self.channel_650, self.start +  self.cool_time + self.prep_time + self.switch_time + \
+            self.addDDS(self.channel_650, self.t0 +  self.cool_time + self.prep_time + self.switch_time + \
                         self.microwave_time + self.ramsey_delay + self.microwave_time +  self.switch_time, self.shelving_time , self.freq_650, self.amp_650_shelving)
-            self.addDDS(self.channel_585, self.start + self.cool_time + self.prep_time + self.switch_time + \
+            self.addDDS(self.channel_585, self.t0 + self.cool_time + self.prep_time + self.switch_time + \
                         self.microwave_time + self.ramsey_delay + self.microwave_time + self.switch_time, self.shelving_time, self.freq_585, self.amp_585)
 
-                       # Turn the dds back on for state detection
-            self.addDDS(self.channel_493, self.start + self.cool_time + self.prep_time + self.switch_time + \
-                         self.microwave_time + self.ramsey_delay + self.microwave_time  + self.switch_time + self.shelving_time, self.sd_time + self.deshelving_time, self.freq_493, self.amp_493)
-            self.addDDS(self.channel_650, self.start + self.cool_time + self.prep_time + self.switch_time + \
-                         self.microwave_time + self.ramsey_delay + self.microwave_time + self.switch_time + self.shelving_time, self.sd_time + self.deshelving_time, self.freq_650, self.amp_650)
+            # Turn the dds back on for state detection
+            self.addDDS(self.channel_493, self.t0 + self.cool_time + self.prep_time + self.switch_time + \
+                         self.microwave_time + self.ramsey_delay + self.microwave_time  + self.switch_time + self.shelving_time, \
+                         self.sd_time + self.deshelving_time, self.freq_493, self.amp_493)
+            self.addDDS(self.channel_650, self.t0 + self.cool_time + self.prep_time + self.switch_time + \
+                         self.microwave_time + self.ramsey_delay + self.microwave_time + self.switch_time + self.shelving_time, \
+                         self.sd_time + self.deshelving_time, self.freq_650, self.amp_650)
 
             # Turn on photon counting for state detection
             self.addTTL('ReadoutCount', self.start + self.cool_time + self.prep_time + self.switch_time + \

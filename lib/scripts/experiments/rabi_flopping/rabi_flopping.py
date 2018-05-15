@@ -74,6 +74,7 @@ class rabi_flopping(experiment):
                     int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
 
         self.set_mw_frequency()
+        time.sleep(.3) # time to switch
         if self.state_detection == 'shelving':
             self.shutter.ttl_output(10, True)
             time.sleep(.5)

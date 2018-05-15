@@ -46,7 +46,7 @@ class QCustomCurrentGui(QtGui.QFrame):
         self.current_spin = QtGui.QDoubleSpinBox()
         self.current_spin.setFont(QtGui.QFont(shell_font, pointSize=16))
         self.current_spin.setDecimals(3)
-        self.current_spin.setSingleStep(.001)
+        self.current_spin.setSingleStep(.05)
         self.current_spin.setRange(0, 700)
         self.current_spin.setKeyboardTracking(False)
 
