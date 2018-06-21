@@ -3,12 +3,9 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 
 from common.lib.servers.abstractservers.script_scanner.scan_methods import experiment
 #from common.lib.servers.Pulser2.pulse_sequences.pulse_sequence import pulse_sequence
-
-from barium.lib.scripts.pulse_sequences.sub_sequences.ProbeLaser import probe_laser as probe_laser
-from barium.lib.scripts.pulse_sequences.sub_sequences.DopplerCooling import doppler_cooling as doppler_cooling
-from barium.lib.scripts.pulse_sequences.sub_sequences.PhotonTimeTags import photon_timetags as photon_timetags
 from barium.lib.scripts.pulse_sequences.ProbeLineScan import probe_line_scan as main_sequence
-
+from barium.lib.scripts.pulse_sequences.sub_sequences.ProbeLaser import  probe_laser as probe_laser
+from barium.lib.scripts.pulse_sequences.sub_sequences.DopplerCooling import  doppler_cooling as doppler_cooling
 
 from config.FrequencyControl_config import FrequencyControl_config
 from config.multiplexerclient_config import multiplexer_config
@@ -41,7 +38,6 @@ class probe_line_scan(experiment):
     # Add the parameters from the required subsequences
     exp_parameters.extend(probe_laser.all_required_parameters())
     exp_parameters.extend(doppler_cooling.all_required_parameters())
-    exp_parameters.extend(photon_timetags.all_required_parameters())
 
     @classmethod
     def all_required_parameters(cls):
@@ -150,12 +146,12 @@ class probe_line_scan(experiment):
         if self.cooling_oscillator == 'GPIB::1':
             self.HP8673.set_frequency(self.cool_sb)
             self.HP8673.rf_state(True)
-        '''
+
         else:
             self.HPB.select_device(self.device_mapB['GPIB0::6'])
             self.HPB.set_frequency(self.cool_sb)
             self.HPB.rf_state(True)
-        '''
+
 
         # set probe oscillator
 

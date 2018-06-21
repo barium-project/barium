@@ -27,6 +27,7 @@ class microwave_sweep(pulse_sequence):
                            ('MicrowaveSweep133', 'TTL_493'),
                            ('MicrowaveSweep133', 'TTL_650'),
                            ('MicrowaveSweep133', 'TTL_455'),
+                           ('MicrowaveSweep133', 'TTL_585'),
                            ('MicrowaveSweep133', 'TTL_prep'),
                            ('MicrowaveSweep133', 'TTL_microwaves'),
                            ('MicrowaveSweep133', 'TTL_deshelve'),
@@ -62,6 +63,7 @@ class microwave_sweep(pulse_sequence):
         self.ttl_493 = self.p.TTL_493
         self.ttl_650 = self.p.TTL_650
         self.ttl_455 = self.p.TTL_455
+        self.ttl_585 = self.p.TTL_585
         self.ttl_prep = self.p.TTL_prep
         self.ttl_microwave = self.p.TTL_microwaves
         self.ttl_deshelve = self.p.TTL_deshelve
@@ -116,6 +118,8 @@ class microwave_sweep(pulse_sequence):
             # Need to send 455 through an RF switch
             if self.shelving_time != 0:
                 self.addTTL(self.ttl_455, self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time + \
+                         self.switch_time, self.shelving_time)
+                self.addTTL(self.ttl_585, self.start + self.cool_time + self.prep_time + self.switch_time + self.microwave_time + \
                          self.switch_time, self.shelving_time)
             self.addDDS(self.channel_455, self.t0 + self.cool_time + self.prep_time + self.switch_time + \
                         self.microwave_time + self.switch_time, self.shelving_time, self.freq_455, self.amp_455)

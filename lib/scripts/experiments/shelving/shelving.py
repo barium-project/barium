@@ -54,6 +54,7 @@ class shelving(experiment):
         self.scan_laser = self.parameters.Shelving.Scan_Laser
         self.dc_thresh = self.p.Shelving.dc_threshold
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+        print self.disc
 
         # Get software laser lock info
         self.reg.cd(['Servers','software_laser_lock'])
@@ -154,10 +155,7 @@ class shelving(experiment):
             freq = np.linspace(self.start_freq['THz'],self.stop_freq['THz'],\
                     int((abs(self.stop_freq['THz']-self.start_freq['THz'])/self.step_freq['THz']) +1))
 
-            self.shutter.ttl_output(10, True)
-            time.sleep(.5)
             self.program_pulse_sequence()
-
             for i in range(len(freq)):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
@@ -168,6 +166,8 @@ class shelving(experiment):
                 # continue if we didn't
                 self.single_lock.set_lock_frequency(freq[i], self.scan_laser)
                 time.sleep(10)
+                self.shutter.ttl_output(10, True)
+                time.sleep(.5)
                 self.pulser.switch_auto('TTL7',False)
                 while True:
                     frequency = self.wm.get_frequency(self.scan_laser_chan)

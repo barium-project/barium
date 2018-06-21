@@ -54,7 +54,7 @@ class rabi_flopping(experiment):
         self.state_detection = self.p.RabiFlopping133.State_Detection
         self.dc_thresh = self.p.RabiFlopping133.dc_threshold
         self.total_exps = 0
-
+        print self.disc
         # Define contexts for saving data sets
         self.c_prob = self.cxn.context()
         self.c_hist = self.cxn.context()

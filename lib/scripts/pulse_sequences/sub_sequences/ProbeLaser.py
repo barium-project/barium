@@ -10,7 +10,8 @@ class probe_laser(pulse_sequence):
 
     required_parameters = [
                            ('ProbeLaser', 'probe_laser_duration'),
-                           ('ProbeLaser', 'probe_laser_TTL')
+                           ('ProbeLaser', 'probe_laser_TTL'),
+                           ('ProbeLaser', 'doppler_cooling_TTL'),
                            ]
 
     def sequence(self):
@@ -18,7 +19,10 @@ class probe_laser(pulse_sequence):
         p = self.parameters.ProbeLaser
         # select which laser to scan
         self.ttl = p.probe_laser_TTL
+        self.dc_ttl = p.doppler_cooling_TTL
 
         self.addTTL(self.ttl, self.start, p.probe_laser_duration)
+        self.addTTL(self.dc_ttl, self.start, p.probe_laser_duration)
+        self.addTTL('TimeResolvedCount', self.start, p.probe_laser_duration)
         self.end = self.start + p.probe_laser_duration
 

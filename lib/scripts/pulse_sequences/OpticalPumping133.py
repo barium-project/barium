@@ -103,13 +103,20 @@ class optical_pumping_133(pulse_sequence):
             self.addTTL(self.ttl_650, self.start + self.cool_time + self.prep_time, self.switch_time + \
                         self.shelving_time)
             # Turn on shelving lasers
-            self.addDDS(self.channel_455, self.t0 + self.cool_time + self.prep_time + self.switch_time \
-                        , self.shelving_time, self.freq_455, self.amp_455)
-            #Turn on low power 650
-            self.addDDS(self.channel_650, self.t0 +  self.cool_time + self.prep_time + self.switch_time \
+            # Need to send 455 & 585 through an RF switch
+            if self.shelving_time != 0:
+                self.addTTL('TTL8', self.start + self.cool_time + self.prep_time + \
+                         self.switch_time, self.shelving_time)
+                self.addTTL('TTL9', self.start + self.cool_time + self.prep_time + \
+                         self.switch_time, self.shelving_time)
+
+                #self.addDDS(self.channel_455, self.t0 + self.cool_time + self.prep_time + self.switch_time \
+                        #, self.shelving_time, self.freq_455, self.amp_455)
+                #Turn on low power 650
+                self.addDDS(self.channel_650, self.t0 +  self.cool_time + self.prep_time + self.switch_time \
                         , self.shelving_time , self.freq_650, self.amp_650_shelving)
-            self.addDDS(self.channel_585, self.t0 + self.cool_time + self.prep_time + self.switch_time \
-                        , self.shelving_time, self.freq_585, self.amp_585)
+                #self.addDDS(self.channel_585, self.t0 + self.cool_time + self.prep_time + self.switch_time \
+                        #, self.shelving_time, self.freq_585, self.amp_585)
 
 
             # Turn the dds back on for state detection
