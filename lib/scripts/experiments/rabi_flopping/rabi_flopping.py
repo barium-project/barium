@@ -2,7 +2,7 @@ import labrad
 from twisted.internet.defer import inlineCallbacks, returnValue
 
 from common.lib.servers.abstractservers.script_scanner.scan_methods import experiment
-from barium.lib.scripts.pulse_sequences.RabiFlopping133 import rabi_flopping as main_sequence
+from barium.lib.scripts.pulse_sequences.RabiFlopping import rabi_flopping as main_sequence
 
 from config.FrequencyControl_config import FrequencyControl_config
 from config.multiplexerclient_config import multiplexer_config
@@ -17,7 +17,12 @@ class rabi_flopping(experiment):
 
     name = 'Rabi Flopping'
 
-    exp_parameters = []
+    exp_parameters = [('RabiFlopping','Sequences_Per_Point'),
+                      ('RabiFlopping','Start_Time'),
+                      ('RabiFlopping','Stop_Time'),
+                      ('RabiFlopping','Time_Step'),
+                      ('RabiFlopping','dc_threshold')
+                      ]
 
     # Add the parameters from the required subsequences
     exp_parameters.extend(main_sequence.all_required_parameters())
@@ -45,16 +50,20 @@ class rabi_flopping(experiment):
 
         # Define variables to be used
         self.p = self.parameters
-        self.cycles = self.p.RabiFlopping133.Sequences_Per_Point
-        self.start_time = self.p.RabiFlopping133.Start_Time
-        self.stop_time = self.p.RabiFlopping133.Stop_Time
-        self.step_time = self.p.RabiFlopping133.Time_Step
-        self.freq = self.p.RabiFlopping133.microwave_frequency
+        self.cycles = self.p.RabiFlopping.Sequences_Per_Point
+        self.start_time = self.p.RabiFlopping.Start_Time
+        self.stop_time = self.p.RabiFlopping.Stop_Time
+        self.step_time = self.p.RabiFlopping.Time_Step
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-        self.state_detection = self.p.RabiFlopping133.State_Detection
-        self.dc_thresh = self.p.RabiFlopping133.dc_threshold
+        self.state_detection = self.p.RabiFlopping.State_Detection
+        self.dc_thresh = self.p.RabiFlopping.dc_threshold
+        self.m_sequence = self.p.RabiFlopping.microwave_pulse_sequence
+        if self.m_sequence == 'single':
+            self.LO_freq = self.p.Microwaves133.LO_frequency
+        elif self.m_sequence == 'composite_1':
+            self.LO_freq = self.p.Composite1.LO_frequency
         self.total_exps = 0
-        print self.disc
+        #print self.disc
         # Define contexts for saving data sets
         self.c_prob = self.cxn.context()
         self.c_hist = self.cxn.context()
@@ -73,7 +82,7 @@ class rabi_flopping(experiment):
         t = np.linspace(self.start_time['us'],self.stop_time['us'],\
                     int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
 
-        self.set_mw_frequency()
+        self.set_hp_frequency()
         time.sleep(.3) # time to switch
         if self.state_detection == 'shelving':
             self.shutter.ttl_output(10, True)
@@ -88,7 +97,11 @@ class rabi_flopping(experiment):
                 return
 
             # set the microwave duration
-            self.p.RabiFlopping133.microwave_duration = WithUnit(t[i],'us')
+            if self.m_sequence == 'single':
+                self.p.Microwaves133.microwave_duration = WithUnit(t[i],'us')
+            elif self.m_sequence == 'composite_1':
+                self.p.Composite1.microwave_duration = WithUnit(t[i],'us')
+
             self.program_pulse_sequence()
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't
@@ -233,9 +246,9 @@ class rabi_flopping(experiment):
         pulse_sequence = main_sequence(self.p)
         pulse_sequence.programSequence(self.pulser)
 
-    def set_mw_frequency(self):
-        self.HPA.set_frequency(WithUnit(int(self.freq['MHz']),'MHz'))
-        dds_freq = WithUnit(30.- self.freq['MHz']/2 + 10*int(self.freq['MHz']/20),'MHz')
+    def set_hp_frequency(self):
+        self.HPA.set_frequency(WithUnit(int(self.LO_freq['MHz']),'MHz'))
+        dds_freq = WithUnit(30.- self.LO_freq['MHz']/2 + 10*int(self.LO_freq['MHz']/20),'MHz')
         self.pulser.frequency('LF DDS',dds_freq)
 
     def finalize(self, cxn, context):

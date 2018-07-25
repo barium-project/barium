@@ -272,8 +272,8 @@ class FrequencyControlClient(Frequency_Ui):
         self.setRFHPB(self.clients_hpb[2],False)
         '''
         # Switch the sidebands off
-        yield self.pulser.switch_auto('TTL2',False)
-        yield self.pulser.switch_auto('TTL3',False)
+        yield self.pulser.switch_manual('TTL2',False)
+        yield self.pulser.switch_manual('TTL3',False)
 
     @inlineCallbacks
     def cool_ba132(self):
@@ -312,8 +312,8 @@ class FrequencyControlClient(Frequency_Ui):
         self.setRFHPB(self.clients_hpb[2],False)
         '''
         # Switch the sidebands off
-        yield self.pulser.switch_auto('TTL2',False)
-        yield self.pulser.switch_auto('TTL3',False)
+        yield self.pulser.switch_manual('TTL2',False)
+        yield self.pulser.switch_manual('TTL3',False)
     @inlineCallbacks
     def cool_ba133(self):
 
@@ -355,6 +355,7 @@ class FrequencyControlClient(Frequency_Ui):
         yield self.pulser.switch_auto('TTL3',True)
         # Make sure microwave switch is on
         yield self.pulser.switch_auto('TTL4',False)
+        yield self.pulser.switch_auto('TTL6',True)
     @inlineCallbacks
     def cool_ba134(self):
 
@@ -392,8 +393,8 @@ class FrequencyControlClient(Frequency_Ui):
         self.setRFHPB(self.clients_hpb[2],False)
         '''
         # Switch the sidebands off
-        yield self.pulser.switch_auto('TTL2',False)
-        yield self.pulser.switch_auto('TTL3',False)
+        yield self.pulser.switch_manual('TTL2',False)
+        yield self.pulser.switch_manual('TTL3',False)
 
     @inlineCallbacks
     def cool_ba135(self):
@@ -469,8 +470,8 @@ class FrequencyControlClient(Frequency_Ui):
         self.setRFHPB(self.clients_hpb[2],False)
         '''
         # Switch the sidebands off
-        yield self.pulser.switch_auto('TTL2',False)
-        yield self.pulser.switch_auto('TTL3',False)
+        yield self.pulser.switch_manual('TTL2',False)
+        yield self.pulser.switch_manual('TTL3',False)
 
     @inlineCallbacks
     def cool_ba137(self):
@@ -541,8 +542,8 @@ class FrequencyControlClient(Frequency_Ui):
         self.setRFHPB(self.clients_hpb[2],False)
         '''
         # Switch the sidebands off
-        yield self.pulser.switch_auto('TTL2',False)
-        yield self.pulser.switch_auto('TTL3',False)
+        yield self.pulser.switch_manual('TTL2',False)
+        yield self.pulser.switch_manual('TTL3',False)
 
     def all_off(self):
         self.GPIB19switch.setChecked(False)

@@ -17,7 +17,18 @@ class shelving(experiment):
 
     name = 'shelving'
 
-    exp_parameters = []
+    exp_parameters = [
+                      ('Shelving', 'Scan'),
+                      ('Shelving', 'Scan_Laser'),
+                      ('Shelving', 'cycles'),
+                      ('Shelving', 'Frequency_Start'),
+                      ('Shelving', 'Frequency_Stop'),
+                      ('Shelving', 'Frequency_Step'),
+                      ('Shelving', 'Start_Time'),
+                      ('Shelving', 'Stop_Time'),
+                      ('Shelving', 'Time_Step'),
+                      ('Shelving', 'dc_threshold'),
+                      ]
 
     # Add the parameters from the required subsequences
     exp_parameters.extend(main_sequence.all_required_parameters())
@@ -92,7 +103,7 @@ class shelving(experiment):
                     self.shutter.ttl_output(10, False)
                     return
 
-                self.p.Shelving.shelving_duration = WithUnit(t[i], 'us')
+                self.p.Shelving133_Sub.shelving_duration = WithUnit(t[i], 'us')
                 self.program_pulse_sequence()
                 self.pulser.switch_auto('TTL7',False)
                 # for the protection beam we start a while loop and break it if we got the data,

@@ -17,7 +17,13 @@ class optical_pumping(experiment):
 
     name = 'Optical Pumping'
 
-    exp_parameters = []
+    exp_parameters = [
+                      ('OpticalPumping133', 'Cycles'),
+                      ('OpticalPumping133', 'Start_Time'),
+                      ('OpticalPumping133', 'Stop_Time'),
+                      ('OpticalPumping133', 'Time_Step'),
+                      ('OpticalPumping133', 'Mode'),
+                      ]
 
     # Add the parameters from the required subsequences
     exp_parameters.extend(main_sequence.all_required_parameters())
@@ -30,15 +36,13 @@ class optical_pumping(experiment):
     def initialize(self, cxn, context, ident):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Optical Pumping')
-        self.cxnwlm = labrad.connect(multiplexer_config.ip, name = 'Optical Pumping', password = 'lab')
 
-
-        self.wm = self.cxnwlm.multiplexerserver
         self.pulser = self.cxn.pulser
         self.grapher = self.cxn.grapher
         self.dv = self.cxn.data_vault
         self.pb = self.cxn.protectionbeamserver
         self.shutter = self.cxn.arduinottl
+        self.pv = self.cxn.parametervault
         # Define variables to be used
         self.p = self.parameters
         self.cycles = self.p.OpticalPumping133.Cycles
@@ -104,8 +108,10 @@ class optical_pumping(experiment):
                         return
 
 
+                pmt_counts = self.pulser.get_readout_counts()
+                dc_counts = pmt_counts[::2]
+                counts = pmt_counts[1::2]
 
-                counts = self.pulser.get_readout_counts()
                 self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                 # 1 state is bright for standard state detection
                 if self.state_detection == 'spin-1/2':
@@ -119,6 +125,8 @@ class optical_pumping(experiment):
                 # If we are optimizing save the data point and rerun the point in the while loop
                 if self.mode == 'Optimize':
                     self.dv.add(i , fid, context = self.c_prob)
+                    data = np.column_stack((np.arange(self.cycles),counts))
+                    self.dv.add(data, context = self.c_hist)
                     self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
                                       True, context = self.c_hist)
                     i = i + 1
@@ -182,7 +190,6 @@ class optical_pumping(experiment):
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()
-        self.cxnwlm.disconnect()
 
 if __name__ == '__main__':
     cxn = labrad.connect()

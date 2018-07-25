@@ -17,7 +17,13 @@ class microwave_sweep(experiment):
 
     name = 'Microwave Sweep'
 
-    exp_parameters = []
+    exp_parameters = [
+                      ('MicrowaveSweep133', 'Sequences_Per_Point'),
+                      ('MicrowaveSweep133', 'Start_Frequency'),
+                      ('MicrowaveSweep133', 'Stop_Frequency'),
+                      ('MicrowaveSweep133', 'Frequency_Step'),
+                      ('MicrowaveSweep133', 'dc_threshold'),
+                      ]
 
     # Add the parameters from the required subsequences
     exp_parameters.extend(main_sequence.all_required_parameters())
@@ -51,6 +57,11 @@ class microwave_sweep(experiment):
         self.state_detection = self.p.MicrowaveSweep133.State_Detection
         self.dc_thresh = self.p.MicrowaveSweep133.dc_threshold
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+        self.m_sequence = self.p.MicrowaveSweep133.microwave_pulse_sequence
+        if self.m_sequence == 'single':
+            self.LO_freq = self.p.Microwaves133.LO_frequency
+        elif self.m_sequence == 'composite_1':
+            self.LO_freq = self.p.Composite1.LO_frequency
 
         # Get contexts for saving the data sets
         self.c_prob = self.cxn.context()
@@ -70,6 +81,8 @@ class microwave_sweep(experiment):
         freq = np.linspace(self.start_frequency['MHz'],self.stop_frequency['MHz'],\
                     int((abs(self.stop_frequency['MHz']-self.start_frequency['MHz'])/self.step_frequency['MHz']) +1))
 
+        self.set_hp_frequency()
+        time.sleep(.3) # time to switch frequencies
 
         if self.state_detection == 'shelving':
             self.shutter.ttl_output(10, True)
@@ -84,9 +97,11 @@ class microwave_sweep(experiment):
                 return
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't
-
-            self.set_mw_frequency(WithUnit(freq[i],'MHz'))
-            time.sleep(.3) # time to switch frequencies
+            # Set the microwave frequency
+            if self.m_sequence == 'single':
+                self.p.Microwaves133.frequency_microwaves = WithUnit(freq[i],'MHz')
+            elif self.m_sequence == 'composite_1':
+                self.p.Composite1.frequency_microwaves = WithUnit(freq[i],'MHz')
             self.program_pulse_sequence()
 
             # for the protection beam we start a while loop and break it if we got the data,
@@ -145,6 +160,7 @@ class microwave_sweep(experiment):
                 self.dv.add(freq[i] , fid, context = self.c_prob)
                 # We want to save all the experimental data, include dc as sd counts
                 exp_list = np.arange(self.cycles)
+                print len(exp_list)
                 data = np.column_stack((exp_list, dc_counts, sd_counts))
                 self.dv.add(data, context = self.c_dc_hist)
 
@@ -222,9 +238,9 @@ class microwave_sweep(experiment):
         pulse_sequence = main_sequence(self.p)
         pulse_sequence.programSequence(self.pulser)
 
-    def set_mw_frequency(self, freq):
-        self.HPA.set_frequency(WithUnit(int(freq['MHz']),'MHz'))
-        dds_freq = WithUnit(30.- freq['MHz']/2 + 10*int(freq['MHz']/20),'MHz')
+    def set_hp_frequency(self):
+        self.HPA.set_frequency(WithUnit(int(self.LO_freq['MHz']),'MHz'))
+        dds_freq = WithUnit(30.- self.LO_freq['MHz']/2 + 10*int(self.LO_freq['MHz']/20),'MHz')
         self.pulser.frequency('LF DDS',dds_freq)
 
     def finalize(self, cxn, context):

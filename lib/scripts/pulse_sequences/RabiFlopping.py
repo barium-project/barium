@@ -9,18 +9,19 @@ from sub_sequences.StandardStateDetection import standard_state_detection
 from sub_sequences.Deshelving133 import deshelving_133
 from labrad.units import WithUnit
 
-class microwave_sweep(pulse_sequence):
+class rabi_flopping(pulse_sequence):
 
     required_parameters = [
-                           ('MicrowaveSweep133', 'State_Detection'),
-                           ('MicrowaveSweep133','microwave_pulse_sequence'),
+                           ('RabiFlopping', 'microwave_pulse_sequence'),
+                           ('RabiFlopping','State_Detection'),
                            ]
 
     required_subsequences = [doppler_cooling_133, state_prep_133, microwaves_133, composite_1, \
                             shelving_133_sub, standard_state_detection, shelving_state_detection, deshelving_133]
 
     def sequence(self):
-        p = self.parameters.MicrowaveSweep133
+
+        p = self.parameters.RabiFlopping
 
         self.end = WithUnit(10.0,'us')
         self.addSequence(doppler_cooling_133)
@@ -37,5 +38,3 @@ class microwave_sweep(pulse_sequence):
             self.addSequence(shelving_133_sub)
             self.addSequence(shelving_state_detection)
             self.addSequence(deshelving_133)
-
-

@@ -30,34 +30,47 @@ class bright_state_detection(experiment):
     def initialize(self, cxn, context, ident):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Bright State')
-        self.cxnwlm = labrad.connect(multiplexer_config.ip, name = 'Bright State', password = 'lab')
 
-
-        self.wm = self.cxnwlm.multiplexerserver
         self.pulser = self.cxn.pulser
-        #self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.grapher
         self.dv = self.cxn.data_vault
+        self.pv = self.cxn.parametervault
 
         # Define variables to be used
         self.p = self.parameters
         self.cycles = self.p.BrightState133.number_of_sequences
-        self.wm_p = multiplexer_config.info
+        # Define contexts for saving data sets
+        self.c_prob = self.cxn.context()
+        self.c_hist = self.cxn.context()
 
         self.set_up_datavault()
 
     def run(self, cxn, context):
-
+        i = 1
         # program sequence to be repeated
-        pulse_sequence = main_sequence(self.p)
-        pulse_sequence.programSequence(self.pulser)
-        self.pulser.start_number(int(self.cycles))
-        self.pulser.wait_sequence_done()
-        self.pulser.stop_sequence()
-        counts = self.pulser.get_readout_counts()
         self.pulser.reset_readout_counts()
-        data = np.column_stack((np.arange(self.cycles),counts))
-        self.dv.add(data)
-        self.dv.add_parameter('hist'+str(1) + 'c' + str(int(self.cycles)), True)
+        self.program_pulse_sequence()
+        while True:
+            if self.pause_or_stop():
+                #Abort experiment
+                return
+
+            self.pulser.start_number(int(self.cycles))
+            self.pulser.wait_sequence_done()
+            self.pulser.stop_sequence()
+
+            pmt_counts = self.pulser.get_readout_counts()
+            dc_counts = pmt_counts[::2]
+            sd_counts = pmt_counts[1::2]
+
+            self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+            bright = np.where(sd_counts >= self.disc)
+            fid = float(len(bright[0]))/len(sd_counts)
+            self.dv.add(i, fid, context = self.c_prob)
+            i = i + 1
+            data = np.column_stack((np.arange(self.cycles),sd_counts))
+            self.dv.add(data, context = self.c_hist)
+            self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
 
     def set_up_datavault(self):
         # set up folder
@@ -66,15 +79,21 @@ class bright_state_detection(experiment):
         month = '%02d' % date.month  # Padded with a zero if one digit
         day   = '%02d' % date.day    # Padded with a zero if one digit
         trunk = year + '_' + month + '_' + day
-        self.dv.cd(['',year,month,trunk],True)
-        dataset = self.dv.new('BrightState',[('run', 'arb u')], [('Counts', 'Counts', 'num')])
+        self.dv.cd(['',year,month,trunk], True, context = self.c_prob)
+        dataset = self.dv.new('BrightState_Prob',[('run', 'arb u')], [('Prob', 'Prob', 'num')], context = self.c_prob)
         # add dv params
         for parameter in self.p:
-            self.dv.add_parameter(parameter, self.p[parameter])
+            self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
+        #Hist with deleted data
+        self.dv.cd(['',year,month,trunk],True, context = self.c_hist)
+        dataset1 = self.dv.new('BrightState_hist',[('run', 'arb u')], [('Counts', 'Hist', 'num')], context = self.c_hist)
 
         # Set live plotting
-        #self.grapher.plot(dataset, 'BrightState', False)
+        self.grapher.plot(dataset, 'bright/dark', False)
 
+    def program_pulse_sequence(self):
+        pulse_sequence = main_sequence(self.p)
+        pulse_sequence.programSequence(self.pulser)
 
     def set_wm_frequency(self, freq, chan):
         self.wm.set_pid_course(chan, freq)
@@ -82,7 +101,6 @@ class bright_state_detection(experiment):
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()
-        self.cxnwlm.disconnect()
 
 if __name__ == '__main__':
     cxn = labrad.connect()
