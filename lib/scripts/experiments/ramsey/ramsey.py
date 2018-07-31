@@ -17,7 +17,13 @@ class ramsey(experiment):
 
     name = 'Ramsey'
 
-    exp_parameters = []
+    exp_parameters = [
+                      ('Ramsey133', 'Sequences_Per_Point'),
+                      ('Ramsey133', 'Start_Time'),
+                      ('Ramsey133', 'Stop_Time'),
+                      ('Ramsey133', 'Time_Step'),
+                      ('Ramsey133', 'dc_threshold'),
+                      ]
 
     # Add the parameters from the required subsequences
     exp_parameters.extend(main_sequence.all_required_parameters())
@@ -53,6 +59,10 @@ class ramsey(experiment):
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
         self.state_detection = self.p.Ramsey133.State_Detection
         self.dc_thresh = self.p.Ramsey133.dc_threshold
+        self.m_sequence = self.p.Ramsey133.microwave_pulse_sequence
+        self.LO_freq = self.p.RamseyDelay.LO_frequency
+
+
         # Define contexts for saving different data sets
         self.c_prob = self.cxn.context()
         self.c_hist = self.cxn.context()
@@ -70,7 +80,7 @@ class ramsey(experiment):
         t = np.linspace(self.start_time['us'],self.stop_time['us'],\
                     int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
 
-        self.set_mw_frequency()
+        self.set_hp_frequency()
         time.sleep(.3) # time to switch frequencies
 
         if self.state_detection == 'shelving':
@@ -217,9 +227,9 @@ class ramsey(experiment):
         pulse_sequence = main_sequence(self.p)
         pulse_sequence.programSequence(self.pulser)
 
-    def set_mw_frequency(self):
-        self.HPA.set_frequency(WithUnit(int(self.freq['MHz']),'MHz'))
-        dds_freq = WithUnit(30.- self.freq['MHz']/2 + 10*int(self.freq['MHz']/20),'MHz')
+    def set_hp_frequency(self):
+        self.HPA.set_frequency(WithUnit(int(self.LO_freq['MHz']),'MHz'))
+        dds_freq = WithUnit(30.- self.LO_freq['MHz']/2 + 10*int(self.LO_freq['MHz']/20),'MHz')
         self.pulser.frequency('LF DDS',dds_freq)
 
     def finalize(self, cxn, context):

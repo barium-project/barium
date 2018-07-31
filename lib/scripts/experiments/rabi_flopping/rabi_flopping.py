@@ -21,7 +21,8 @@ class rabi_flopping(experiment):
                       ('RabiFlopping','Start_Time'),
                       ('RabiFlopping','Stop_Time'),
                       ('RabiFlopping','Time_Step'),
-                      ('RabiFlopping','dc_threshold')
+                      ('RabiFlopping','dc_threshold'),
+                      ('RabiFlopping', 'Mode'),
                       ]
 
     # Add the parameters from the required subsequences
@@ -58,6 +59,7 @@ class rabi_flopping(experiment):
         self.state_detection = self.p.RabiFlopping.State_Detection
         self.dc_thresh = self.p.RabiFlopping.dc_threshold
         self.m_sequence = self.p.RabiFlopping.microwave_pulse_sequence
+        self.mode = self.p.RabiFlopping.Mode
         if self.m_sequence == 'single':
             self.LO_freq = self.p.Microwaves133.LO_frequency
         elif self.m_sequence == 'composite_1':
@@ -96,11 +98,13 @@ class rabi_flopping(experiment):
                 self.shutter.ttl_output(10, False)
                 return
 
-            # set the microwave duration
-            if self.m_sequence == 'single':
-                self.p.Microwaves133.microwave_duration = WithUnit(t[i],'us')
-            elif self.m_sequence == 'composite_1':
-                self.p.Composite1.microwave_duration = WithUnit(t[i],'us')
+            # if running in normal mode set the time
+            if self.mode == 'Normal':
+                # set the microwave duration
+                if self.m_sequence == 'single':
+                    self.p.Microwaves133.microwave_duration = WithUnit(t[i],'us')
+                elif self.m_sequence == 'composite_1':
+                    self.p.Composite1.microwave_duration = WithUnit(t[i],'us')
 
             self.program_pulse_sequence()
             # for the protection beam we start a while loop and break it if we got the data,
@@ -155,6 +159,23 @@ class rabi_flopping(experiment):
                     dark = np.where(counts <= self.disc)
                     fid = float(len(dark[0]))/len(counts)
 
+                # If we are in repeat save the data point and rerun the point in the while loop
+                if self.mode == 'Repeat':
+                    self.dv.add(i , fid, context = self.c_prob)
+                    exp_list = np.arange(self.cycles)
+                    data = np.column_stack((exp_list, dc_counts, sd_counts))
+                    self.dv.add(data, context = self.c_dc_hist)
+
+                    # Now the hist with the ones we threw away
+                    exp_list = np.delete(exp_list,ind[0])
+                    data = np.column_stack((exp_list,counts))
+                    self.dv.add(data, context = self.c_hist)
+                    # Adding the character c and the number of cycles so plotting the histogram
+                    # only plots the most recent point.
+                    self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
+                                      True, context = self.c_hist)
+                    i = i + 1
+                    continue
                 # Save time vs prob
                 self.dv.add(t[i] , fid, context = self.c_prob)
                 # We want to save all the experimental data, include dc as sd counts

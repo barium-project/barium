@@ -26,6 +26,8 @@ class rabi_flopping(pulse_sequence):
         self.end = WithUnit(10.0,'us')
         self.addSequence(doppler_cooling_133)
         self.addSequence(state_prep_133)
+
+
         if p.microwave_pulse_sequence == 'single':
             self.addSequence(microwaves_133)
         elif p.microwave_pulse_sequence == 'composite_1':

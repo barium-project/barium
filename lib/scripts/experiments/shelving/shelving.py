@@ -28,6 +28,7 @@ class shelving(experiment):
                       ('Shelving', 'Stop_Time'),
                       ('Shelving', 'Time_Step'),
                       ('Shelving', 'dc_threshold'),
+                      ('Shelving', 'Mode'),
                       ]
 
     # Add the parameters from the required subsequences
@@ -65,7 +66,8 @@ class shelving(experiment):
         self.scan_laser = self.parameters.Shelving.Scan_Laser
         self.dc_thresh = self.p.Shelving.dc_threshold
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-        print self.disc
+        self.mode = self.p.Shelving.Mode
+
 
         # Get software laser lock info
         self.reg.cd(['Servers','software_laser_lock'])
@@ -103,7 +105,8 @@ class shelving(experiment):
                     self.shutter.ttl_output(10, False)
                     return
 
-                self.p.Shelving133_Sub.shelving_duration = WithUnit(t[i], 'us')
+                if self.mode == 'Normal':
+                    self.p.Shelving133_Sub.shelving_duration = WithUnit(t[i], 'us')
                 self.program_pulse_sequence()
                 self.pulser.switch_auto('TTL7',False)
                 # for the protection beam we start a while loop and break it if we got the data,
@@ -148,8 +151,25 @@ class shelving(experiment):
                     print len(dc_counts), len(counts)
 
                     self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-                    bright = np.where(counts >= self.disc)
-                    fid = float(len(bright[0]))/len(counts)
+                    dark = np.where(counts <= self.disc)
+                    fid = float(len(dark[0]))/len(counts)
+
+                    # If we are in repeat save the data point and rerun the point in the while loop
+                    if self.mode == 'Repeat':
+                        self.dv.add(i , fid, context = self.c_prob)
+                        exp_list = np.arange(self.cycles)
+
+                        # Now the hist with the ones we threw away
+                        exp_list = np.delete(exp_list,ind[0])
+                        data = np.column_stack((exp_list,counts))
+                        self.dv.add(data, context = self.c_hist)
+                        # Adding the character c and the number of cycles so plotting the histogram
+                        # only plots the most recent point.
+                        self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
+                                      True, context = self.c_hist)
+                        i = i + 1
+                        continue
+
                     self.dv.add(t[i] , fid, context = self.c_prob)
                     # Save histogram
                     data = np.column_stack((np.arange(len(counts)),counts))

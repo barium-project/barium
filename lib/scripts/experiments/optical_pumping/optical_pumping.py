@@ -77,7 +77,7 @@ class optical_pumping(experiment):
 
             # set the optical pumping duration. If optimizing leave it as set
             if self.mode == 'Normal':
-                self.p.OpticalPumping133.state_prep_duration = WithUnit(t[i],'us')
+                self.p.StatePreparation133.state_prep_duration = WithUnit(t[i],'us')
             self.program_pulse_sequence()
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't
@@ -111,6 +111,7 @@ class optical_pumping(experiment):
                 pmt_counts = self.pulser.get_readout_counts()
                 dc_counts = pmt_counts[::2]
                 counts = pmt_counts[1::2]
+                print dc_counts
 
                 self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                 # 1 state is bright for standard state detection
