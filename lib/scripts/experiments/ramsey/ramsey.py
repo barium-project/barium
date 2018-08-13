@@ -95,7 +95,7 @@ class ramsey(experiment):
                 self.shutter.ttl_output(10, False)
                 return
 
-            self.p.Ramsey133.Ramsey_Delay = WithUnit(t[i],'us')
+            self.p.RamseyDelay.ramsey_delay = WithUnit(t[i],'us')
             self.program_pulse_sequence()
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't

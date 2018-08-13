@@ -30,7 +30,7 @@ class ramsey_delay(pulse_sequence):
         switch_on_delay = WithUnit(2.0,'us')
         amp_change_delay = WithUnit(355.0,'ns')
         dds_freq = p.frequency_microwaves - p.LO_frequency
-        print dds_freq['MHz']
+
 
         if p.microwave_duration != 0:
             # Make sure no 493 is on
@@ -38,7 +38,7 @@ class ramsey_delay(pulse_sequence):
             self.addTTL(p.TTL_493, self.start, 2*p.microwave_duration + p.ramsey_delay + 2*switch_on_delay)
 
             # Turn the DDS on at low power
-            self.addDDS(p.channel_microwaves, self.start, switch_on_delay - amp_change_delay, \
+            self.addDDS(p.channel_microwaves, self.start - amp_change_delay, switch_on_delay , \
                     dds_freq, amp_off)
 
             self.addDDS(p.channel_microwaves, self.start + switch_on_delay - amp_change_delay, 2*p.microwave_duration + p.ramsey_delay, \

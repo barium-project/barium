@@ -7,6 +7,7 @@ class doppler_cooling_133(pulse_sequence):
     required_parameters = [
                            ('DopplerCooling133', 'doppler_cooling_duration'),
                            ('DopplerCooling133', 'TTL_493_DDS'),
+                           ('DopplerCooling133', 'TTL_493_SD'),
                            ('DopplerCooling133', 'TTL_493'),
                            ('DopplerCooling133', 'TTL_650'),
                            ('DopplerCooling133', 'channel_493'),
@@ -20,10 +21,12 @@ class doppler_cooling_133(pulse_sequence):
     def sequence(self):
         # start time is defined to be 0s.
         p = self.parameters.DopplerCooling133
+        # add a small delay for the switching on
+        amp_change_delay = WithUnit(600.0,'ns')
 
-        self.addDDS(p.channel_493, self.start, \
+        self.addDDS(p.channel_493, self.start - amp_change_delay, \
                      p.doppler_cooling_duration, p.frequency_493, p.amplitude_493)
-        self.addDDS(p.channel_650, self.start, \
+        self.addDDS(p.channel_650, self.start - amp_change_delay, \
                      p.doppler_cooling_duration, p.frequency_650, p.amplitude_650)
 
         # Count photons during doppler cooling to monitor for dropouts

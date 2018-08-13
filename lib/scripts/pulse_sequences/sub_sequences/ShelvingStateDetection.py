@@ -7,6 +7,7 @@ class shelving_state_detection(pulse_sequence):
                            ('ShelvingStateDetection', 'state_detection_duration'),
                            ('ShelvingStateDetection', 'TTL_493'),
                            ('ShelvingStateDetection', 'TTL_493_DDS'),
+                           ('ShelvingStateDetection', 'TTL_493_SD'),
                            ('ShelvingStateDetection', 'TTL_650'),
                            ('ShelvingStateDetection', 'channel_493'),
                            ('ShelvingStateDetection', 'frequency_493'),
@@ -25,6 +26,10 @@ class shelving_state_detection(pulse_sequence):
                      p.state_detection_duration, p.frequency_493, p.amplitude_493)
         self.addDDS(p.channel_650, self.start, \
                      p.state_detection_duration, p.frequency_650, p.amplitude_650)
+
+        # make sure doppler cooling ttl is off
+        self.addTTL(p.TTL_493_DDS, self.start, p.state_detection_duration)
+        self.addTTL(p.TTL_493_SD, self.start, p.state_detection_duration)
 
         # Count photons during doppler cooling to monitor for dropouts
         self.addTTL('ReadoutCount', self.start, p.state_detection_duration)

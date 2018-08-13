@@ -23,6 +23,7 @@ class optical_pumping_133(pulse_sequence):
         self.end = WithUnit(10.0,'us')
         self.addSequence(doppler_cooling_133)
         self.addSequence(state_prep_133)
+
         if p.State_Detection == 'spin-1/2':
             self.addSequence(standard_state_detection)
         elif p.State_Detection == 'shelving':

@@ -13,6 +13,7 @@ class microwaves_133(pulse_sequence):
                            ('Microwaves133', 'amplitude_microwaves'),
                            ('Microwaves133', 'LO_frequency'),
                            ('Microwaves133', 'TTL_493_DDS'),
+                           ('Microwaves133', 'TTL_493_SD'),
                            ('Microwaves133', 'TTL_493'),
                            ]
 

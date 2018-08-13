@@ -13,6 +13,7 @@ class state_prep_133(pulse_sequence):
                            ('StatePreparation133', 'TTL_prep'),
                            ('StatePreparation133', 'TTL_493'),
                            ('StatePreparation133', 'TTL_493_DDS'),
+                           ('StatePreparation133', 'TTL_493_SD'),
                            ('StatePreparation133', 'TTL_650'),
                            ('StatePreparation133', 'channel_493'),
                            ('StatePreparation133', 'frequency_493'),
@@ -29,14 +30,16 @@ class state_prep_133(pulse_sequence):
 
         # add a small delay for the switching on
         amp_change_delay = WithUnit(2.0,'us')
-        amp_change_delay_2 = WithUnit(400.0,'ns')
+        amp_change_delay_2 = WithUnit(350.0,'ns')
 
-        self.addDDS(p.channel_493, self.start,\
-                     p.state_prep_duration - amp_change_delay_2, p.frequency_493, p.amplitude_493)
-        self.addDDS(p.channel_650, self.start, \
-                     p.state_prep_duration - amp_change_delay_2, p.frequency_650, p.amplitude_650)
 
         if p.state_prep_duration != 0:
+
+            self.addDDS(p.channel_493, self.start - amp_change_delay_2,\
+                     p.state_prep_duration - amp_change_delay_2, p.frequency_493, p.amplitude_493)
+            self.addDDS(p.channel_650, self.start - amp_change_delay_2, \
+                     p.state_prep_duration - amp_change_delay_2, p.frequency_650, p.amplitude_650)
+
             #Need to make sure the 5.8 is off while turning off
             self.addTTL(p.TTL_493, self.start, p.state_prep_duration + amp_change_delay)
             self.addTTL(p.TTL_prep, self.start, p.state_prep_duration + amp_change_delay/2)

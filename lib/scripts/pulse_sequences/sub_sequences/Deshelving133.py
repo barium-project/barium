@@ -8,6 +8,7 @@ class deshelving_133(pulse_sequence):
                            ('Deshelving133', 'deshelving_duration'),
                            ('Deshelving133', 'TTL_614'),
                            ('Deshelving133', 'TTL_493_DDS'),
+                           ('Deshelving133', 'TTL_493_SD'),
                            ('Deshelving133', 'channel_493'),
                            ('Deshelving133', 'frequency_493'),
                            ('Deshelving133', 'amplitude_493'),

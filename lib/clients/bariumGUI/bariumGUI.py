@@ -32,12 +32,13 @@ class BARIUM_GUI(QtGui.QMainWindow):
         switch = self.makePMTCameraSwitchWidget(reactor)
 
         # add tabs
-        self.tabWidget = DetachableTabWidget()
-        self.tabWidget.addTab(wavemeter, '&Wavemeter')
+        self.tabWidget = QtGui.QTabWidget()
+        #self.tabWidget = DetachableTabWidget()
         self.tabWidget.addTab(laser_control, '&Laser Control')
-        self.tabWidget.addTab(script_scanner, '&Script Scanner')
+        self.tabWidget.addTab(wavemeter, '&Wavemeter')
         self.tabWidget.addTab(control, '&Trap Control')
         self.tabWidget.addTab(frequency, '&Oscillators')
+        self.tabWidget.addTab(script_scanner, '&Script Scanner')
         self.tabWidget.addTab(switch, '&Switches')
 
         layout.addWidget(self.tabWidget)
