@@ -14,6 +14,7 @@ class rabi_flopping(pulse_sequence):
     required_parameters = [
                            ('RabiFlopping', 'microwave_pulse_sequence'),
                            ('RabiFlopping','State_Detection'),
+                           ('RabiFlopping','number_of_microwave_pulses'),
                            ]
 
     required_subsequences = [doppler_cooling_133, state_prep_133, microwaves_133, composite_1, \
@@ -27,11 +28,13 @@ class rabi_flopping(pulse_sequence):
         self.addSequence(doppler_cooling_133)
         self.addSequence(state_prep_133)
 
-
-        if p.microwave_pulse_sequence == 'single':
-            self.addSequence(microwaves_133)
-        elif p.microwave_pulse_sequence == 'composite_1':
-            self.addSequence(composite_1)
+        # Do n microwave pulses. This is only for checking
+        # pi pulse fidelity
+        for i in range(int(p.number_of_microwave_pulses)):
+            if p.microwave_pulse_sequence == 'single':
+                self.addSequence(microwaves_133)
+            elif p.microwave_pulse_sequence == 'composite_1':
+                self.addSequence(composite_1)
 
         if p.State_Detection == 'spin-1/2':
             self.addSequence(standard_state_detection)

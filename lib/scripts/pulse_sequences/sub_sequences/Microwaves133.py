@@ -30,7 +30,6 @@ class microwaves_133(pulse_sequence):
         switch_on_delay = WithUnit(2.0,'us')
         amp_change_delay = WithUnit(355.0,'ns')
         dds_freq = p.frequency_microwaves - p.LO_frequency
-        print dds_freq['MHz']
 
         if p.microwave_duration != 0:
             #We want to leave the DDS on, so we'll use two fast microwave switches to turn things on and off

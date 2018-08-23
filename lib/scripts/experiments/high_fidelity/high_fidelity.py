@@ -18,11 +18,7 @@ class high_fidelity(experiment):
     name = 'High Fidelity'
 
     exp_parameters = [('HighFidelity','Sequences_Per_Point'),
-                      ('HighFidelity','Start_Time'),
-                      ('HighFidelity','Stop_Time'),
-                      ('HighFidelity','Time_Step'),
                       ('HighFidelity','dc_threshold'),
-                      ('HighFidelity', 'Mode'),
                       ]
 
     # Add the parameters from the required subsequences
@@ -52,27 +48,28 @@ class high_fidelity(experiment):
         # Define variables to be used
         self.p = self.parameters
         self.cycles = self.p.HighFidelity.Sequences_Per_Point
-        self.start_time = self.p.HighFidelity.Start_Time
-        self.stop_time = self.p.HighFidelity.Stop_Time
-        self.step_time = self.p.HighFidelity.Time_Step
+        self.dc_thresh = self.p.HighFidelity.dc_threshold
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
         self.state_detection = self.p.RabiFlopping.State_Detection
-        self.dc_thresh = self.p.HighFidelity.dc_threshold
         self.m_sequence = self.p.RabiFlopping.microwave_pulse_sequence
-        self.mode = self.p.HighFidelity.Mode
-        self.pi_time = self.p.Composite1.microwave_duration
-        self.microwave_power = self.p.Composite1.amplitude_microwaves
+
         if self.m_sequence == 'single':
             self.LO_freq = self.p.Microwaves133.LO_frequency
+            self.pi_time = self.p.Microwaves133.microwave_duration
+            self.microwave_power = self.p.Microwaves133.amplitude_microwaves
         elif self.m_sequence == 'composite_1':
             self.LO_freq = self.p.Composite1.LO_frequency
+            self.pi_time = self.p.Composite1.microwave_duration
+            self.microwave_power = self.p.Composite1.amplitude_microwaves
+
         self.total_exps = 0
         #print self.disc
         # Define contexts for saving data sets
         self.c_prob = self.cxn.context()
         self.c_hist_bright = self.cxn.context()
         self.c_hist_dark = self.cxn.context()
-        self.c_dc_hist = self.cxn.context()
+        self.c_time_tags_bright = self.cxn.context()
+        self.c_time_tags_dark = self.cxn.context()
 
         # Need to map the gpib address to the labrad conection
         self.device_mapA = {}
@@ -88,17 +85,15 @@ class high_fidelity(experiment):
         self.set_hp_frequency()
         time.sleep(.3) # time to switch
         if self.state_detection == 'shelving':
-            self.shutter.ttl_output(10, True)
-            time.sleep(.5)
+            #self.shutter.ttl_output(10, True)
+            #time.sleep(.5)
             self.pulser.switch_auto('TTL7',False)
-
-
         i = 0
         while True:
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
                 self.pulser.switch_manual('TTL7',True)
-                self.shutter.ttl_output(10, False)
+                #self.shutter.ttl_output(10, False)
                 return
 
             if i % 2 == 0:
@@ -109,9 +104,8 @@ class high_fidelity(experiment):
                 self.p.Composite1.amplitude_micrwaves = WithUnit(-48.0,'dBm')
 
             self.program_pulse_sequence()
-
-
             self.pulser.reset_readout_counts()
+            self.pulser.reset_timetags()
             self.pulser.start_number(int(self.cycles))
             self.pulser.wait_sequence_done()
             self.pulser.stop_sequence()
@@ -131,12 +125,14 @@ class high_fidelity(experiment):
                 else:
                     # Failed, abort experiment
                     self.pulser.switch_manual('TTL7',True)
-                    self.shutter.ttl_output(10, False)
+                    #self.shutter.ttl_output(10, False)
                     return
 
             # Here we look to see if the doppler cooling counts were low,
             # and throw out experiments that were below threshold
             pmt_counts = self.pulser.get_readout_counts()
+            # We also want to grab the time tags in case we're correcting for D5/2 decay
+            time_tags = self.pulser.get_timetags()
             dc_counts = pmt_counts[::2]
             sd_counts = pmt_counts[1::2]
             ind = np.where(dc_counts < self.dc_thresh)
@@ -148,40 +144,33 @@ class high_fidelity(experiment):
             # 1 state is bright for standard state detection
             if self.state_detection == 'spin-1/2':
                 bright = np.where(counts >= self.disc)
-                fid = float(len(bright[0]))/len(counts)                # 1 state is dark for shelving state detection
+                fid = float(len(bright[0]))/len(counts)# 1 state is dark for shelving state detection
             elif self.state_detection == 'shelving':
                 dark = np.where(counts <= self.disc)
                 fid = float(len(dark[0]))/len(counts)
-
-
-
 
             # Save time vs prob
             self.dv.add(i , fid, context = self.c_prob)
             # We want to save all the experimental data, include dc as sd counts
             exp_list = np.arange(self.cycles)
             data = np.column_stack((exp_list, dc_counts, sd_counts))
-            self.dv.add(data, context = self.c_dc_hist)
 
-            # Now the hist with the ones we threw away
-            exp_list = np.delete(exp_list,ind[0])
-            data = np.column_stack((exp_list,counts))
+            # Save bright or dark
             if i % 2 == 0:
                 self.dv.add(data, context = self.c_hist_dark)
+                self.dv.add(np.column_stack((np.zeros(len(time_tags)),time_tags)), context = self.c_time_tags_dark)
                 self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
                                     True, context = self.c_hist_dark)
             else:
                 self.dv.add(data, context = self.c_hist_bright)
-                # Adding the character c and the number of cycles so plotting the histogram
-                # only plots the most recent point.
+                self.dv.add(np.column_stack((np.zeros(len(time_tags)),time_tags)), context = self.c_time_tags_bright)
                 self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
                                     True, context = self.c_hist_bright)
-
 
             i = i + 1
             continue
         self.pulser.switch_manual('TTL7',True)
-        self.shutter.ttl_output(10, False)
+        #self.shutter.ttl_output(10, False)
 
     def set_up_datavault(self):
         # set up folder
@@ -200,17 +189,19 @@ class high_fidelity(experiment):
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
         #Hist with deleted data
         self.dv.cd(['',year,month,trunk],True, context = self.c_hist_bright)
-        dataset1 = self.dv.new('RabiFlopping_bright_hist',[('run', 'arb u')], [('Counts', 'Hist', 'num')], context = self.c_hist_bright)
+        dataset1 = self.dv.new('High_Fid_hist_bright',[('run', 'arb u')], [('Counts', 'DC_Hist', 'num'),('Counts', 'SD_Hist', 'num')], context = self.c_hist_bright)
 
         #Hist with deleted data
         self.dv.cd(['',year,month,trunk],True, context = self.c_hist_dark)
-        dataset3 = self.dv.new('RabiFlopping_hist_dark',[('run', 'arb u')], [('Counts', 'Hist', 'num')], context = self.c_hist_dark)
+        dataset3 = self.dv.new('High_Fid_hist_dark',[('run', 'arb u')], [('Counts', 'DC_Hist', 'num'), ('Counts', 'SD_Hist', 'num')], context = self.c_hist_dark)
 
         #Hist with dc counts and sd counts
-        self.dv.cd(['',year,month,trunk],True, context = self.c_dc_hist)
-        dataset2 = self.dv.new('RabiFlopping_dc_hist',[('run', 'arb u')],\
-                               [('Counts', 'DC_Hist', 'num'), ('Counts', 'SD_Hist', 'num')], context = self.c_dc_hist)
+        self.dv.cd(['',year,month,trunk],True, context = self.c_time_tags_bright)
+        dataset2 = self.dv.new('High_Fid_Time_Tags_Bright',[('arb', 'arb')],[('Time', 'Time_Tags', 's')], context = self.c_time_tags_bright)
 
+        # Time Tags
+        self.dv.cd(['',year,month,trunk],True, context = self.c_time_tags_dark)
+        dataset4 = self.dv.new('High_Fid_Time_Tags_Dark',[('arb', 'arb')],[('Time', 'Time_Tags', 's')], context = self.c_time_tags_dark)
 
         # add dv params
         for parameter in self.p:

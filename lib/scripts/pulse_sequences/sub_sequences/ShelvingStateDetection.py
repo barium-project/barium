@@ -33,4 +33,6 @@ class shelving_state_detection(pulse_sequence):
 
         # Count photons during doppler cooling to monitor for dropouts
         self.addTTL('ReadoutCount', self.start, p.state_detection_duration)
+        # Time Tag photons for correcting quadrupole decay
+        self.addTTL('TimeResolvedCount', self.start, p.state_detection_duration)
         self.end = self.start + p.state_detection_duration
