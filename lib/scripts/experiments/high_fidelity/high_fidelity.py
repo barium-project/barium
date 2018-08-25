@@ -3,6 +3,7 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 
 from common.lib.servers.abstractservers.script_scanner.scan_methods import experiment
 from barium.lib.scripts.pulse_sequences.RabiFlopping import rabi_flopping as main_sequence
+from MaximumLikelihood import MaximumLikelihood
 
 from config.FrequencyControl_config import FrequencyControl_config
 from config.multiplexerclient_config import multiplexer_config
@@ -19,6 +20,9 @@ class high_fidelity(experiment):
 
     exp_parameters = [('HighFidelity','Sequences_Per_Point'),
                       ('HighFidelity','dc_threshold'),
+                      ('HighFidelity','MaximumLikelihood'),
+                      ('HighFidelity','Mean_Bright'),
+                      ('HighFidelity','Mean_Dark'),
                       ]
 
     # Add the parameters from the required subsequences
@@ -49,6 +53,7 @@ class high_fidelity(experiment):
         self.p = self.parameters
         self.cycles = self.p.HighFidelity.Sequences_Per_Point
         self.dc_thresh = self.p.HighFidelity.dc_threshold
+        self.correct_ML = self.p.HighFidelity.MaximumLikelihood
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
         self.state_detection = self.p.RabiFlopping.State_Detection
         self.m_sequence = self.p.RabiFlopping.microwave_pulse_sequence
@@ -70,12 +75,21 @@ class high_fidelity(experiment):
         self.c_hist_dark = self.cxn.context()
         self.c_time_tags_bright = self.cxn.context()
         self.c_time_tags_dark = self.cxn.context()
+        self.c_ML_prob = self.cxn.context()
+        self.c_ML_hist_dark = self.cxn.context()
+        self.c_ML_hist_bright = self.cxn.context()
 
         # Need to map the gpib address to the labrad conection
         self.device_mapA = {}
         self.device_mapB = {}
         self.get_device_map()
         self.HPA.select_device(self.device_mapA['GPIB0::19'])
+
+        if self.correct_ML == 'True':
+            self.ML = MaximumLikelihood()
+            self.ML.detection_time = self.p.ShelvingStateDetection.state_detection_duration['s']
+            self.ML.mean_dark = self.p.HighFidelity.Mean_Dark
+            self.ML.mean_bright = self.p.HighFidelity.Mean_Bright
 
         self.set_up_datavault()
 
@@ -96,14 +110,18 @@ class high_fidelity(experiment):
                 #self.shutter.ttl_output(10, False)
                 return
 
+            # Dark State
             if i % 2 == 0:
                 self.p.Composite1.microwave_duration = self.pi_time
                 self.p.Composite1.amplitude_micrwaves = self.microwave_power
+            # Bright State
             else:
                 self.p.Composite1.microwave_duration = WithUnit(0.0,'us')
                 self.p.Composite1.amplitude_micrwaves = WithUnit(-48.0,'dBm')
 
             self.program_pulse_sequence()
+            if self.correct_ML == 'True':
+                self.set_sd_time_window()
             self.pulser.reset_readout_counts()
             self.pulser.reset_timetags()
             self.pulser.start_number(int(self.cycles))
@@ -135,8 +153,8 @@ class high_fidelity(experiment):
             time_tags = self.pulser.get_timetags()
             dc_counts = pmt_counts[::2]
             sd_counts = pmt_counts[1::2]
-            ind = np.where(dc_counts < self.dc_thresh)
-            counts = np.delete(sd_counts,ind[0])
+            self.ind = np.where(dc_counts < self.dc_thresh)
+            counts = np.delete(sd_counts,self.ind[0])
             self.total_exps = self.total_exps + len(counts)
             print len(counts), self.total_exps
 
@@ -154,18 +172,60 @@ class high_fidelity(experiment):
             # We want to save all the experimental data, include dc as sd counts
             exp_list = np.arange(self.cycles)
             data = np.column_stack((exp_list, dc_counts, sd_counts))
-
             # Save bright or dark
             if i % 2 == 0:
                 self.dv.add(data, context = self.c_hist_dark)
                 self.dv.add(np.column_stack((np.zeros(len(time_tags)),time_tags)), context = self.c_time_tags_dark)
                 self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
                                     True, context = self.c_hist_dark)
+
+                if self.correct_ML == 'True':
+                    p_bright_arr = np.array([])
+                    p_dark_arr = np.array([])
+                    for j in range(len(sd_counts)):
+                        tt = time_tags[:sd_counts[j]]
+                        time_tags = np.delete(time_tags, np.arange(sd_counts[j]))
+                        if dc_counts[j] > self.dc_thresh:
+                            bins, counts = self.ML.bin_time_tags(tt)
+                            p_dark_r = self.ML.prob_dark_recursive(counts)
+                            p_bright = self.ML.prob_bright(counts)
+                            p_bright_arr = np.append(p_bright_arr, p_bright)
+                            p_dark_arr = np.append(p_dark_arr, p_dark_r)
+
+                    ratio = p_bright_arr/p_dark_arr
+                    dark_ml = np.where(ratio < 1.0)
+                    fid_ml = float(len(dark_ml[0]))/len(p_dark_arr)
+                    ml_data = np.column_stack((ratio, p_bright_arr, p_dark_arr))
+
+                    self.dv.add(i, fid_ml, context = self.c_ML_prob)
+                    self.dv.add(ml_data, context = self.c_ML_hist_dark)
+
             else:
                 self.dv.add(data, context = self.c_hist_bright)
                 self.dv.add(np.column_stack((np.zeros(len(time_tags)),time_tags)), context = self.c_time_tags_bright)
                 self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
                                     True, context = self.c_hist_bright)
+
+                if self.correct_ML == 'True':
+                    p_bright_arr = np.array([])
+                    p_dark_arr = np.array([])
+                    for j in range(len(sd_counts)):
+                        tt = time_tags[:sd_counts[j]]
+                        time_tags = np.delete(time_tags, np.arange(sd_counts[j]))
+                        if dc_counts[j] > self.dc_thresh:
+                            bins, counts = self.ML.bin_time_tags(tt)
+                            p_dark_r = self.ML.prob_dark_recursive(counts)
+                            p_bright = self.ML.prob_bright(counts)
+                            p_bright_arr = np.append(p_bright_arr, p_bright)
+                            p_dark_arr = np.append(p_dark_arr, p_dark_r)
+
+                    ratio = p_bright_arr/p_dark_arr
+                    dark_ml = np.where(ratio < 1.0)
+                    fid_ml = float(len(dark_ml[0]))/len(p_dark_arr)
+                    ml_data = np.column_stack((ratio, p_bright_arr, p_dark_arr))
+
+                    self.dv.add(i, fid_ml, context = self.c_ML_prob)
+                    self.dv.add(ml_data, context = self.c_ML_hist_bright)
 
             i = i + 1
             continue
@@ -187,15 +247,15 @@ class high_fidelity(experiment):
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
-        #Hist with deleted data
+        #Hist
         self.dv.cd(['',year,month,trunk],True, context = self.c_hist_bright)
         dataset1 = self.dv.new('High_Fid_hist_bright',[('run', 'arb u')], [('Counts', 'DC_Hist', 'num'),('Counts', 'SD_Hist', 'num')], context = self.c_hist_bright)
 
-        #Hist with deleted data
+        #Hist
         self.dv.cd(['',year,month,trunk],True, context = self.c_hist_dark)
         dataset3 = self.dv.new('High_Fid_hist_dark',[('run', 'arb u')], [('Counts', 'DC_Hist', 'num'), ('Counts', 'SD_Hist', 'num')], context = self.c_hist_dark)
 
-        #Hist with dc counts and sd counts
+        #Hist time tags
         self.dv.cd(['',year,month,trunk],True, context = self.c_time_tags_bright)
         dataset2 = self.dv.new('High_Fid_Time_Tags_Bright',[('arb', 'arb')],[('Time', 'Time_Tags', 's')], context = self.c_time_tags_bright)
 
@@ -203,13 +263,29 @@ class high_fidelity(experiment):
         self.dv.cd(['',year,month,trunk],True, context = self.c_time_tags_dark)
         dataset4 = self.dv.new('High_Fid_Time_Tags_Dark',[('arb', 'arb')],[('Time', 'Time_Tags', 's')], context = self.c_time_tags_dark)
 
+        if self.correct_ML == 'True':
+            # prob ML
+            self.dv.cd(['',year,month,trunk],True, context = self.c_ML_prob)
+            dataset5 = self.dv.new('High_Fid_prob_ML',[('run', 'time')], [('num', 'prob', 'num')], context = self.c_ML_prob)
+
+            #ML Hist ml dark
+            self.dv.cd(['',year,month,trunk],True, context = self.c_ML_hist_dark)
+            dataset6 = self.dv.new('High_Fid_ML_hist_dark',[('Ratio', 'PB/PD')], \
+                                [('Prob', 'P_Bright', 'num'), ('Prob', 'P_Dark', 'num')], context = self.c_ML_hist_dark)
+
+            #ML Hist ml dark
+            self.dv.cd(['',year,month,trunk],True, context = self.c_ML_hist_bright)
+            dataset7 = self.dv.new('High_Fid_ML_hist_bright',[('Ratio', 'PB/PD')], \
+                                [('Prob', 'P_Bright', 'num'), ('Prob', 'P_Dark', 'num')], context = self.c_ML_hist_bright)
+
+            self.grapher.plot(dataset5, 'ML', False)
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_hist_dark)
         self.dv.add_parameter('Readout Threshold', self.disc, context = self.c_hist_dark)
 
         # Set live plotting
-        self.grapher.plot(dataset, 'rabi_flopping', False)
+        self.grapher.plot(dataset, 'Threshold', False)
 
 
     def set_wm_frequency(self, freq, chan):
@@ -252,6 +328,19 @@ class high_fidelity(experiment):
         self.HPA.set_frequency(WithUnit(int(self.LO_freq['MHz']),'MHz'))
         dds_freq = WithUnit(30.- self.LO_freq['MHz']/2 + 10*int(self.LO_freq['MHz']/20),'MHz')
         self.pulser.frequency('LF DDS',dds_freq)
+
+    def set_sd_time_window(self):
+        ttl = self.pulser.human_readable_ttl(True)
+        #print ttl
+        for i in range(len(ttl)):
+            if ttl[i][1][17] == '1':
+                self.ML.t_start = float(ttl[i][0])
+                print self.ML.t_start
+                for j in range(i,len(ttl)):
+                    if ttl[j][1][17] == '0':
+                        self.ML.t_stop = float(ttl[j][0])
+                        print self.ML.t_stop
+                        return
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()
