@@ -31,7 +31,6 @@ class ramsey_delay(pulse_sequence):
         amp_change_delay = WithUnit(355.0,'ns')
         dds_freq = p.frequency_microwaves - p.LO_frequency
 
-
         if p.microwave_duration != 0:
             # Make sure no 493 is on
             self.addTTL(p.TTL_493_DDS, self.start, 2*p.microwave_duration + p.ramsey_delay + 2*switch_on_delay)

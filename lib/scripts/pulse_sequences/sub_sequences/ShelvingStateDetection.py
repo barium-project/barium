@@ -28,8 +28,8 @@ class shelving_state_detection(pulse_sequence):
                      p.state_detection_duration, p.frequency_650, p.amplitude_650)
 
         # make sure doppler cooling ttl is off
-        self.addTTL(p.TTL_493_DDS, self.start, p.state_detection_duration)
-        self.addTTL(p.TTL_493_SD, self.start, p.state_detection_duration)
+        #self.addTTL(p.TTL_493_DDS, self.start, p.state_detection_duration)
+        #self.addTTL(p.TTL_493_SD, self.start, p.state_detection_duration)
 
         # Count photons during doppler cooling to monitor for dropouts
         self.addTTL('ReadoutCount', self.start, p.state_detection_duration)

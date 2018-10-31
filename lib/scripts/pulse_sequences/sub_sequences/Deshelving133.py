@@ -22,13 +22,13 @@ class deshelving_133(pulse_sequence):
         p = self.parameters.Deshelving133
 
         self.addDDS(p.channel_493, self.start, \
-                     p.deshelving_duration, p.frequency_493, p.amplitude_493)
+                     p.deshelving_duration , p.frequency_493, p.amplitude_493)
         self.addDDS(p.channel_650, self.start, \
                      p.deshelving_duration, p.frequency_650, p.amplitude_650)
 
         if p.deshelving_duration != 0:
             self.addTTL(p.TTL_614, self.start, p.deshelving_duration)
-            #self.addTTL(p.TTL_493_DDS, self.start + switch_on_delay, p.deshelving_duration)
 
-        self.end = self.start + p.deshelving_duration
+
+        self.end = self.start + p.deshelving_duration + WithUnit(650.0, 'ns')
 

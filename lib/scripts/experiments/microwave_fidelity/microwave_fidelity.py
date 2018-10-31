@@ -2,7 +2,7 @@ import labrad
 from twisted.internet.defer import inlineCallbacks, returnValue
 
 from common.lib.servers.abstractservers.script_scanner.scan_methods import experiment
-from barium.lib.scripts.pulse_sequences.RabiFlopping import rabi_flopping as main_sequence
+from barium.lib.scripts.pulse_sequences.MicrowaveFidelity import microwave_fidelity as main_sequence
 
 from config.FrequencyControl_config import FrequencyControl_config
 from config.multiplexerclient_config import multiplexer_config
@@ -13,16 +13,16 @@ import numpy as np
 import datetime as datetime
 from random import *
 
-class rabi_flopping(experiment):
+class microwave_fidelity(experiment):
 
-    name = 'Rabi Flopping'
+    name = 'Microwave_Fidelity'
 
-    exp_parameters = [('RabiFlopping','Sequences_Per_Point'),
-                      ('RabiFlopping','Start_Time'),
-                      ('RabiFlopping','Stop_Time'),
-                      ('RabiFlopping','Time_Step'),
-                      ('RabiFlopping','dc_threshold'),
-                      ('RabiFlopping', 'Mode'),
+    exp_parameters = [('MicrowaveFidelity','Sequences_Per_Point'),
+                      ('MicrowaveFidelity','Start_Time'),
+                      ('MicrowaveFidelity','Stop_Time'),
+                      ('MicrowaveFidelity','Time_Step'),
+                      ('MicrowaveFidelity','dc_threshold'),
+                      ('MicrowaveFidelity', 'Mode'),
                       ]
 
     # Add the parameters from the required subsequences
@@ -51,15 +51,15 @@ class rabi_flopping(experiment):
 
         # Define variables to be used
         self.p = self.parameters
-        self.cycles = self.p.RabiFlopping.Sequences_Per_Point
-        self.start_time = self.p.RabiFlopping.Start_Time
-        self.stop_time = self.p.RabiFlopping.Stop_Time
-        self.step_time = self.p.RabiFlopping.Time_Step
+        self.cycles = self.p.MicrowaveFidelity.Sequences_Per_Point
+        self.start_time = self.p.MicrowaveFidelity.Start_Time
+        self.stop_time = self.p.MicrowaveFidelity.Stop_Time
+        self.step_time = self.p.MicrowaveFidelity.Time_Step
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-        self.state_detection = self.p.RabiFlopping.State_Detection
-        self.dc_thresh = self.p.RabiFlopping.dc_threshold
-        self.m_sequence = self.p.RabiFlopping.microwave_pulse_sequence
-        self.mode = self.p.RabiFlopping.Mode
+        self.state_detection = self.p.MicrowaveFidelity.State_Detection
+        self.dc_thresh = self.p.MicrowaveFidelity.dc_threshold
+        self.m_sequence = self.p.MicrowaveFidelity.microwave_pulse_sequence
+        self.mode = self.p.MicrowaveFidelity.Mode
         if self.m_sequence == 'single':
             self.LO_freq = self.p.Microwaves133.LO_frequency
         elif self.m_sequence == 'composite_1':
@@ -106,7 +106,7 @@ class rabi_flopping(experiment):
                 elif self.m_sequence == 'composite_1':
                     self.p.Composite1.microwave_duration = WithUnit(t[i],'us')
 
-            self.program_pulse_sequence()
+
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't
             while True:
@@ -116,6 +116,7 @@ class rabi_flopping(experiment):
                     #self.shutter.ttl_output(10, False)
                     return
 
+                self.program_pulse_sequence()
                 self.pulser.reset_readout_counts()
                 self.pulser.reset_timetags()
                 self.pulser.start_number(int(self.cycles))
@@ -149,7 +150,7 @@ class rabi_flopping(experiment):
                 ind = np.where(dc_counts < self.dc_thresh)
                 counts = np.delete(sd_counts,ind[0])
                 self.total_exps = self.total_exps + len(counts)
-                print len(counts), self.total_exps
+                print len(dc_counts), self.total_exps
 
                 self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                 # 1 state is bright for standard state detection
@@ -203,17 +204,17 @@ class rabi_flopping(experiment):
         # Define data sets for probability and the associated histograms
         self.dv.cd(['',year,month,trunk],True, context = self.c_prob)
         # prob
-        dataset = self.dv.new('Rabi_prob',[('run', 'time')], [('num', 'prob', 'num')], context = self.c_prob)
+        dataset = self.dv.new('Microwave_Fidelity',[('run', 'time')], [('num', 'prob', 'num')], context = self.c_prob)
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
         #Hist with deleted data
         self.dv.cd(['',year,month,trunk],True, context = self.c_time_tags)
-        dataset1 = self.dv.new('Rabi_Time_Tags',[('run', 'arb u')], [('Time_Tags', 'Time', 's')], context = self.c_time_tags)
+        dataset1 = self.dv.new('Microwave_Time_Tags',[('run', 'arb u')], [('Time_Tags', 'Time', 's')], context = self.c_time_tags)
 
         #Hist with dc counts and sd counts
         self.dv.cd(['',year,month,trunk],True, context = self.c_hist)
-        dataset2 = self.dv.new('Rabi_hist',[('run', 'arb u')],\
+        dataset2 = self.dv.new('Microwave_hist',[('run', 'arb u')],\
                                [('Counts', 'DC_Hist', 'num'), ('Counts', 'SD_Hist', 'num')], context = self.c_hist)
 
         # add dv params
@@ -253,6 +254,7 @@ class rabi_flopping(experiment):
             print "trying to remove " + str(i)
             print self.pb.get_protection_state()
             if not self.pb.get_protection_state():
+                time.sleep(.3)
                 return True
         print 'failed to remove protection beam'
         return False
@@ -273,7 +275,7 @@ class rabi_flopping(experiment):
 if __name__ == '__main__':
     cxn = labrad.connect()
     scanner = cxn.scriptscanner
-    exprt = rabi_flopping(cxn = cxn)
+    exprt = microwave_fidelity(cxn = cxn)
     ident = scanner.register_external_launch(exprt.name)
     exprt.execute(ident)
 

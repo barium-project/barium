@@ -83,7 +83,7 @@ class readout_histogram(QtGui.QWidget):
             self.last_hist.remove()
             #explicitly delete the reference although not necessary
             #el self.last_hist
-        y = numpy.histogram(data[:,1],int(numpy.max([data[:,1].max()-data[:,1].min(),1])))
+        y = numpy.histogram(data[:,-1],int(numpy.max([data[:,-1].max()-data[:,-1].min(),1])))
         counts = y[0]
         bins = y[1][:-1]
         if bins[0] < 0:

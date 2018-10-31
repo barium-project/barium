@@ -57,6 +57,7 @@ class high_fidelity(experiment):
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
         self.state_detection = self.p.RabiFlopping.State_Detection
         self.m_sequence = self.p.RabiFlopping.microwave_pulse_sequence
+        self.shelve_time = self.p.Shelving133_Sub.shelving_duration
 
         if self.m_sequence == 'single':
             self.LO_freq = self.p.Microwaves133.LO_frequency
@@ -114,10 +115,12 @@ class high_fidelity(experiment):
             if i % 2 == 0:
                 self.p.Composite1.microwave_duration = self.pi_time
                 self.p.Composite1.amplitude_micrwaves = self.microwave_power
+                #self.p.Shelving133_Sub.shelving_duration = self.shelve_time
             # Bright State
             else:
                 self.p.Composite1.microwave_duration = WithUnit(0.0,'us')
                 self.p.Composite1.amplitude_micrwaves = WithUnit(-48.0,'dBm')
+                #self.p.Shelving133_Sub.shelving_duration = WithUnit(0.0,'s')
 
             self.program_pulse_sequence()
             if self.correct_ML == 'True':
@@ -127,7 +130,7 @@ class high_fidelity(experiment):
             self.pulser.start_number(int(self.cycles))
             self.pulser.wait_sequence_done()
             self.pulser.stop_sequence()
-
+            self.pulser.switch_manual('TTL7',True)
             # First check if the protection was enabled, do nothing if not
             if not self.pb.get_protection_state():
                     pass
@@ -158,6 +161,9 @@ class high_fidelity(experiment):
             self.total_exps = self.total_exps + len(counts)
             print len(counts), self.total_exps
 
+            if np.sum(sd_counts) > 32000.0:
+                print "Too many time tags. Reduce experiment number"
+                return
             self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
             # 1 state is bright for standard state detection
             if self.state_detection == 'spin-1/2':
@@ -166,6 +172,7 @@ class high_fidelity(experiment):
             elif self.state_detection == 'shelving':
                 dark = np.where(counts <= self.disc)
                 fid = float(len(dark[0]))/len(counts)
+
 
             # Save time vs prob
             self.dv.add(i , fid, context = self.c_prob)
@@ -226,7 +233,7 @@ class high_fidelity(experiment):
 
                     self.dv.add(i, fid_ml, context = self.c_ML_prob)
                     self.dv.add(ml_data, context = self.c_ML_hist_bright)
-
+            self.pulser.switch_auto('TTL7',False)
             i = i + 1
             continue
         self.pulser.switch_manual('TTL7',True)

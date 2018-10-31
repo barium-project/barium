@@ -111,7 +111,6 @@ class optical_pumping(experiment):
                 pmt_counts = self.pulser.get_readout_counts()
                 dc_counts = pmt_counts[::2]
                 counts = pmt_counts[1::2]
-                print dc_counts
 
                 self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                 # 1 state is bright for standard state detection

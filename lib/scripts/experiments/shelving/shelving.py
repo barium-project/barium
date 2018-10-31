@@ -240,6 +240,8 @@ class shelving(experiment):
                     self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                     bright = np.where(counts >= self.disc)
                     fid = float(len(bright[0]))/len(counts)
+
+
                     self.dv.add(frequency , fid, context = self.c_prob)
                     # Save histogram
                     data = np.column_stack((np.arange(len(counts)),counts))
@@ -260,16 +262,13 @@ class shelving(experiment):
             t = np.linspace(self.start_time['us'],self.stop_time['us'],\
                     int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
             # Open shelving laser shutting and turn LED off
-            self.shutter.ttl_output(10, True)
-            time.sleep(.5)
             for i in range(len(t)):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_auto('TTL7',True)
-                    self.shutter.ttl_output(10, False)
                     return
-
-                self.p.Shelving.deshelving_duration = WithUnit(t[i], 'us')
+                if self.mode == 'Normal':
+                    self.p.Deshelving133.deshelving_duration = WithUnit(t[i], 'us')
                 self.program_pulse_sequence()
                 self.pulser.switch_auto('TTL7',False)
                 # for the protection beam we start a while loop and break it if we got the data,
@@ -278,7 +277,6 @@ class shelving(experiment):
                     if self.pause_or_stop():
                         # Turn on LED if aborting experiment
                         self.pulser.switch_auto('TTL7',True)
-                        self.shutter.ttl_output(10, False)
                         return
 
                     self.pulser.reset_readout_counts()
@@ -302,7 +300,6 @@ class shelving(experiment):
                         else:
                             # Failed, abort experiment
                             self.pulser.switch_auto('TTL7',True)
-                            self.shutter.ttl_output(10, False)
                             return
 
                     # Here we look to see if the doppler cooling counts were low,
@@ -317,6 +314,22 @@ class shelving(experiment):
                     self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                     bright = np.where(counts >= self.disc)
                     fid = float(len(bright[0]))/len(counts)
+
+                 # If we are in repeat save the data point and rerun the point in the while loop
+                    if self.mode == 'Repeat':
+                        self.dv.add(i , fid, context = self.c_deshelve)
+                        exp_list = np.arange(self.cycles)
+
+                        # Now the hist with the ones we threw away
+                        exp_list = np.delete(exp_list,ind[0])
+                        data = np.column_stack((exp_list,counts))
+                        self.dv.add(data, context = self.c_hist)
+                        # Adding the character c and the number of cycles so plotting the histogram
+                        # only plots the most recent point.
+                        self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
+                                      True, context = self.c_hist)
+                        i = i + 1
+                        continue
                     self.dv.add(t[i] , fid, context = self.c_deshelve)
                     # Save histogram
                     data = np.column_stack((np.arange(len(counts)),counts))
@@ -326,7 +339,6 @@ class shelving(experiment):
                     self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
                     break
             self.pulser.switch_auto('TTL7',True)
-            self.shutter.ttl_output(10, False)
 
     def remove_protection_beam(self):
         for i in range(5):
