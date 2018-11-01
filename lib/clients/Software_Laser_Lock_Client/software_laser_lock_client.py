@@ -11,6 +11,7 @@ from common.lib.clients.qtui.q_custom_text_changing_button import \
 from barium.lib.clients.gui.software_laser_lock_gui import software_laser_lock_channel
 
 SIGNALID1 = 445567
+SIGNALID2 = 445568
 
 
 class software_laser_lock_client(QtGui.QWidget):
@@ -33,6 +34,8 @@ class software_laser_lock_client(QtGui.QWidget):
         self.wm = yield self.wm_cxn.multiplexerserver
         self.cxn = yield connectAsync('bender', name = socket.gethostname() + ' Single Channel Lock', password=self.password)
         self.lock_server = yield self.cxn.software_laser_lock_server
+        self.bristol = yield self.cxn.bristolserver
+        self.piezo = yield self.cxn.piezo_controller
         self.registry = self.cxn.registry
 
         # Get lasers to lock
@@ -43,6 +46,9 @@ class software_laser_lock_client(QtGui.QWidget):
 
         yield self.wm.signal__frequency_changed(SIGNALID1)
         yield self.wm.addListener(listener = self.updateFrequency, source = None, ID = SIGNALID1)
+
+        yield self.bristol.signal__frequency_changed(SIGNALID2)
+        yield self.bristol.addListener(listener = self.updateBristolFrequency, source = None, ID = SIGNALID2)
 
         self.initializeGUI()
 
@@ -127,11 +133,19 @@ class software_laser_lock_client(QtGui.QWidget):
     @inlineCallbacks
     def updateFrequency(self, c, signal):
         for chan in self.lasers:
-            if signal[0] == self.lasers[chan][1]:
-
+            if signal[0] == self.lasers[chan][1] and self.lasers[chan][4] != -1:
                 laser = self.channel_GUIs[chan]
                 laser.wavelength.setText(str(signal[1])[0:10])
                 voltage = yield self.lock_server.get_dac_voltage(chan)
+                laser.dacVoltage.setText(str(voltage)[0:5])
+
+    @inlineCallbacks
+    def updateBristolFrequency(self, c, signal):
+        for chan in self.lasers:
+            if self.lasers[chan][4] == -1:
+                laser = self.channel_GUIs[chan]
+                laser.wavelength.setText(str(signal)[0:10])
+                voltage = yield self.piezo.get_voltage(4)
                 laser.dacVoltage.setText(str(voltage)[0:5])
 
     @inlineCallbacks

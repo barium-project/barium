@@ -83,8 +83,8 @@ class software_laser_lock_channel(QtGui.QFrame):
         # low rail
         self.spinLowRail = QtGui.QDoubleSpinBox()
         self.spinLowRail.setFont(QtGui.QFont(shell_font, pointSize=16))
-        self.spinLowRail.setDecimals(0)
-        self.spinLowRail.setSingleStep(1)
+        self.spinLowRail.setDecimals(3)
+        self.spinLowRail.setSingleStep(.001)
         self.spinLowRail.setRange(0 , 50)
         self.spinLowRail.setKeyboardTracking(False)
 
@@ -97,8 +97,8 @@ class software_laser_lock_channel(QtGui.QFrame):
         # high rail
         self.spinHighRail = QtGui.QDoubleSpinBox()
         self.spinHighRail.setFont(QtGui.QFont(shell_font, pointSize=16))
-        self.spinHighRail.setDecimals(0)
-        self.spinHighRail.setSingleStep(1)
+        self.spinHighRail.setDecimals(3)
+        self.spinHighRail.setSingleStep(.001)
         self.spinHighRail.setRange(0 , 50)
         self.spinHighRail.setKeyboardTracking(False)
 

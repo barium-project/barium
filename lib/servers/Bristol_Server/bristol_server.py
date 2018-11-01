@@ -34,7 +34,7 @@ class BristolServer(LabradServer):
 
     name = 'BristolServer'
 
-    freq_changed = Signal(FREQSIGNAL, 'signal: frequency changed', '(v)')
+    freq_changed = Signal(FREQSIGNAL, 'signal: frequency changed', 'v')
 
     def initServer(self):
         self.password = os.environ['LABRADPASSWORD']
@@ -69,14 +69,15 @@ class BristolServer(LabradServer):
             freq = float(freq)
             self.freq_changed((freq))
             self.freq = freq
-            print freq
+            self.freq_changed(freq)
             returnValue(self.freq)
+
         else:
             returnValue(self.freq)
 
 
     def measure_chan(self):
-        reactor.callLater(0.2, self.measure_chan)
+        reactor.callLater(0.1, self.measure_chan)
         self.get_frequency(self)
 
     def stopServer(self):
