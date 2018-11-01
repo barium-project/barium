@@ -22,9 +22,11 @@ class frequency_scan(experiment):
     exp_parameters.append(('Frequency_Scan', 'Center_Frequency_493'))
     exp_parameters.append(('Frequency_Scan', 'Center_Frequency_650'))
     exp_parameters.append(('Frequency_Scan', 'Center_Frequency_455'))
+    exp_parameters.append(('Frequency_Scan', 'Center_Frequency_1762'))
     exp_parameters.append(('Frequency_Scan', 'Return'))
     exp_parameters.append(('Frequency_Scan', 'Return_Frequency'))
     exp_parameters.append(('Frequency_Scan', 'Source'))
+    exp_parameters.append(('Frequency_Scan', 'Points'))
 
     @classmethod
     def all_required_parameters(cls):
@@ -44,7 +46,8 @@ class frequency_scan(experiment):
         self.grapher = self.cxn.grapher
         self.dv = self.cxn.data_vault
         self.cam = self.cxn.andor_server
-        self.single_lock = self.cxn.single_channel_lock_server
+        self.single_lock = self.cxn.software_laser_lock_server
+        self.bristol = self.cxn.bristolserver
 
         # Need to map the gpib address to the labrad context number
         self.device_mapA = {}
@@ -56,6 +59,7 @@ class frequency_scan(experiment):
         self.frequency_493 = self.parameters.Frequency_Scan.Center_Frequency_493
         self.frequency_650 = self.parameters.Frequency_Scan.Center_Frequency_650
         self.frequency_455 = self.parameters.Frequency_Scan.Center_Frequency_455
+        self.frequency_1762 = self.parameters.Frequency_Scan.Center_Frequency_1762
         self.frequency = self.parameters.Frequency_Scan.Frequency
         self.start_frequency = self.parameters.Frequency_Scan.Frequency_Start
         self.stop_frequency = self.parameters.Frequency_Scan.Frequency_Stop
@@ -64,6 +68,7 @@ class frequency_scan(experiment):
         self.return_bool = self.parameters.Frequency_Scan.Return
         self.return_frequency = self.parameters.Frequency_Scan.Return_Frequency
         self.source = self.parameters.Frequency_Scan.Source
+        self.points = self.parameters.Frequency_Scan.Points
 
         self.wm_p = multiplexer_config.info
 
@@ -129,12 +134,12 @@ class frequency_scan(experiment):
 
         if self.frequency == '455':
             print '455'
-            self.single_lock.set_point(self.frequency_455['THz'] + freq[0])
+            self.single_lock.set_lock_frequency(self.frequency_455['THz'] + freq[0])
             time.sleep(5)
             for i in range(len(freq)):
                 if self.pause_or_stop():
                     break
-                self.single_lock.set_point(self.frequency_455['THz'] + freq[i])
+                self.single_lock.set_lock_frequency(self.frequency_455['THz'] + freq[i])
                 time.sleep(self.time_step['s'])
                 frequency = self.wm.get_frequency(self.wm_p['455nm'][0]) - self.frequency_455['THz']
                 if self.source == 'pmt':
@@ -147,6 +152,24 @@ class frequency_scan(experiment):
 
             if int(self.return_bool) == 1:
                 self.single_lock.set_point(self.frequency_455['THz'])
+
+        if self.frequency == '1762':
+            self.single_lock.set_lock_frequency(self.frequency_1762['THz'] + freq[0], '1762nm')
+            for i in range(len(freq)):
+                if self.pause_or_stop():
+                    break
+                all_freq = np.array([])
+                all_counts = np.array([])
+                self.single_lock.set_lock_frequency(self.frequency_1762['THz'] + freq[i], '1762nm')
+                time.sleep(3)
+                for j in range(int(self.points)):
+                    time.sleep(self.time_step['s'])
+                    frequency = self.bristol.get_frequency()
+                    counts = self.pmt.get_next_counts('ON', 1, False)
+                    all_freq = np.append(all_freq, frequency)
+                    all_counts = np.append(all_counts, counts)
+
+                self.dv.add(np.mean(all_freq)*1e6,np.mean(all_counts))
 
         if self.frequency == 'GPIB0::19':
             self.HPA.select_device(self.device_mapA['GPIB0::19'])
