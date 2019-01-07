@@ -85,7 +85,7 @@ class software_laser_lock_channel(QtGui.QFrame):
         self.spinLowRail.setFont(QtGui.QFont(shell_font, pointSize=16))
         self.spinLowRail.setDecimals(3)
         self.spinLowRail.setSingleStep(.001)
-        self.spinLowRail.setRange(0 , 50)
+        self.spinLowRail.setRange(0 , 100)
         self.spinLowRail.setKeyboardTracking(False)
 
         #high rails  label
@@ -99,8 +99,22 @@ class software_laser_lock_channel(QtGui.QFrame):
         self.spinHighRail.setFont(QtGui.QFont(shell_font, pointSize=16))
         self.spinHighRail.setDecimals(3)
         self.spinHighRail.setSingleStep(.001)
-        self.spinHighRail.setRange(0 , 50)
+        self.spinHighRail.setRange(0 , 100)
         self.spinHighRail.setKeyboardTracking(False)
+
+
+        #dac voltage  label
+        setDacVoltage = QtGui.QLabel(' Set Dac Voltage')
+        setDacVoltage.setFont(QtGui.QFont(shell_font, pointSize=16))
+        setDacVoltage.setAlignment(QtCore.Qt.AlignCenter)
+
+        # set dac voltage
+        self.spinDacVoltage = QtGui.QDoubleSpinBox()
+        self.spinDacVoltage.setFont(QtGui.QFont(shell_font, pointSize=16))
+        self.spinDacVoltage.setDecimals(3)
+        self.spinDacVoltage.setSingleStep(.001)
+        self.spinDacVoltage.setRange(0 , 100)
+        self.spinDacVoltage.setKeyboardTracking(False)
 
        # Too lazy to add signals to the server so
         # will update and display dac voltage every time
@@ -125,18 +139,20 @@ class software_laser_lock_channel(QtGui.QFrame):
         layout.addWidget(chanName, 1,1)
         layout.addWidget(self.wavelength, 2,0, 6, 2)
         layout.addWidget(self.lockSwitch, 1, 3, 1, 1)
-        layout.addWidget(lockName, 8, 0, 1, 1)
-        layout.addWidget(self.spinFreq1, 9, 0, 1, 1)
-        layout.addWidget(exposureName, 8, 1, 1, 1)
-        layout.addWidget(self.spinExposure, 9, 1, 1, 1)
+        layout.addWidget(lockName, 10, 0, 1, 1)
+        layout.addWidget(self.spinFreq1, 11, 0, 1, 1)
+        layout.addWidget(exposureName, 10, 1, 1, 1)
+        layout.addWidget(self.spinExposure, 11, 1, 1, 1)
         layout.addWidget(gainName, 2, 3, 1, 1)
         layout.addWidget(self.spinGain, 3, 3, 1, 1)
         layout.addWidget(lowRail, 4, 3, 1, 1)
         layout.addWidget(self.spinLowRail, 5, 3, 1, 1)
         layout.addWidget(highRail, 6, 3, 1, 1)
         layout.addWidget(self.spinHighRail, 7, 3, 1, 1)
-        layout.addWidget(self.dacLabel, 8,3, 1, 1)
-        layout.addWidget(self.dacVoltage, 9,3, 1, 1)
+        layout.addWidget(setDacVoltage, 8, 3, 1, 1)
+        layout.addWidget(self.spinDacVoltage, 9, 3, 1, 1)
+        layout.addWidget(self.dacLabel, 10,3, 1, 1)
+        layout.addWidget(self.dacVoltage, 11,3, 1, 1)
         layout.addWidget(self.clear_lock, 1, 0, 1, 1)
 
         layout.minimumSize()

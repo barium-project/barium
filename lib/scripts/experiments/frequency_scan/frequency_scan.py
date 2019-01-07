@@ -48,6 +48,7 @@ class frequency_scan(experiment):
         self.cam = self.cxn.andor_server
         self.single_lock = self.cxn.software_laser_lock_server
         self.bristol = self.cxn.bristolserver
+        self.shutter = cxn.arduinottl
 
         # Need to map the gpib address to the labrad context number
         self.device_mapA = {}
@@ -155,22 +156,27 @@ class frequency_scan(experiment):
 
         if self.frequency == '1762':
             self.single_lock.set_lock_frequency(self.frequency_1762['THz'] + freq[0], '1762nm')
+            self.shutter.ttl_output(10, True)
             for i in range(len(freq)):
                 if self.pause_or_stop():
-                    break
+                    self.shutter.ttl_output(10, False)
+                    return
                 all_freq = np.array([])
                 all_counts = np.array([])
                 self.single_lock.set_lock_frequency(self.frequency_1762['THz'] + freq[i], '1762nm')
                 time.sleep(3)
                 for j in range(int(self.points)):
-                    time.sleep(self.time_step['s'])
+                    if self.pause_or_stop():
+                        self.shutter.ttl_output(10, False)
+                        return
+                    #time.sleep(self.time_step['s'])
                     frequency = self.bristol.get_frequency()
                     counts = self.pmt.get_next_counts('ON', 1, False)
                     all_freq = np.append(all_freq, frequency)
                     all_counts = np.append(all_counts, counts)
 
                 self.dv.add(np.mean(all_freq)*1e6,np.mean(all_counts))
-
+            self.shutter.ttl_output(10, False)
         if self.frequency == 'GPIB0::19':
             self.HPA.select_device(self.device_mapA['GPIB0::19'])
             for i in range(len(freq)):

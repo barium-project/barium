@@ -85,15 +85,12 @@ class microwave_sweep(experiment):
         time.sleep(.3) # time to switch frequencies
 
         if self.state_detection == 'shelving':
-            self.shutter.ttl_output(10, True)
-            time.sleep(.5)
             self.pulser.switch_auto('TTL7',False)
 
         for i in range(len(freq)):
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
                 self.pulser.switch_manual('TTL7',True)
-                self.shutter.ttl_output(10, False)
                 return
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't
@@ -110,7 +107,6 @@ class microwave_sweep(experiment):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL7',True)
-                    self.shutter.ttl_output(10, False)
                     return
 
                 self.pulser.reset_readout_counts()
@@ -133,7 +129,6 @@ class microwave_sweep(experiment):
                     else:
                         # Failed, abort experiment
                         self.pulser.switch_manual('TTL7',True)
-                        self.shutter.ttl_output(10, False)
                         return
 
                 # Here we look to see if the doppler cooling counts were low,
@@ -176,7 +171,6 @@ class microwave_sweep(experiment):
                 break
         # Close shutter and turn LED on after experiment
         self.pulser.switch_manual('TTL7',True)
-        self.shutter.ttl_output(10, False)
 
     def set_up_datavault(self):
         # set up folder

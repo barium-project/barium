@@ -65,8 +65,6 @@ class optical_pumping(experiment):
                     int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
 
         if self.state_detection == 'shelving':
-            self.shutter.ttl_output(10, True)
-            time.sleep(.5)
             self.pulser.switch_auto('TTL7',False)
 
         for i in range(len(t)):
@@ -142,7 +140,6 @@ class optical_pumping(experiment):
 
                 break
         self.pulser.switch_manual('TTL7',True)
-        self.shutter.ttl_output(10, False)
 
     def set_up_datavault(self):
         # set up folder

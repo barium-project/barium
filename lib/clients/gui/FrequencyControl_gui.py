@@ -136,7 +136,7 @@ class Frequency_Ui(QtGui.QWidget):
         self.GPIB19spinAmpVer.setKeyboardTracking(False)
         self.GPIB19spinAmpVer.setDecimals(0)
         self.GPIB19spinAmpVer.setMinimum(-10.0)
-        self.GPIB19spinAmpVer.setMaximum(-8.0)
+        self.GPIB19spinAmpVer.setMaximum(2.0)
         self.GPIB19spinAmpVer.setSingleStep(1.0)
         self.GPIB19spinAmpVer.setProperty("value", 0.0)
         self.GPIB19spinAmpVer.setObjectName(_fromUtf8("GPIB19spinAmpVer"))

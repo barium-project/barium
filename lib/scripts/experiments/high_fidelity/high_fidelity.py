@@ -100,27 +100,31 @@ class high_fidelity(experiment):
         self.set_hp_frequency()
         time.sleep(.3) # time to switch
         if self.state_detection == 'shelving':
-            #self.shutter.ttl_output(10, True)
-            #time.sleep(.5)
             self.pulser.switch_auto('TTL7',False)
         i = 0
         while True:
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
                 self.pulser.switch_manual('TTL7',True)
-                #self.shutter.ttl_output(10, False)
                 return
 
             # Dark State
             if i % 2 == 0:
-                self.p.Composite1.microwave_duration = self.pi_time
-                self.p.Composite1.amplitude_micrwaves = self.microwave_power
-                #self.p.Shelving133_Sub.shelving_duration = self.shelve_time
+                if self.m_sequence == 'composite_1':
+                    self.p.Composite1.microwave_duration = self.pi_time
+                    self.p.Composite1.amplitude_micrwaves = self.microwave_power
+                elif self.m_sequence == 'single':
+                    self.p.Microwaves133.microwave_duration = self.pi_time
+                    self.p.Microwaves133.amplitude_micrwaves = self.microwave_power
+
             # Bright State
             else:
-                self.p.Composite1.microwave_duration = WithUnit(0.0,'us')
-                self.p.Composite1.amplitude_micrwaves = WithUnit(-48.0,'dBm')
-                #self.p.Shelving133_Sub.shelving_duration = WithUnit(0.0,'s')
+                if self.m_sequence == 'composite_1':
+                    self.p.Composite1.microwave_duration = WithUnit(0.0,'us')
+                    self.p.Composite1.amplitude_micrwaves = WithUnit(-48.0,'dBm')
+                elif self.m_sequence == 'single':
+                    self.p.Microwaves133.microwave_duration = WithUnit(0.0,'us')
+                    self.p.Microwaves133.amplitude_micrwaves = WithUnit(-48.0,'dBm')
 
             self.program_pulse_sequence()
             if self.correct_ML == 'True':
@@ -146,7 +150,6 @@ class high_fidelity(experiment):
                 else:
                     # Failed, abort experiment
                     self.pulser.switch_manual('TTL7',True)
-                    #self.shutter.ttl_output(10, False)
                     return
 
             # Here we look to see if the doppler cooling counts were low,

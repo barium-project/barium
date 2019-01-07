@@ -132,6 +132,16 @@ class piezo_server(DeviceServer):
         yield dev.write('out.w ' + str(channel) + ' ' + str(int(value))+ '\r\n')
         self.current_state[str(channel)][1] = int(value)
 
+    @setting(102, value='b')
+    def set_remote_state(self, c, value):
+        '''
+        Turn the remote mode on
+        '''
+
+        dev = self.selectDevice(c)
+        yield dev.write('remote.w ' + str(int(value))+ '\r\n')
+
+
     @setting(200, channel = 'i', returns='b')
     def get_output_state(self, c, channel, value):
         '''

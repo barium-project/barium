@@ -80,32 +80,33 @@ class Software_Laser_Lock_Server(LabradServer):
     @inlineCallbacks
     def loop(self):
         for laser in self.lasers:
-            if self.lasers[laser][6] == True and self.lasers[laser][4] != -1:
+            if self.lasers[laser][6] == True and self.lasers[laser][4] != 4:
                 # Get the frequency
                 freq = yield self.wm.get_frequency(self.lasers[laser][1])
                 error = (self.lasers[laser][0] - freq)*1e6 # gives me diff in MHz
                 # Multiply error by the gain and add the previous output
                 output = error*self.lasers[laser][3]  + self.lasers[laser][7]
                 # Check against the rails
-                if output >= self.lasers[laser][5][1]:
-                    output = self.lasers[laser][5][1]
-                elif output <= self.lasers[laser][5][0]:
-                    output = self.lasers[laser][5][0]
+                if output >= float(self.lasers[laser][5][1]):
+                    output = float(self.lasers[laser][5][1])
+                elif output <= float(self.lasers[laser][5][0]):
+                    output = float(self.lasers[laser][5][0])
                 else:
                     pass
                 # Store the output
                 self.lasers[laser][7] = output
-                yield self.trap.set_dc(output,int(self.lasers[laser][4]))
+                #yield self.trap.set_dc(output,int(self.lasers[laser][4]))
+                yield self.piezo.set_voltage(int(self.lasers[laser][4]),U(output, 'V'))
 
-            elif self.lasers[laser][6] == True and self.lasers[laser][4] == -1:
+            elif self.lasers[laser][6] == True and self.lasers[laser][4] == 4:
                 freq = yield self.bristol.get_frequency()
                 error = (self.lasers[laser][0] - freq)*1e6 # gives me diff in MHz
                 # Multiply error by the gain and add the previous output
                 output = error*self.lasers[laser][3]  + self.lasers[laser][7]
                 # Check against the rails
-                if output >= self.lasers[laser][5][1]:
+                if output >= float(self.lasers[laser][5][1]):
                     output = float(self.lasers[laser][5][1])
-                elif output <= self.lasers[laser][5][0]:
+                elif output <= float(self.lasers[laser][5][0]):
                     output = float(self.lasers[laser][5][0])
                 else:
                     pass
@@ -145,6 +146,11 @@ class Software_Laser_Lock_Server(LabradServer):
     def set_low_rail(self, c, lower, chan):
         self.lasers[chan][5][0] = lower
         self.update_registry(chan)
+
+    @setting(50, voltage = 'v', chan = 's')
+    def set_dac_voltage(self, c, voltage, chan):
+        self.lasers[chan][7] = voltage
+        yield self.piezo.set_voltage(int(self.lasers[chan][4]),U(voltage, 'V'))
 
     @setting(19, chan = 's', returns = 'v')
     def get_lock_frequency(self, c, chan):

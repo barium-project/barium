@@ -122,9 +122,9 @@ class software_laser_lock_client(QtGui.QWidget):
             if signal[0] == self.lasers[chan][0]:
 
                 laser = self.channel_GUIs[chan]
-                laser.wavelength.setText(str(signal[1])[0:10])
+                laser.wavelength.setText('{:.6f}'.format(signal[1]))
                 voltage = yield self.lock_server.get_dac_voltage(chan)
-                laser.dacVoltage.setText(str(voltage)[0:5])
+                laser.dacVoltage.setText('{:.3f}'.format(voltage))
 
     @inlineCallbacks
     def set_lock(self, state, chan):

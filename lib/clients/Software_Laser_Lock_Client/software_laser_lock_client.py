@@ -104,6 +104,9 @@ class software_laser_lock_client(QtGui.QWidget):
 
             laser.clear_lock.clicked.connect(lambda state = laser.clear_lock.isDown(), chan = chan : self.reset_lock(chan))
 
+            laser.spinDacVoltage.valueChanged.connect(lambda voltage = laser.spinDacVoltage.value(), \
+                                                    chan = chan : self.voltageChanged(voltage, chan))
+
             self.channel_GUIs[chan] = laser
             subLayout.addWidget(laser, self.lasers[chan][2][0], self.lasers[chan][2][1] , 1, 1)
             self.setLayout(layout)
@@ -112,6 +115,10 @@ class software_laser_lock_client(QtGui.QWidget):
     @inlineCallbacks
     def freqChanged(self, freq, chan):
         yield self.lock_server.set_lock_frequency(freq, chan)
+
+    @inlineCallbacks
+    def voltageChanged(self, voltage, chan):
+        yield self.lock_server.set_dac_voltage(float(voltage), chan)
 
     @inlineCallbacks
     def expChanged(self, exp, chan):
@@ -133,7 +140,7 @@ class software_laser_lock_client(QtGui.QWidget):
     @inlineCallbacks
     def updateFrequency(self, c, signal):
         for chan in self.lasers:
-            if signal[0] == self.lasers[chan][1] and self.lasers[chan][4] != -1:
+            if signal[0] == self.lasers[chan][1] and self.lasers[chan][4] != 4:
                 laser = self.channel_GUIs[chan]
                 laser.wavelength.setText(str(signal[1])[0:10])
                 voltage = yield self.lock_server.get_dac_voltage(chan)
@@ -142,9 +149,9 @@ class software_laser_lock_client(QtGui.QWidget):
     @inlineCallbacks
     def updateBristolFrequency(self, c, signal):
         for chan in self.lasers:
-            if self.lasers[chan][4] == -1:
+            if self.lasers[chan][4] == 4:
                 laser = self.channel_GUIs[chan]
-                laser.wavelength.setText(str(signal)[0:10])
+                laser.wavelength.setText('{:.6f}'.format(signal))
                 voltage = yield self.piezo.get_voltage(4)
                 laser.dacVoltage.setText(str(voltage)[0:5])
 

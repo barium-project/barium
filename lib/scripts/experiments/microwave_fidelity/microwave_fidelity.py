@@ -87,15 +87,12 @@ class microwave_fidelity(experiment):
         self.set_hp_frequency()
         time.sleep(.3) # time to switch
         if self.state_detection == 'shelving':
-            #self.shutter.ttl_output(10, True)
-            #time.sleep(.5)
             self.pulser.switch_auto('TTL7',False)
 
         for i in range(len(t)):
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
                 self.pulser.switch_manual('TTL7',True)
-                #self.shutter.ttl_output(10, False)
                 return
 
             # if running in normal mode set the time
@@ -113,7 +110,6 @@ class microwave_fidelity(experiment):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL7',True)
-                    #self.shutter.ttl_output(10, False)
                     return
 
                 self.program_pulse_sequence()
@@ -150,7 +146,7 @@ class microwave_fidelity(experiment):
                 ind = np.where(dc_counts < self.dc_thresh)
                 counts = np.delete(sd_counts,ind[0])
                 self.total_exps = self.total_exps + len(counts)
-                print len(dc_counts), self.total_exps
+                print len(dc_counts), len(counts), self.total_exps
 
                 self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                 # 1 state is bright for standard state detection
@@ -178,7 +174,6 @@ class microwave_fidelity(experiment):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL7',True)
-                    #self.shutter.ttl_output(10, False)
                     return
                 # If we are in repeat save the data point and rerun the point in the while loop
                 if self.mode == 'Repeat':
@@ -191,7 +186,6 @@ class microwave_fidelity(experiment):
 
                 break
         self.pulser.switch_manual('TTL7',True)
-        self.shutter.ttl_output(10, False)
 
     def set_up_datavault(self):
         # set up folder

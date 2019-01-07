@@ -64,6 +64,14 @@ class rabi_flopping(experiment):
             self.LO_freq = self.p.Microwaves133.LO_frequency
         elif self.m_sequence == 'composite_1':
             self.LO_freq = self.p.Composite1.LO_frequency
+        elif self.m_sequence == 'composite_2':
+            self.LO_freq = self.p.Composite2.LO_frequency
+        elif self.m_sequence == 'composite_3':
+            self.LO_freq = self.p.Composite3.LO_frequency
+        elif self.m_sequence == 'composite_4':
+            self.LO_freq = self.p.Composite4.LO_frequency
+        elif self.m_sequence == 'spin_echo':
+            self.LO_freq = self.p.SpinEcho.LO_frequency
         self.total_exps = 0
 
         # Define contexts for saving data sets
@@ -87,15 +95,12 @@ class rabi_flopping(experiment):
         self.set_hp_frequency()
         time.sleep(.3) # time to switch
         if self.state_detection == 'shelving':
-            #self.shutter.ttl_output(10, True)
-            #time.sleep(.5)
             self.pulser.switch_auto('TTL7',False)
 
         for i in range(len(t)):
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
                 self.pulser.switch_manual('TTL7',True)
-                #self.shutter.ttl_output(10, False)
                 return
 
             # if running in normal mode set the time
@@ -105,19 +110,26 @@ class rabi_flopping(experiment):
                     self.p.Microwaves133.microwave_duration = WithUnit(t[i],'us')
                 elif self.m_sequence == 'composite_1':
                     self.p.Composite1.microwave_duration = WithUnit(t[i],'us')
+                elif self.m_sequence == 'composite_4':
+                    self.p.Composite4.delay_duration = WithUnit(t[i],'us')
 
-            self.program_pulse_sequence()
-            # for the protection beam we start a while loop and break it if we got the data,
-            # continue if we didn't
+            dds = []
             while True:
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL7',True)
-                    #self.shutter.ttl_output(10, False)
                     return
+
 
                 self.pulser.reset_readout_counts()
                 self.pulser.reset_timetags()
+
+                self.program_pulse_sequence()
+                #l = self.pulser.human_readable_dds()
+
+
+                # for the protection beam we start a while loop and break it if we got the data,
+                # continue if we didn't
                 self.pulser.start_number(int(self.cycles))
                 self.pulser.wait_sequence_done()
                 self.pulser.stop_sequence()
@@ -136,7 +148,6 @@ class rabi_flopping(experiment):
                     else:
                         # Failed, abort experiment
                         self.pulser.switch_manual('TTL7',True)
-                        #self.shutter.ttl_output(10, False)
                         return
 
                 # Here we look to see if the doppler cooling counts were low,
@@ -180,7 +191,9 @@ class rabi_flopping(experiment):
                     #self.shutter.ttl_output(10, False)
                     return
                 # If we are in repeat save the data point and rerun the point in the while loop
+
                 if self.mode == 'Repeat':
+
                     self.dv.add(i , fid, context = self.c_prob)
                     i = i + 1
                     continue
@@ -190,7 +203,6 @@ class rabi_flopping(experiment):
 
                 break
         self.pulser.switch_manual('TTL7',True)
-        self.shutter.ttl_output(10, False)
 
     def set_up_datavault(self):
         # set up folder
