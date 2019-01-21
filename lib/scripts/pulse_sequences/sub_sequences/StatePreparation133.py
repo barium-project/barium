@@ -38,7 +38,7 @@ class state_prep_133(pulse_sequence):
             self.addDDS(p.channel_493, self.start - amp_change_delay_2,\
                      p.state_prep_duration - amp_change_delay_2, p.frequency_493, p.amplitude_493)
             self.addDDS(p.channel_650, self.start - amp_change_delay_2, \
-                     p.state_prep_duration - amp_change_delay_2, p.frequency_650, p.amplitude_650)
+                     p.state_prep_duration - amp_change_delay_2 + amp_change_delay, p.frequency_650, p.amplitude_650)
 
             #Need to make sure the 5.8 is off while turning off
             self.addTTL(p.TTL_493, self.start, p.state_prep_duration + amp_change_delay)

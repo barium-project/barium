@@ -116,6 +116,7 @@ class high_fidelity(experiment):
                 elif self.m_sequence == 'single':
                     self.p.Microwaves133.microwave_duration = self.pi_time
                     self.p.Microwaves133.amplitude_micrwaves = self.microwave_power
+                    self.p.Shelving133_Sub.shelving_duration = self.shelve_time
 
             # Bright State
             else:
@@ -125,6 +126,7 @@ class high_fidelity(experiment):
                 elif self.m_sequence == 'single':
                     self.p.Microwaves133.microwave_duration = WithUnit(0.0,'us')
                     self.p.Microwaves133.amplitude_micrwaves = WithUnit(-48.0,'dBm')
+                    self.p.Shelving133_Sub.shelving_duration = WithUnit(0.0,'us')
 
             self.program_pulse_sequence()
             if self.correct_ML == 'True':

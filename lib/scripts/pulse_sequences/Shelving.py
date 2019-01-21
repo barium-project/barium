@@ -21,6 +21,7 @@ class shelving(pulse_sequence):
 
         self.end = WithUnit(10.0,'us')
         self.addSequence(doppler_cooling_133)
+        self.addSequence(state_prep_133)
         self.addSequence(shelving_1762)
         self.addSequence(shelving_133_sub)
         self.addSequence(shelving_state_detection)

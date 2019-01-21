@@ -31,7 +31,7 @@ voltage_convergence = .003
 voltage_guess = 0
 
 
-start_phase = 36.4
+start_phase = 34.8
 phase_step = .1
 max_phase_itt = 25
 phase_convergence = .003

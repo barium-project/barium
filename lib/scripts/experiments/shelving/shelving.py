@@ -105,6 +105,8 @@ class shelving(experiment):
                 if self.mode == 'Normal':
                     if self.scan_laser == '455nm':
                         self.p.Shelving133_Sub.shelving_duration = WithUnit(t[i], 'us')
+                    if self.scan_laser == '585nm':
+                        self.p.Shelving133_Sub.shelving_duration = WithUnit(t[i], 'us')
                     elif self.scan_laser == '1762nm':
                         self.p.Shelving1762.shelving_duration = WithUnit(t[i], 'us')
 
