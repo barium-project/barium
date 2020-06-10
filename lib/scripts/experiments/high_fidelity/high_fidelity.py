@@ -68,6 +68,12 @@ class high_fidelity(experiment):
             self.pi_time = self.p.Composite1.microwave_duration
             self.microwave_power = self.p.Composite1.amplitude_microwaves
 
+        elif self.m_sequence == 'composite_2':
+            self.LO_freq = self.p.Composite2.LO_frequency
+            self.pi_time = self.p.Composite2.microwave_duration
+            self.microwave_power = self.p.Composite2.amplitude_microwaves
+
+
         self.total_exps = 0
         #print self.disc
         # Define contexts for saving data sets
@@ -100,12 +106,12 @@ class high_fidelity(experiment):
         self.set_hp_frequency()
         time.sleep(.3) # time to switch
         if self.state_detection == 'shelving':
-            self.pulser.switch_auto('TTL7',False)
+            self.pulser.switch_auto('TTL8',False)
         i = 0
         while True:
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
-                self.pulser.switch_manual('TTL7',True)
+                self.pulser.switch_manual('TTL8',True)
                 return
 
             # Dark State
@@ -113,6 +119,11 @@ class high_fidelity(experiment):
                 if self.m_sequence == 'composite_1':
                     self.p.Composite1.microwave_duration = self.pi_time
                     self.p.Composite1.amplitude_micrwaves = self.microwave_power
+
+                elif self.m_sequence == 'composite_2':
+                    self.p.Composite2.microwave_duration = self.pi_time
+                    self.p.Composite2.amplitude_micrwaves = self.microwave_power
+
                 elif self.m_sequence == 'single':
                     self.p.Microwaves133.microwave_duration = self.pi_time
                     self.p.Microwaves133.amplitude_micrwaves = self.microwave_power
@@ -123,10 +134,15 @@ class high_fidelity(experiment):
                 if self.m_sequence == 'composite_1':
                     self.p.Composite1.microwave_duration = WithUnit(0.0,'us')
                     self.p.Composite1.amplitude_micrwaves = WithUnit(-48.0,'dBm')
+
+                elif self.m_sequence == 'composite_2':
+                    self.p.Composite2.microwave_duration = WithUnit(0.0,'us')
+                    self.p.Composite2.amplitude_micrwaves = WithUnit(-48.0,'dBm')
+
                 elif self.m_sequence == 'single':
                     self.p.Microwaves133.microwave_duration = WithUnit(0.0,'us')
                     self.p.Microwaves133.amplitude_micrwaves = WithUnit(-48.0,'dBm')
-                    self.p.Shelving133_Sub.shelving_duration = WithUnit(0.0,'us')
+                    #self.p.Shelving133_Sub.shelving_duration = WithUnit(0.0,'us')
 
             self.program_pulse_sequence()
             if self.correct_ML == 'True':
@@ -136,7 +152,7 @@ class high_fidelity(experiment):
             self.pulser.start_number(int(self.cycles))
             self.pulser.wait_sequence_done()
             self.pulser.stop_sequence()
-            self.pulser.switch_manual('TTL7',True)
+            self.pulser.switch_manual('TTL8',True)
             # First check if the protection was enabled, do nothing if not
             if not self.pb.get_protection_state():
                     pass
@@ -144,14 +160,14 @@ class high_fidelity(experiment):
             # otherwise call return to break out of function
             else:
                 # Should turn on deshelving LED while trying
-                self.pulser.switch_manual('TTL7',True)
+                self.pulser.switch_manual('TTL8',True)
                 if self.remove_protection_beam():
                     # If successful switch off LED and return to top of loop
-                    self.pulser.switch_auto('TTL7',False)
+                    self.pulser.switch_auto('TTL8',False)
                     continue
                 else:
                     # Failed, abort experiment
-                    self.pulser.switch_manual('TTL7',True)
+                    self.pulser.switch_manual('TTL8',True)
                     return
 
             # Here we look to see if the doppler cooling counts were low,
@@ -238,10 +254,10 @@ class high_fidelity(experiment):
 
                     self.dv.add(i, fid_ml, context = self.c_ML_prob)
                     self.dv.add(ml_data, context = self.c_ML_hist_bright)
-            self.pulser.switch_auto('TTL7',False)
+            self.pulser.switch_auto('TTL8',False)
             i = i + 1
             continue
-        self.pulser.switch_manual('TTL7',True)
+        self.pulser.switch_manual('TTL8',True)
         #self.shutter.ttl_output(10, False)
 
     def set_up_datavault(self):
@@ -343,7 +359,7 @@ class high_fidelity(experiment):
 
     def set_sd_time_window(self):
         ttl = self.pulser.human_readable_ttl(True)
-        #print ttl
+        print ttl
         for i in range(len(ttl)):
             if ttl[i][1][17] == '1':
                 self.ML.t_start = float(ttl[i][0])

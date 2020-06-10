@@ -84,12 +84,12 @@ class ramsey(experiment):
         time.sleep(.3) # time to switch frequencies
 
         if self.state_detection == 'shelving':
-            self.pulser.switch_auto('TTL7',False)
+            self.pulser.switch_auto('TTL8',False)
 
         for i in range(len(t)):
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
-                self.pulser.switch_manual('TTL7',True)
+                self.pulser.switch_manual('TTL8',True)
                 return
 
             self.p.RamseyDelay.ramsey_delay = WithUnit(t[i],'us')
@@ -99,7 +99,7 @@ class ramsey(experiment):
             while True:
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
-                    self.pulser.switch_manual('TTL7',True)
+                    self.pulser.switch_manual('TTL8',True)
                     return
 
                 self.pulser.reset_readout_counts()
@@ -114,14 +114,14 @@ class ramsey(experiment):
                 # otherwise call return to break out of function
                 else:
                     # Should turn on deshelving LED while trying
-                    self.pulser.switch_manual('TTL7',True)
+                    self.pulser.switch_manual('TTL8',True)
                     if self.remove_protection_beam():
                         # If successful switch off LED and return to top of loop
-                        self.pulser.switch_auto('TTL7',False)
+                        self.pulser.switch_auto('TTL8',False)
                         continue
                     else:
                         # Failed, abort experiment
-                        self.pulser.switch_manual('TTL7',True)
+                        self.pulser.switch_manual('TTL8',True)
                         return
 
                 # Here we look to see if the doppler cooling counts were low,
@@ -159,7 +159,7 @@ class ramsey(experiment):
                 self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
                                       True, context = self.c_hist)
                 break
-        self.pulser.switch_manual('TTL7',True)
+        self.pulser.switch_manual('TTL8',True)
 
 
     def set_up_datavault(self):

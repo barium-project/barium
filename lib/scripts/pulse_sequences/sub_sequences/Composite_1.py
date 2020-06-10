@@ -75,6 +75,7 @@ class composite_1(pulse_sequence):
             self.addDDS(p.channel_microwaves, dds_start + 4*p.microwave_duration, p.microwave_duration + phase_change_delay + WithUnit(100.0,'ns'), \
                         dds_freq, p.amplitude_microwaves, phase = WithUnit(30.0,'deg')+ p.random_phase)
 
+
             # adding extra time at the end to make sure the microwaves are off
             self.end = self.start + 2*switch_on_delay + 5*p.microwave_duration
         else:

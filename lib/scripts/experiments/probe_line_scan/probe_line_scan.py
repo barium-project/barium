@@ -112,6 +112,28 @@ class probe_line_scan(experiment):
                     counts = counts + len(time_tags)
                     self.pulser.reset_timetags()
                 self.dv.add(frequency+freq[i],counts)
+
+        # Select probe oscillator
+        if self.probe_oscillator == 'GPIB0::19':
+            self.HPA.select_device(self.device_mapA['GPIB0::19'])
+
+            for i in range(len(freq)):
+                if self.pause_or_stop():
+                    break
+
+                self.HPA.set_frequency(WithUnit(freq[i],'MHz'))
+                time.sleep(.5) # time to switch frequencies
+                counts = 0
+                for j in range(int(self.repeats)):
+                    self.pulser.start_number(int(self.probe_cycles))
+                    self.pulser.wait_sequence_done()
+                    self.pulser.stop_sequence()
+                    time_tags = self.pulser.get_timetags()
+                    frequency = (self.wm.get_frequency(self.wm_p[self.laser][0]) - self.frequency_493['THz'])*1e6 # MHz
+                    counts = counts + len(time_tags)
+                    self.pulser.reset_timetags()
+                self.dv.add(frequency+freq[i],counts)
+
         else:
             self.HPB.select_device(self.device_mapB[self.probe_oscillator])
 
@@ -136,14 +158,14 @@ class probe_line_scan(experiment):
     def set_init_frequencies(self):
 
         # First set laser carriers
-        self.set_wm_frequency(self.frequency_493['THz'], self.wm_p['493nm'][5])
+        #self.set_wm_frequency(self.frequency_493['THz'], self.wm_p['493nm'][5])
         self.set_wm_frequency(self.frequency_650['THz'], self.wm_p['650nm'][5])
         time.sleep(5)
 
         # only one 8673 so select it
         self.HP8673.select_device()
         # Set cooling sideband
-        if self.cooling_oscillator == 'GPIB::1':
+        if self.cooling_oscillator == 'GPIB0::1':
             self.HP8673.set_frequency(self.cool_sb)
             self.HP8673.rf_state(True)
 

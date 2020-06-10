@@ -22,7 +22,7 @@ import time
 from labrad.server import LabradServer, setting
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.task import LoopingCall
-import os
+from twisted.internet import reactor
 import socket
 from config.multiplexerclient_config import multiplexer_config
 from labrad.units import WithUnit as U
@@ -35,8 +35,8 @@ class Software_Laser_Lock_Server(LabradServer):
         self.password = os.environ['LABRADPASSWORD']
         self.name = socket.gethostname() + ' Software Laser Lock Server'
         self.lasers = {}
-        self.timer = 0.2
-        self.lc = LoopingCall(self.loop)
+        self.timer = 0.1
+        #self.lc = LoopingCall(self.loop)
         self.connect()
 
     @inlineCallbacks
@@ -51,7 +51,7 @@ class Software_Laser_Lock_Server(LabradServer):
         self.wm = self.cxn.multiplexerserver
         self.trap = self.trap_cxn.trapserver
 
-        self.bristol = self.trap_cxn.bristolserver
+        #self.bristol = self.trap_cxn.bristolserver
         self.piezo = self.trap_cxn.piezo_controller
 
         self.reg = self.trap_cxn.registry
@@ -74,30 +74,32 @@ class Software_Laser_Lock_Server(LabradServer):
         for chan in lasers_to_lock:
             self.lasers[chan] = yield self.reg.get(chan)
             self.lasers[chan] = list(self.lasers[chan])
-
-        self.lc.start(self.timer)
-
+        
+        #self.lc.start(self.timer)
+        self.loop_server()
     @inlineCallbacks
     def loop(self):
         for laser in self.lasers:
-            if self.lasers[laser][6] == True and self.lasers[laser][4] != 4:
+            if self.lasers[laser][6]:# == True and self.lasers[laser][4] != 4:
                 # Get the frequency
                 freq = yield self.wm.get_frequency(self.lasers[laser][1])
-                error = (self.lasers[laser][0] - freq)*1e6 # gives me diff in MHz
-                # Multiply error by the gain and add the previous output
-                output = error*self.lasers[laser][3]  + self.lasers[laser][7]
-                # Check against the rails
-                if output >= float(self.lasers[laser][5][1]):
-                    output = float(self.lasers[laser][5][1])
-                elif output <= float(self.lasers[laser][5][0]):
-                    output = float(self.lasers[laser][5][0])
-                else:
-                    pass
-                # Store the output
-                self.lasers[laser][7] = output
-                #yield self.trap.set_dc(output,int(self.lasers[laser][4]))
-                yield self.piezo.set_voltage(int(self.lasers[laser][4]),U(output, 'V'))
-
+                # Make sure we didn't get some erroneous reading and throw the lock
+                if (freq < self.lasers[laser][0]) + .1 and freq > (self.lasers[laser][0] -.1):
+                    error = (self.lasers[laser][0] - freq)*1e6 # gives me diff in MHz
+                    # Multiply error by the gain and add the previous output
+                    output = error*self.lasers[laser][3]  + self.lasers[laser][7]
+                    # Check against the rails
+                    if output >= float(self.lasers[laser][5][1]):
+                        output = float(self.lasers[laser][5][1])
+                    elif output <= float(self.lasers[laser][5][0]):
+                        output = float(self.lasers[laser][5][0])
+                    else:
+                        pass
+                    # Store the output
+                    self.lasers[laser][7] = output
+                    #yield self.trap.set_dc(output,int(self.lasers[laser][4]))
+                    yield self.piezo.set_voltage(int(self.lasers[laser][4]),U(output, 'V'))
+            
             elif self.lasers[laser][6] == True and self.lasers[laser][4] == 4:
                 freq = yield self.bristol.get_frequency()
                 error = (self.lasers[laser][0] - freq)*1e6 # gives me diff in MHz
@@ -113,7 +115,7 @@ class Software_Laser_Lock_Server(LabradServer):
                 # Store the output
                 self.lasers[laser][7] = output
                 yield self.piezo.set_voltage(4,U(output, 'V'))
-
+            
     @setting(13, state='b', chan = 's')
     def lock_channel(self, c, state, chan):
         '''
@@ -139,6 +141,7 @@ class Software_Laser_Lock_Server(LabradServer):
 
     @setting(17, high = 'v', chan = 's')
     def set_high_rail(self, c, high, chan):
+        print high, chan
         self.lasers[chan][5][1] = high
         self.update_registry(chan)
 
@@ -185,6 +188,10 @@ class Software_Laser_Lock_Server(LabradServer):
     @inlineCallbacks
     def update_registry(self, chan):
         yield self.reg.set(chan, tuple(self.lasers[chan]))
+
+    def loop_server(self):
+        reactor.callLater(0.2, self.loop_server)
+        self.loop()
 
 if __name__ == "__main__":
     from labrad import util

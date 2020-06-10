@@ -95,12 +95,12 @@ class rabi_flopping(experiment):
         self.set_hp_frequency()
         time.sleep(.3) # time to switch
         if self.state_detection == 'shelving':
-            self.pulser.switch_auto('TTL7',False)
+            self.pulser.switch_auto('TTL8',False)
 
         for i in range(len(t)):
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
-                self.pulser.switch_manual('TTL7',True)
+                self.pulser.switch_manual('TTL8',True)
                 return
 
             # if running in normal mode set the time
@@ -117,7 +117,7 @@ class rabi_flopping(experiment):
             while True:
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
-                    self.pulser.switch_manual('TTL7',True)
+                    self.pulser.switch_manual('TTL8',True)
                     return
 
 
@@ -140,14 +140,14 @@ class rabi_flopping(experiment):
                 # otherwise call return to break out of function
                 else:
                     # Should turn on deshelving LED while trying
-                    self.pulser.switch_manual('TTL7',True)
+                    self.pulser.switch_manual('TTL8',True)
                     if self.remove_protection_beam():
                         # If successful switch off LED and return to top of loop
-                        self.pulser.switch_auto('TTL7',False)
+                        self.pulser.switch_auto('TTL8',False)
                         continue
                     else:
                         # Failed, abort experiment
-                        self.pulser.switch_manual('TTL7',True)
+                        self.pulser.switch_manual('TTL8',True)
                         return
 
                 # Here we look to see if the doppler cooling counts were low,
@@ -187,7 +187,7 @@ class rabi_flopping(experiment):
                                       True, context = self.c_hist)
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
-                    self.pulser.switch_manual('TTL7',True)
+                    self.pulser.switch_manual('TTL8',True)
                     #self.shutter.ttl_output(10, False)
                     return
                 # If we are in repeat save the data point and rerun the point in the while loop
@@ -202,7 +202,7 @@ class rabi_flopping(experiment):
                 self.dv.add(t[i] , fid, context = self.c_prob)
 
                 break
-        self.pulser.switch_manual('TTL7',True)
+        self.pulser.switch_manual('TTL8',True)
 
     def set_up_datavault(self):
         # set up folder

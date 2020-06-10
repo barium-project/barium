@@ -62,20 +62,31 @@ class PMTCameraSwitchClient(QtGui.QWidget):
         self.cam_switch.clicked.connect(self.switchCamera)
         self.subLayout.addWidget(self.cam_switch, 1,0)
 
-        # Add deshelving LED
-        self.led_switch = QtGui.QPushButton('Deshelve LED')
+        # Add 614 RF Switch
+        self.led_switch = QtGui.QPushButton('614 TTL')
         self.led_switch.setMinimumHeight(100)
         self.led_switch.setMinimumWidth(100)
         self.led_switch.setMaximumWidth(100)
         self.led_switch.setCheckable(True)
-        self.led_switch.toggled.connect(lambda  state = self.led_switch.isDown() , chan = 'TTL7',\
+        self.led_switch.toggled.connect(lambda  state = self.led_switch.isDown() , chan = 'TTL8',\
                                          :self.switchState(state, chan))
 
         self.subLayout.addWidget(self.led_switch, 1,1)
 
+        # Add 455 RF Switch
+        self.shelve_switch = QtGui.QPushButton('455 TTL')
+        self.shelve_switch.setMinimumHeight(100)
+        self.shelve_switch.setMinimumWidth(100)
+        self.shelve_switch.setMaximumWidth(100)
+        self.shelve_switch.setCheckable(True)
+        self.shelve_switch.toggled.connect(lambda  state = self.shelve_switch.isDown() , chan = 'TTL7',\
+                                         :self.switchState(state, chan))
+
+        self.subLayout.addWidget(self.shelve_switch, 2,0)
+
         # Add Protection Beam Control
         prot = protectionBeamClient(self.reactor)
-        self.subLayout.addWidget(prot ,2,0,1,2)
+        self.subLayout.addWidget(prot ,3,0,1,2)
 
         # Add shutter control
         shutters = shutterclient(self.reactor)
@@ -83,7 +94,7 @@ class PMTCameraSwitchClient(QtGui.QWidget):
 
         # Add DDS Controls
         dds = DDS_CONTROL(self.reactor)
-        self.subLayout.addWidget(dds,1,2,2,1)
+        self.subLayout.addWidget(dds,1,2,3,1)
 
         self.setLayout(self.layout)
 
@@ -95,7 +106,7 @@ class PMTCameraSwitchClient(QtGui.QWidget):
 
     @inlineCallbacks
     def switchState(self,state, chan):
-        yield self.server.switch_auto('TTL7', state)
+        yield self.server.switch_auto(chan, state)
 
 
 if __name__ == "__main__":

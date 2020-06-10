@@ -18,7 +18,7 @@ SIGNALID1 = 445567
 class laser_control_client(QtGui.QWidget):
     def __init__(self, reactor, parent=None):
         super(laser_control_client, self).__init__()
-        self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        #self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         self.reactor = reactor
         self.initializeGUI()
 
