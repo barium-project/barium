@@ -12,6 +12,11 @@ from labrad.units import WithUnit
 
 class shelving(pulse_sequence):
 
+    required_parameters = [
+                      ('Shelving', 'Scan'),
+                      ('Shelving', 'Scan_Laser'),
+                          ]
+
     required_subsequences = [doppler_cooling_133, state_prep_133, shelving_133_sub, shelving_1762, \
                              microwaves_133, shelving_state_detection, deshelving_133, deshelve_led]
 
@@ -21,10 +26,21 @@ class shelving(pulse_sequence):
 
         self.end = WithUnit(10.0,'us')
         self.addSequence(doppler_cooling_133)
-        self.addSequence(state_prep_133)
-        self.addSequence(shelving_1762)
+        #self.addSequence(state_prep_133)
+        #self.addSequence(microwaves_133)
+        #self.addSequence(shelving_1762)
         self.addSequence(shelving_133_sub)
-        self.addSequence(shelving_state_detection)
-        self.addSequence(deshelving_133)
-        #self.addSequence(deshelve_led)
+
+        if self.p.Scan == 'deshelve':
+            self.addSequence(deshelving_133)
+            self.addSequence(shelving_state_detection)
+            self.addSequence(deshelve_led)
+        elif self.p.Scan == 'frequency' and self.p.Scan_Laser == '614nm':
+            self.addSequence(deshelving_133)
+            self.addSequence(shelving_state_detection)
+            self.addSequence(deshelve_led)
+        else:
+            self.addSequence(shelving_state_detection)
+            self.addSequence(deshelving_133)
+
 

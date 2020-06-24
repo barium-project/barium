@@ -18,7 +18,7 @@ SIGNALID1 = 445567
 class laser_control_client(QtGui.QWidget):
     def __init__(self, reactor, parent=None):
         super(laser_control_client, self).__init__()
-        self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        #self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         self.reactor = reactor
         self.initializeGUI()
 
@@ -31,10 +31,10 @@ class laser_control_client(QtGui.QWidget):
         self.layout.addWidget(self.qBox, 0, 0), returnValue
 
         self.software_lock = software_laser_lock_client(self.reactor)
-        self.cc_control = CurrentControllerClient(self.reactor)
+        #self.cc_control = CurrentControllerClient(self.reactor)
 
         self.subLayout.addWidget(self.software_lock,0,0,4,1)
-        self.subLayout.addWidget(self.cc_control,2,1,1,1)
+        #self.subLayout.addWidget(self.cc_control,2,1,1,1)
         self.setLayout(self.layout)
 
 if __name__ == "__main__":

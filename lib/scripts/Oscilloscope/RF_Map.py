@@ -31,10 +31,10 @@ voltage_convergence = .003
 voltage_guess = 0
 
 
-start_phase = 34.8
-phase_step = .1
+start_phase = 41.2
+phase_step = .5
 max_phase_itt = 25
-phase_convergence = .003
+phase_convergence = .005
 
 total_v_points = ((stop_voltage-start_voltage)/voltage_step) + 1
 print total_v_points
@@ -72,12 +72,12 @@ for i in range(int(total_v_points)):
             phase3 = fit3[0][1]
             offset3 = fit3[0][2]
 
-            dat = sin_wave(time_array,amplitude2,phase2,offset2)
+            #dat = sin_wave(time_array,amplitude2,phase2,offset2)
 
             #Use to check fit
             #plot(time_array,ch2)
             #plot(time_array,dat)
-            show()
+            #show()
 
             print amplitude2, phase2, offset2
             print amplitude3, phase3, offset3
@@ -97,7 +97,7 @@ for i in range(int(total_v_points)):
                     start_phase = start_phase + phase_guess
             else:
                 # if they did converge check the phase difference
-                if abs(phase3 - phase2)/abs(phase2) > phase_convergence:
+                if abs(phase3 - phase2) > phase_convergence:
                     if phase3-phase2 > 0:
                         phase_guess = phase_guess - phase_step
                         trap.set_phase(start_phase + phase_guess,3)

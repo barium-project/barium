@@ -48,13 +48,14 @@ class bright_state_detection(experiment):
     def run(self, cxn, context):
         i = 1
         # program sequence to be repeated
-        self.pulser.reset_readout_counts()
+
         self.program_pulse_sequence()
         while True:
             if self.pause_or_stop():
                 #Abort experiment
                 return
 
+            self.pulser.reset_readout_counts()
             self.pulser.start_number(int(self.cycles))
             self.pulser.wait_sequence_done()
             self.pulser.stop_sequence()
@@ -63,12 +64,15 @@ class bright_state_detection(experiment):
             dc_counts = pmt_counts[::2]
             sd_counts = pmt_counts[1::2]
 
+
+            print len(pmt_counts)
+
             self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
             bright = np.where(sd_counts >= self.disc)
             fid = float(len(bright[0]))/len(sd_counts)
             self.dv.add(i, fid, context = self.c_prob)
             i = i + 1
-            data = np.column_stack((np.arange(self.cycles),sd_counts))
+            data = np.column_stack((np.arange(len(sd_counts)),sd_counts))
             self.dv.add(data, context = self.c_hist)
             self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
 

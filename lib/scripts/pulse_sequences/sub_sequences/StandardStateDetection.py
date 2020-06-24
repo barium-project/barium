@@ -36,7 +36,6 @@ class standard_state_detection(pulse_sequence):
         # For standard state detection we want a little bit more space between the DDS turning
         # on and off
         #self.addTTL(p.TTL_493_DDS, self.start, p.state_detection_duration + 3*sd_delay)
-        self.addTTL(p.TTL_493_SD, self.start + sd_delay, p.state_detection_duration)
         self.addTTL(p.TTL_493, self.start, p.state_detection_duration + 3*sd_delay)
         self.addTTL(p.TTL_650, self.start, p.state_detection_duration + 3*sd_delay)
 

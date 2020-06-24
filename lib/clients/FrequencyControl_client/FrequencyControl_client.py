@@ -42,6 +42,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.cool_136 = FrequencyControl_config.cool_136
         self.cool_137 = FrequencyControl_config.cool_137
         self.cool_138 = FrequencyControl_config.cool_138
+        self.heat_135 = FrequencyControl_config.heat_135
 
     def _check_window_size(self):
         """Checks screen size to make sure window fits in the screen. """
@@ -103,6 +104,7 @@ class FrequencyControlClient(Frequency_Ui):
 
         self.hp8673 = self.cxn1.hp8673server
         self.pulser = self.cxn1.pulser
+        self.software_lock = self.cxn1.software_laser_lock_server
 
         self.clients_hpa = [self.hp8672a_19]
         self.clients_hpb = [self.hp8657b_6, self.hp8657b_7, self.hp8657b_8]
@@ -133,7 +135,9 @@ class FrequencyControlClient(Frequency_Ui):
                     self.clients_hpb[i].select_device(devices[j][1])
                     break
 
-        self.hp8673.select_device()
+        l = yield self.hp8673.list_devices()
+        if len(l) != 0:
+            self.hp8673.select_device()
 
         # set up hp8672a oscillators
         self.GPIB19spinFreq.valueChanged.connect(lambda freq = \
@@ -199,6 +203,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.cool136.clicked.connect(lambda : self.cool_ba136())
         self.cool137.clicked.connect(lambda : self.cool_ba137())
         self.cool138.clicked.connect(lambda : self.cool_ba138())
+        self.heat135.clicked.connect(lambda : self.heat_ba135())
         self.allOff.clicked.connect(lambda: self.all_off())
 
 
@@ -282,7 +287,8 @@ class FrequencyControlClient(Frequency_Ui):
         freq_132_493 = float(self.lasers['493nm'][1]) + self.cool_132['493nm']
         freq_132_650 = float(self.lasers['650nm'][1]) + self.cool_132['650nm']
 
-        yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),freq_132_493)
+        #yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),freq_132_493)
+        yield self.software_lock.set_lock_frequency(freq_132_493,'493nm')
         yield self.wm.set_pid_course(int(self.lasers['650nm'][5]),freq_132_650)
 
         self.GPIB19spinFreq.setValue(self.cool_132['GPIB0::19'][0])
@@ -321,7 +327,8 @@ class FrequencyControlClient(Frequency_Ui):
         freq_133_493 = float(self.lasers['493nm'][1]) + self.cool_133['493nm']
         freq_133_650 = float(self.lasers['650nm'][1]) + self.cool_133['650nm']
 
-        yield self.wm.set_pid_course(int(self.lasers['493nm'][5]), freq_133_493)
+        #yield self.wm.set_pid_course(int(self.lasers['493nm'][5]), freq_133_493)
+        yield self.software_lock.set_lock_frequency(freq_133_493,'493nm')
         yield self.wm.set_pid_course(int(self.lasers['650nm'][5]), freq_133_650)
 
         self.GPIB19spinFreq.setValue(self.cool_133['GPIB0::19'][0])
@@ -339,12 +346,13 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB6spinAmp.setValue(self.cool_133['GPIB0::6'][1])
         self.GPIB6switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[0],True)
-        '''
+
         self.GPIB7spinFreq.setValue(self.cool_133['GPIB0::7'][0])
         self.GPIB7spinAmp.setValue(self.cool_133['GPIB0::7'][1])
         self.GPIB7switch.setChecked(True)
         self.setRFHPB(self.clients_hpb[1],True)
 
+        '''
         self.GPIB8spinFreq.setValue(self.cool_133['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_133['GPIB0::8'][1])
         self.GPIB8switch.setChecked(True)
@@ -363,7 +371,8 @@ class FrequencyControlClient(Frequency_Ui):
         freq_134_493 = float(self.lasers['493nm'][1]) + self.cool_134['493nm']
         freq_134_650 = float(self.lasers['650nm'][1]) + self.cool_134['650nm']
 
-        yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),freq_134_493)
+        #yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),freq_134_493)
+        yield self.software_lock.set_lock_frequency(freq_134_493,'493nm')
         yield self.wm.set_pid_course(int(self.lasers['650nm'][5]),freq_134_650)
 
         self.GPIB19spinFreq.setValue(self.cool_134['GPIB0::19'][0])
@@ -403,7 +412,8 @@ class FrequencyControlClient(Frequency_Ui):
         freq_135_493 = float(self.lasers['493nm'][1]) + self.cool_135['493nm']
         freq_135_650 = float(self.lasers['650nm'][1]) + self.cool_135['650nm']
 
-        yield self.wm.set_pid_course(int(self.lasers['493nm'][5]), freq_135_493)
+        #yield self.wm.set_pid_course(int(self.lasers['493nm'][5]), freq_135_493)
+        yield self.software_lock.set_lock_frequency(freq_135_493,'493nm')
         yield self.wm.set_pid_course(int(self.lasers['650nm'][5]), freq_135_650)
 
         self.GPIB19spinFreq.setValue(self.cool_135['GPIB0::19'][0])
@@ -434,13 +444,51 @@ class FrequencyControlClient(Frequency_Ui):
         '''
 
     @inlineCallbacks
+    def heat_ba135(self):
+        # changing this function to be our loading 
+        #add the frequency shifts relative to 138
+        freq_135_493 = float(self.lasers['493nm'][1]) - 200*1.e-6 #+ self.heat_135['493nm']
+        freq_135_650 = float(self.lasers['650nm'][1]) - 200*1.e-6 #+ self.heat_135['650nm']
+
+        #yield self.wm.set_pid_course(int(self.lasers['493nm'][5]), freq_135_493)
+        yield self.software_lock.set_lock_frequency(freq_135_493,'493nm')
+        yield self.wm.set_pid_course(int(self.lasers['650nm'][5]), freq_135_650)
+        '''
+        self.GPIB19spinFreq.setValue(self.cool_135['GPIB0::19'][0])
+        self.GPIB19spinAmpDec.setValue(self.cool_135['GPIB0::19'][1])
+        self.GPIB19spinAmpVer.setValue(self.cool_135['GPIB0::19'][2])
+        self.GPIB19switch.setChecked(True)
+        self.setRFHPA(self.clients_hpa[0],True)
+
+        self.GPIB1spinFreq.setValue(self.cool_135['GPIB0::1'][0])
+        self.GPIB1spinAmp.setValue(self.cool_135['GPIB0::1'][1])
+        self.GPIB1switch.setChecked(True)
+        self.setRFHP8673(True)
+
+        self.GPIB6spinFreq.setValue(self.cool_135['GPIB0::6'][0])
+        self.GPIB6spinAmp.setValue(self.cool_135['GPIB0::6'][1])
+        self.GPIB6switch.setChecked(True)
+        self.setRFHPB(self.clients_hpb[0],True)
+
+        self.GPIB7spinFreq.setValue(self.cool_135['GPIB0::7'][0])
+        self.GPIB7spinAmp.setValue(self.cool_135['GPIB0::7'][1])
+        self.GPIB7switch.setChecked(True)
+        self.setRFHPB(self.clients_hpb[1],True)
+
+        self.GPIB8spinFreq.setValue(self.cool_135['GPIB0::8'][0])
+        self.GPIB8spinAmp.setValue(self.cool_135['GPIB0::8'][1])
+        self.GPIB8switch.setChecked(True)
+        self.setRFHPB(self.clients_hpb[2],True)
+        '''
+    @inlineCallbacks
     def cool_ba136(self):
 
         #add the frequency shifts relative to 138
         freq_136_493 = float(self.lasers['493nm'][1]) + self.cool_136['493nm']
         freq_136_650 = float(self.lasers['650nm'][1]) + self.cool_136['650nm']
 
-        yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),freq_136_493)
+        #yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),freq_136_493)
+        yield self.software_lock.set_lock_frequency(freq_136_493,'493nm')
         yield self.wm.set_pid_course(int(self.lasers['650nm'][5]),freq_136_650)
 
         self.GPIB19spinFreq.setValue(self.cool_136['GPIB0::19'][0])
@@ -480,7 +528,8 @@ class FrequencyControlClient(Frequency_Ui):
         freq_137_493 = float(self.lasers['493nm'][1]) + self.cool_137['493nm']
         freq_137_650 = float(self.lasers['650nm'][1]) + self.cool_137['650nm']
 
-        yield self.wm.set_pid_course(int(self.lasers['493nm'][5]), freq_137_493)
+        #yield self.wm.set_pid_course(int(self.lasers['493nm'][5]), freq_137_493)
+        yield self.software_lock.set_lock_frequency(freq_137_493,'493nm')
         yield self.wm.set_pid_course(int(self.lasers['650nm'][5]), freq_137_650)
 
         self.GPIB19spinFreq.setValue(self.cool_137['GPIB0::19'][0])
@@ -512,7 +561,8 @@ class FrequencyControlClient(Frequency_Ui):
     @inlineCallbacks
     def cool_ba138(self):
 
-        yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),float(self.lasers['493nm'][1]))
+        #yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),float(self.lasers['493nm'][1]))
+        yield self.software_lock.set_lock_frequency(float(self.lasers['493nm'][1]),'493nm')
         yield self.wm.set_pid_course(int(self.lasers['650nm'][5]),float(self.lasers['650nm'][1]))
 
         self.GPIB19spinFreq.setValue(self.cool_138['GPIB0::19'][0])
@@ -530,12 +580,13 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB6spinAmp.setValue(self.cool_138['GPIB0::6'][1])
         self.GPIB6switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[0],False)
-        '''
+
         self.GPIB7spinFreq.setValue(self.cool_138['GPIB0::7'][0])
         self.GPIB7spinAmp.setValue(self.cool_138['GPIB0::7'][1])
         self.GPIB7switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[1],False)
 
+        '''
         self.GPIB8spinFreq.setValue(self.cool_138['GPIB0::8'][0])
         self.GPIB8spinAmp.setValue(self.cool_138['GPIB0::8'][1])
         self.GPIB8switch.setChecked(False)

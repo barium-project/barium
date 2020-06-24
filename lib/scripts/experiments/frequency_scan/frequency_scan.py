@@ -1,5 +1,5 @@
 import labrad
-from labrad.units import WithUnit
+from labrad.units import WithUnit as U
 from common.lib.servers.abstractservers.script_scanner.scan_methods import experiment
 import datetime as datetime
 from twisted.internet.defer import inlineCallbacks, returnValue
@@ -49,6 +49,8 @@ class frequency_scan(experiment):
         self.single_lock = self.cxn.software_laser_lock_server
         self.bristol = self.cxn.bristolserver
         self.shutter = cxn.arduinottl
+        self.pulser = cxn.pulser
+        self.sls    = cxn.slsserver
 
         # Need to map the gpib address to the labrad context number
         self.device_mapA = {}
@@ -155,19 +157,19 @@ class frequency_scan(experiment):
                 self.single_lock.set_point(self.frequency_455['THz'])
 
         if self.frequency == '1762':
-            self.single_lock.set_lock_frequency(self.frequency_1762['THz'] + freq[0], '1762nm')
-            self.shutter.ttl_output(10, True)
+            # self.sls.set_frequency(U(freq1[0],'MHz'))
+            # use pulser to shutter aom
+            #self.pulser.amplitude()
             for i in range(len(freq)):
                 if self.pause_or_stop():
-                    self.shutter.ttl_output(10, False)
                     return
                 all_freq = np.array([])
                 all_counts = np.array([])
-                self.single_lock.set_lock_frequency(self.frequency_1762['THz'] + freq[i], '1762nm')
-                time.sleep(3)
+                self.sls.set_frequency(U(freq1[0],'MHz'))
+
                 for j in range(int(self.points)):
                     if self.pause_or_stop():
-                        self.shutter.ttl_output(10, False)
+                    #    self.shutter.ttl_output(10, False)
                         return
                     #time.sleep(self.time_step['s'])
                     frequency = self.bristol.get_frequency()
@@ -176,7 +178,8 @@ class frequency_scan(experiment):
                     all_counts = np.append(all_counts, counts)
 
                 self.dv.add(np.mean(all_freq)*1e6,np.mean(all_counts))
-            self.shutter.ttl_output(10, False)
+                #np.mean  -> offset frequency
+            #self.shutter.ttl_output(10, False)
         if self.frequency == 'GPIB0::19':
             self.HPA.select_device(self.device_mapA['GPIB0::19'])
             for i in range(len(freq)):
@@ -277,6 +280,8 @@ class frequency_scan(experiment):
         self.dv.cd(['',year,month,trunk],True)
 
         dataset = self.dv.new('Line_Scan',[('Frequency', 'MHz')], [('KiloCounts/sec', 'Counts', 'num')])
+        #dataset = self.dv.new('Line_Scan',[('Frequency', 'MHz')],('Frequency', 'MHz')], [('KiloCounts/sec', 'Counts', 'num')])
+        #cf eg . Rabi Flopping experiment
         self.grapher.plot(dataset, 'spectrum', False)
 
         # add dv params

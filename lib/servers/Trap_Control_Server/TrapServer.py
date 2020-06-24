@@ -264,6 +264,11 @@ class TrapServer( SerialDeviceServer ):
         self.use_RFMap = state
 
 
+    @setting(24,'reset_DC')
+    def reset_DC(self, c):
+        '''Resets the DC set all values to zero'''
+        yield self.ser.write('dcr \n')
+
 # Define all get functions
 
     @setting(50,'get_frequency', channel = 'w')

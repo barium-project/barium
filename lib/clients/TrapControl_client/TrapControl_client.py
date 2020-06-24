@@ -16,7 +16,7 @@ import time
 import socket
 import os
 import numpy as np
-from keysight import command_expert as kt
+#from keysight import command_expert as kt
 
 SIGNALID1 = 445566
 SIGNALID2 = 143533
@@ -172,9 +172,9 @@ class TrapControlClient(QtGui.QWidget):
         init_hv3 = yield self.server.get_hv(self.rods['3'])
         self.trap.spinHV3.setValue(init_hv3)
         self.trap.spinHV3.valueChanged.connect(lambda hv = self.trap.spinHV3.value(), channel = self.rods['3'] : self.hvChanged(hv, channel))
-        init_hv4 = yield self.server.get_hv(self.rods['4'])
+        init_hv4 = yield self.server.get_hv(4)
         self.trap.spinHV4.setValue(init_hv4)
-        self.trap.spinHV4.valueChanged.connect(lambda hv = self.trap.spinHV4.value(), channel = self.rods['4'] : self.hvChanged(hv, channel))
+        self.trap.spinHV4.valueChanged.connect(lambda hv = self.trap.spinHV4.value(), channel = 4 : self.hvChanged(hv, channel))
 
         init_ec1 = yield self.server.get_dc(self.endCaps['1'])
         self.trap.spinEndCap1.setValue(init_ec1)

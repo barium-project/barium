@@ -18,8 +18,6 @@ class shelving(experiment):
     name = 'shelving'
 
     exp_parameters = [
-                      ('Shelving', 'Scan'),
-                      ('Shelving', 'Scan_Laser'),
                       ('Shelving', 'cycles'),
                       ('Shelving', 'Frequency_Start'),
                       ('Shelving', 'Frequency_Stop'),
@@ -44,7 +42,7 @@ class shelving(experiment):
         self.cxn = labrad.connect(name = 'Shelving')
         self.cxnwlm = labrad.connect('wavemeter', name = 'Frequency Scan', password = 'lab')
         self.wm = self.cxnwlm.multiplexerserver
-        self.bristol = self.cxn.bristolserver
+        #self.bristol = self.cxn.bristolserver
         self.pulser = self.cxn.pulser
         self.dv = self.cxn.data_vault
         self.grapher = self.cxn.grapher
@@ -99,7 +97,7 @@ class shelving(experiment):
             for i in range(len(t)):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
-                    self.pulser.switch_auto('TTL7',True)
+                    self.pulser.switch_auto('TTL8',True)
                     return
 
                 if self.mode == 'Normal':
@@ -111,13 +109,13 @@ class shelving(experiment):
                         self.p.Shelving1762.shelving_duration = WithUnit(t[i], 'us')
 
                 self.program_pulse_sequence()
-                self.pulser.switch_auto('TTL7',False)
+                self.pulser.switch_auto('TTL8',False)
                 # for the protection beam we start a while loop and break it if we got the data,
                 # continue if we didn't
                 while True:
                     if self.pause_or_stop():
                         # Turn on LED if aborting experiment
-                        self.pulser.switch_auto('TTL7',True)
+                        self.pulser.switch_auto('TTL8',True)
                         return
 
                     self.pulser.reset_readout_counts()
@@ -132,14 +130,14 @@ class shelving(experiment):
                     # otherwise call return to break out of function
                     else:
                         # Should turn on deshelving LED while trying
-                        self.pulser.switch_auto('TTL7',True)
+                        self.pulser.switch_auto('TTL8',True)
                         if self.remove_protection_beam():
                             # If successful switch off LED and return to top of loop
-                            self.pulser.switch_auto('TTL7',False)
+                            self.pulser.switch_auto('TTL8',False)
                             continue
                         else:
                             # Failed, abort experiment
-                            self.pulser.switch_auto('TTL7',True)
+                            self.pulser.switch_auto('TTL8',True)
                             return
 
                     # Here we look to see if the doppler cooling counts were low,
@@ -179,25 +177,31 @@ class shelving(experiment):
                     # only plots the most recent point.
                     self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
                     break
-            self.pulser.switch_auto('TTL7',True)
+            self.pulser.switch_auto('TTL8',True)
 
         if self.scan == 'frequency':
 
             freq = np.linspace(self.start_freq['THz'],self.stop_freq['THz'],\
-                    int((abs(self.stop_freq['THz']-self.start_freq['THz'])/self.step_freq['THz']) +1))
+                    np.round(abs(self.stop_freq['THz']-self.start_freq['THz'])/self.step_freq['THz'],0) +1)
+
 
             self.program_pulse_sequence()
             for i in range(len(freq)):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
-                    self.pulser.switch_auto('TTL7',True)
+                    self.pulser.switch_auto('TTL8',True)
                     return
                 # for the protection beam we start a while loop and break it if we got the data,
                 # continue if we didn't
                 self.single_lock.set_lock_frequency(freq[i], self.scan_laser)
                 time.sleep(5)
-                self.pulser.switch_auto('TTL7',False)
+                self.pulser.switch_auto('TTL8',False)
                 while True:
+
+                    if self.pause_or_stop():
+                        # Turn on LED if aborting experiment
+                        self.pulser.switch_auto('TTL8',True)
+                        return
 
                     if self.scan_laser == '1762nm':
                         frequency = self.bristol.get_frequency()
@@ -217,14 +221,14 @@ class shelving(experiment):
                     # otherwise call return to break out of function
                     else:
                         # Should turn on deshelving LED while trying
-                        self.pulser.switch_manual('TTL7',True)
+                        self.pulser.switch_manual('TTL8',True)
                         if self.remove_protection_beam():
                             # If successful switch off LED and return to top of loop
-                            self.pulser.switch_auto('TTL7',False)
+                            self.pulser.switch_auto('TTL8',False)
                             continue
                         else:
                             # Failed, abort experiment
-                            self.pulser.switch_auto('TTL7',True)
+                            self.pulser.switch_auto('TTL8',True)
                             return
 
 
@@ -242,7 +246,7 @@ class shelving(experiment):
                     fid = float(len(bright[0]))/len(counts)
 
 
-                    self.dv.add(frequency , fid, context = self.c_prob)
+                    self.dv.add(freq[i] , fid, context = self.c_prob)
                     # Save histogram
                     data = np.column_stack((np.arange(len(counts)),counts))
                     self.dv.add(data, context = self.c_hist)
@@ -251,9 +255,9 @@ class shelving(experiment):
                     self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
                     break
                 # since switching frequencies is slow, close shutter and turn LED on while waiting
-                self.pulser.switch_manual('TTL7',True)
+                self.pulser.switch_manual('TTL8',True)
 
-            self.pulser.switch_manual('TTL7',True)
+            self.pulser.switch_manual('TTL8',True)
 
         if self.scan == 'deshelve':
 
@@ -263,18 +267,18 @@ class shelving(experiment):
             for i in range(len(t)):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
-                    self.pulser.switch_auto('TTL7',True)
+                    self.pulser.switch_auto('TTL8',True)
                     return
                 if self.mode == 'Normal':
                     self.p.Deshelving133.deshelving_duration = WithUnit(t[i], 'us')
                 self.program_pulse_sequence()
-                self.pulser.switch_auto('TTL7',False)
+                self.pulser.switch_auto('TTL8',False)
                 # for the protection beam we start a while loop and break it if we got the data,
                 # continue if we didn't
                 while True:
                     if self.pause_or_stop():
                         # Turn on LED if aborting experiment
-                        self.pulser.switch_auto('TTL7',True)
+                        self.pulser.switch_auto('TTL8',True)
                         return
 
                     self.pulser.reset_readout_counts()
@@ -290,14 +294,14 @@ class shelving(experiment):
                     # otherwise call return to break out of function
                     else:
                         # Should turn on deshelving LED while trying
-                        self.pulser.switch_auto('TTL7',True)
+                        self.pulser.switch_auto('TTL8',True)
                         if self.remove_protection_beam():
                             # If successful switch off LED and return to top of loop
-                            self.pulser.switch_auto('TTL7',False)
+                            self.pulser.switch_auto('TTL8',False)
                             continue
                         else:
                             # Failed, abort experiment
-                            self.pulser.switch_auto('TTL7',True)
+                            self.pulser.switch_auto('TTL8',True)
                             return
 
                     # Here we look to see if the doppler cooling counts were low,
@@ -336,7 +340,7 @@ class shelving(experiment):
                     # only plots the most recent point.
                     self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
                     break
-            self.pulser.switch_auto('TTL7',True)
+            self.pulser.switch_auto('TTL8',True)
 
     def remove_protection_beam(self):
         for i in range(5):

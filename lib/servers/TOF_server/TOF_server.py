@@ -20,7 +20,7 @@ from labrad.server import LabradServer, setting, Signal
 from twisted.internet.defer import returnValue
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
-from keysight import command_expert as kt
+#from keysight import command_expert as kt
 import datetime as datetime
 import numpy as np
 import time

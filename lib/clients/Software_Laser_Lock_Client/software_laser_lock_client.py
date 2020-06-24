@@ -17,7 +17,7 @@ SIGNALID2 = 445568
 class software_laser_lock_client(QtGui.QWidget):
     def __init__(self, reactor, parent=None):
         super(software_laser_lock_client, self).__init__()
-        self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        #self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         self.reactor = reactor
         self.lasers = {}
         self.channel_GUIs = {}
@@ -34,7 +34,7 @@ class software_laser_lock_client(QtGui.QWidget):
         self.wm = yield self.wm_cxn.multiplexerserver
         self.cxn = yield connectAsync('bender', name = socket.gethostname() + ' Single Channel Lock', password=self.password)
         self.lock_server = yield self.cxn.software_laser_lock_server
-        self.bristol = yield self.cxn.bristolserver
+        #self.bristol = yield self.cxn.bristolserver
         self.piezo = yield self.cxn.piezo_controller
         self.registry = self.cxn.registry
 
@@ -47,8 +47,8 @@ class software_laser_lock_client(QtGui.QWidget):
         yield self.wm.signal__frequency_changed(SIGNALID1)
         yield self.wm.addListener(listener = self.updateFrequency, source = None, ID = SIGNALID1)
 
-        yield self.bristol.signal__frequency_changed(SIGNALID2)
-        yield self.bristol.addListener(listener = self.updateBristolFrequency, source = None, ID = SIGNALID2)
+        #yield self.bristol.signal__frequency_changed(SIGNALID2)
+        #yield self.bristol.addListener(listener = self.updateBristolFrequency, source = None, ID = SIGNALID2)
 
         self.initializeGUI()
 
@@ -140,7 +140,7 @@ class software_laser_lock_client(QtGui.QWidget):
     @inlineCallbacks
     def updateFrequency(self, c, signal):
         for chan in self.lasers:
-            if signal[0] == self.lasers[chan][1] and self.lasers[chan][4] != 4:
+            if signal[0] == self.lasers[chan][1]:# and self.lasers[chan][4] != 4:
                 laser = self.channel_GUIs[chan]
                 laser.wavelength.setText(str(signal[1])[0:10])
                 voltage = yield self.lock_server.get_dac_voltage(chan)

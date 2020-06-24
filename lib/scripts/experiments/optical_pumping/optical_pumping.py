@@ -65,12 +65,12 @@ class optical_pumping(experiment):
                     int((abs(self.stop_time['us']-self.start_time['us'])/self.step_time['us']) +1))
 
         if self.state_detection == 'shelving':
-            self.pulser.switch_auto('TTL7',False)
+            self.pulser.switch_auto('TTL8',False)
 
         for i in range(len(t)):
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
-                self.pulser.switch_manual('TTL7',True)
+                self.pulser.switch_manual('TTL8',True)
                 return
 
             # set the optical pumping duration. If optimizing leave it as set
@@ -82,7 +82,7 @@ class optical_pumping(experiment):
             while True:
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
-                    self.pulser.switch_manual('TTL7',True)
+                    self.pulser.switch_manual('TTL8',True)
                     return
 
                 self.pulser.reset_readout_counts()
@@ -96,10 +96,10 @@ class optical_pumping(experiment):
                 # otherwise call return to break out of function
                 else:
                     # Should turn on deshelving LED while trying
-                    self.pulser.switch_manual('TTL7',True)
+                    self.pulser.switch_manual('TTL8',True)
                     if self.remove_protection_beam():
                         # If successful switch off LED and return to top of loop
-                        self.pulser.switch_auto('TTL7',False)
+                        self.pulser.switch_auto('TTL8',False)
                         continue
                     else:
                         # Failed, abort experiment
@@ -109,6 +109,7 @@ class optical_pumping(experiment):
                 pmt_counts = self.pulser.get_readout_counts()
                 dc_counts = pmt_counts[::2]
                 counts = pmt_counts[1::2]
+                print len(dc_counts), len(counts)
 
                 self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                 # 1 state is bright for standard state detection
@@ -139,7 +140,7 @@ class optical_pumping(experiment):
                                       True, context = self.c_hist)
 
                 break
-        self.pulser.switch_manual('TTL7',True)
+        self.pulser.switch_manual('TTL8',True)
 
     def set_up_datavault(self):
         # set up folder

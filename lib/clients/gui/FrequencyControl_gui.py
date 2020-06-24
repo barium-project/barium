@@ -1352,7 +1352,7 @@ class Frequency_Ui(QtGui.QWidget):
         self.GPIB8switch.setText(_translate("Form", "On/Off", None))
         self.allOff.setText(_translate("Form", "Off", None))
         self.cool133.setText(_translate("Form", "Cool Ba-133", None))
-        self.heat135.setText(_translate("Form", "Heat Ba-135", None))
+        self.heat135.setText(_translate("Form", "Detune - Loading", None))
         self.cool135.setText(_translate("Form", "Cool Ba-135", None))
         self.cool137.setText(_translate("Form", "Cool Ba-137", None))
         self.cool138.setText(_translate("Form", "Cool Ba-138", None))
@@ -1360,6 +1360,6 @@ class Frequency_Ui(QtGui.QWidget):
         self.cool134.setText(_translate("Form", "Cool Ba-134", None))
         self.cool132.setText(_translate("Form", "Cool Ba-132", None))
         self.cool130.setText(_translate("Form", "Cool Ba-130", None))
-        self.heat137.setText(_translate("Form", "Heat Ba-137", None))
-        self.heat138.setText(_translate("Form", "Heat Ba-138", None))
+        self.heat137.setText(_translate("Form", "", None))
+        self.heat138.setText(_translate("Form", "", None))
 
