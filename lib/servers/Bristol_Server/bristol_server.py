@@ -39,8 +39,8 @@ class BristolServer(LabradServer):
     def initServer(self):
         self.password = os.environ['LABRADPASSWORD']
         self.name = socket.gethostname() + 'Bristol Server'
-#        self.ip = '10.97.111.50'
-        self.ip = '10.97.111.231'
+        self.ip = '10.97.111.50'
+        #self.ip = '10.97.111.231'
         self.port = 23
         self.timeout = 3 #s
         self.freq = 0

@@ -135,7 +135,9 @@ class FrequencyControlClient(Frequency_Ui):
                     self.clients_hpb[i].select_device(devices[j][1])
                     break
 
-        self.hp8673.select_device()
+        l = yield self.hp8673.list_devices()
+        if len(l) != 0:
+            self.hp8673.select_device()
 
         # set up hp8672a oscillators
         self.GPIB19spinFreq.valueChanged.connect(lambda freq = \
@@ -443,10 +445,10 @@ class FrequencyControlClient(Frequency_Ui):
 
     @inlineCallbacks
     def heat_ba135(self):
-
+        # changing this function to be our loading 
         #add the frequency shifts relative to 138
-        freq_135_493 = float(self.lasers['493nm'][1]) + self.heat_135['493nm']
-        freq_135_650 = float(self.lasers['650nm'][1]) + self.heat_135['650nm']
+        freq_135_493 = float(self.lasers['493nm'][1]) - 200*1.e-6 #+ self.heat_135['493nm']
+        freq_135_650 = float(self.lasers['650nm'][1]) - 200*1.e-6 #+ self.heat_135['650nm']
 
         #yield self.wm.set_pid_course(int(self.lasers['493nm'][5]), freq_135_493)
         yield self.software_lock.set_lock_frequency(freq_135_493,'493nm')

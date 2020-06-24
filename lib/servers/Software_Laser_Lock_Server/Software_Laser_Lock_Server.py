@@ -35,7 +35,7 @@ class Software_Laser_Lock_Server(LabradServer):
         self.password = os.environ['LABRADPASSWORD']
         self.name = socket.gethostname() + ' Software Laser Lock Server'
         self.lasers = {}
-        self.timer = 0.1
+        self.timer = 0.3 # faster than this and the computer has problems
         #self.lc = LoopingCall(self.loop)
         self.connect()
 
@@ -190,7 +190,7 @@ class Software_Laser_Lock_Server(LabradServer):
         yield self.reg.set(chan, tuple(self.lasers[chan]))
 
     def loop_server(self):
-        reactor.callLater(0.2, self.loop_server)
+        reactor.callLater(self.timer, self.loop_server)
         self.loop()
 
 if __name__ == "__main__":
