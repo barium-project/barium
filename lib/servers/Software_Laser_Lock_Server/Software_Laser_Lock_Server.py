@@ -35,7 +35,7 @@ class Software_Laser_Lock_Server(LabradServer):
         self.password = os.environ['LABRADPASSWORD']
         self.name = socket.gethostname() + ' Software Laser Lock Server'
         self.lasers = {}
-        self.timer = 0.3 # faster than this and the computer has problems
+        self.timer = 0.4 # faster than this and the computer has problems
         #self.lc = LoopingCall(self.loop)
         self.connect()
 
