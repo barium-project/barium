@@ -47,7 +47,6 @@ class bristol_client(QtGui.QWidget):
         connects incoming signals to relavent functions
 
         """
-        self.chaninfo = bristol_config.info
         self.wavemeterIP = bristol_config.ip
         from labrad.wrappers import connectAsync
         self.cxn = yield connectAsync(self.wavemeterIP,
@@ -102,11 +101,8 @@ class bristol_client(QtGui.QWidget):
 
 
     def updateAmplitude(self, c, signal):
-        wmChannel = signal[0]
         value = signal[1]
-        if wmChannel in self.d:
-            #self.d[wmChannel].interfAmp.setText('Interferometer Amp\n' + str(value))
-            self.d[wmChannel].powermeter.setValue(value)#('Interferometer Amp\n' + str(value))
+        self.d[wmChannel].powermeter.setValue(value)#('Interferometer Amp\n' + str(value))
 
 
 
@@ -117,6 +113,6 @@ if __name__ == "__main__":
     import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
-    wavemeterWidget = Bristol_client(reactor)
+    wavemeterWidget = bristol_client(reactor)
     wavemeterWidget.show()
     reactor.run()
