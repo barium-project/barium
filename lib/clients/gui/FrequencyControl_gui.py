@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\barium133\Code\barium\lib\clients\gui\frequency_gui.ui'
+# Form implementation generated from reading ui file 'C:\Users\barium133\code\barium\lib\clients\gui\frequency_gui.ui'
 #
 # Created by: PyQt4 UI code generator 4.11.4
 #
@@ -97,8 +97,7 @@ class Frequency_Ui(QtGui.QWidget):
         self.GPIB19spinFreq.setFont(font)
         self.GPIB19spinFreq.setFrame(True)
         self.GPIB19spinFreq.setKeyboardTracking(False)
-        self.GPIB19spinFreq.setDecimals(7)
-        self.GPIB19spinFreq.setSingleStep(0.0000001)
+        self.GPIB19spinFreq.setDecimals(0)
         self.GPIB19spinFreq.setMinimum(2000.0)
         self.GPIB19spinFreq.setMaximum(18000.0)
         self.GPIB19spinFreq.setProperty("value", 2000.0)
@@ -124,7 +123,7 @@ class Frequency_Ui(QtGui.QWidget):
         self.GPIB8spinAmp.setKeyboardTracking(False)
         self.GPIB8spinAmp.setDecimals(1)
         self.GPIB8spinAmp.setMinimum(-143.0)
-        self.GPIB8spinAmp.setMaximum(5.0)
+        self.GPIB8spinAmp.setMaximum(13.0)
         self.GPIB8spinAmp.setProperty("value", -143.0)
         self.GPIB8spinAmp.setObjectName(_fromUtf8("GPIB8spinAmp"))
         self.gridLayout_4.addWidget(self.GPIB8spinAmp, 5, 2, 1, 1)
@@ -136,9 +135,9 @@ class Frequency_Ui(QtGui.QWidget):
         self.GPIB19spinAmpVer.setKeyboardTracking(False)
         self.GPIB19spinAmpVer.setDecimals(0)
         self.GPIB19spinAmpVer.setMinimum(-10.0)
-        self.GPIB19spinAmpVer.setMaximum(2.0)
+        self.GPIB19spinAmpVer.setMaximum(3.0)
         self.GPIB19spinAmpVer.setSingleStep(1.0)
-        self.GPIB19spinAmpVer.setProperty("value", 0.0)
+        self.GPIB19spinAmpVer.setProperty("value", -10.0)
         self.GPIB19spinAmpVer.setObjectName(_fromUtf8("GPIB19spinAmpVer"))
         self.gridLayout_4.addWidget(self.GPIB19spinAmpVer, 1, 4, 1, 1)
         self.spinAmp4 = QtGui.QDoubleSpinBox(self.gridLayoutWidget)
@@ -157,7 +156,7 @@ class Frequency_Ui(QtGui.QWidget):
         self.GPIB7spinAmp.setKeyboardTracking(False)
         self.GPIB7spinAmp.setDecimals(1)
         self.GPIB7spinAmp.setMinimum(-143.0)
-        self.GPIB7spinAmp.setMaximum(10)
+        self.GPIB7spinAmp.setMaximum(-18.0)
         self.GPIB7spinAmp.setProperty("value", -143.0)
         self.GPIB7spinAmp.setObjectName(_fromUtf8("GPIB7spinAmp"))
         self.gridLayout_4.addWidget(self.GPIB7spinAmp, 4, 2, 1, 1)
@@ -177,7 +176,7 @@ class Frequency_Ui(QtGui.QWidget):
         self.GPIB6spinAmp.setKeyboardTracking(False)
         self.GPIB6spinAmp.setDecimals(1)
         self.GPIB6spinAmp.setMinimum(-143.0)
-        self.GPIB6spinAmp.setMaximum(17.0)
+        self.GPIB6spinAmp.setMaximum(13.0)
         self.GPIB6spinAmp.setProperty("value", -143.0)
         self.GPIB6spinAmp.setObjectName(_fromUtf8("GPIB6spinAmp"))
         self.gridLayout_4.addWidget(self.GPIB6spinAmp, 3, 2, 1, 1)
@@ -282,7 +281,7 @@ class Frequency_Ui(QtGui.QWidget):
         self.GPIB1spinAmp.setKeyboardTracking(False)
         self.GPIB1spinAmp.setDecimals(1)
         self.GPIB1spinAmp.setMinimum(-143.0)
-        self.GPIB1spinAmp.setMaximum(10.0)
+        self.GPIB1spinAmp.setMaximum(13.0)
         self.GPIB1spinAmp.setProperty("value", -143.0)
         self.GPIB1spinAmp.setObjectName(_fromUtf8("GPIB1spinAmp"))
         self.gridLayout_4.addWidget(self.GPIB1spinAmp, 2, 2, 1, 1)
@@ -1336,7 +1335,7 @@ class Frequency_Ui(QtGui.QWidget):
         self.label_7.setText(_translate("Form", "<html><head/><body><p><span style=\" font-size:18pt;\">650-4</span></p></body></html>", None))
         self.label.setText(_translate("Form", "<html><head/><body><p><span style=\" font-size:16pt;\">Oscillator</span></p></body></html>", None))
         self.label_2.setText(_translate("Form", "<html><head/><body><p><span style=\" font-size:18pt;\">493-GPIB 19</span></p></body></html>", None))
-        self.label_5.setText(_translate("Form", "<html><head/><body><p><span style=\" font-size:18pt;\">650-GPIB 7</span></p></body></html>", None))
+        self.label_5.setText(_translate("Form", "<html><head/><body><p><span style=\" font-size:18pt;\">614-GPIB 7</span></p></body></html>", None))
         self.label_3.setText(_translate("Form", "<html><head/><body><p><span style=\" font-size:18pt;\">493-GPIB 1</span></p></body></html>", None))
         self.label_6.setText(_translate("Form", "<html><head/><body><p><span style=\" font-size:18pt;\">650-GPIB 8</span></p></body></html>", None))
         self.label_4.setText(_translate("Form", "<html><head/><body><p><span style=\" font-size:18pt;\">650-GPIB 6</span></p></body></html>", None))
@@ -1352,7 +1351,7 @@ class Frequency_Ui(QtGui.QWidget):
         self.GPIB8switch.setText(_translate("Form", "On/Off", None))
         self.allOff.setText(_translate("Form", "Off", None))
         self.cool133.setText(_translate("Form", "Cool Ba-133", None))
-        self.heat135.setText(_translate("Form", "Detune - Loading", None))
+        self.heat135.setText(_translate("Form", "Heat Ba-135", None))
         self.cool135.setText(_translate("Form", "Cool Ba-135", None))
         self.cool137.setText(_translate("Form", "Cool Ba-137", None))
         self.cool138.setText(_translate("Form", "Cool Ba-138", None))
@@ -1360,6 +1359,6 @@ class Frequency_Ui(QtGui.QWidget):
         self.cool134.setText(_translate("Form", "Cool Ba-134", None))
         self.cool132.setText(_translate("Form", "Cool Ba-132", None))
         self.cool130.setText(_translate("Form", "Cool Ba-130", None))
-        self.heat137.setText(_translate("Form", "", None))
-        self.heat138.setText(_translate("Form", "", None))
+        self.heat137.setText(_translate("Form", "Heat Ba-137", None))
+        self.heat138.setText(_translate("Form", "Heat Ba-138", None))
 
