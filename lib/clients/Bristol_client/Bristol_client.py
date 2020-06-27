@@ -12,6 +12,8 @@ import socket
 import os
 
 SIGNALID1 = 445566
+SIGNALID2 = 444333
+
 
 class bristol_client(QtGui.QWidget):
 
@@ -27,7 +29,6 @@ class bristol_client(QtGui.QWidget):
         self.reactor = reactor
         self.name = socket.gethostname() + ' Bristol Client'
         self.d = {}
-        self.wmChannels = {}
         self.connect()
         self._check_window_size()
 
@@ -52,16 +53,16 @@ class bristol_client(QtGui.QWidget):
         self.cxn = yield connectAsync(self.wavemeterIP,
                                       name=self.name,
                                       password=self.password)
-
-        self.server = yield self.cxn.Bristol_server
+        self.server = yield self.cxn.bristolserver
         yield self.server.signal__frequency_changed(SIGNALID1)
-
+        yield self.server.signal__amplitude_changed(SIGNALID2)
 
         yield self.server.addListener(listener = self.updateFrequency, source = None, ID = SIGNALID1)
-
+        yield self.server.addListener(listener = self.updateAmplitude, source = None, ID = SIGNALID2)
 
         self.initializeGUI()
 
+        
     @inlineCallbacks
     def initializeGUI(self):
 
@@ -73,38 +74,24 @@ class bristol_client(QtGui.QWidget):
         subLayout = QtGui.QGridLayout()
         qBox.setLayout(subLayout)
         layout.addWidget(qBox, 0, 0)
-
-
+        widget = QCustomBristol('Under Exposed',False)
+        self.d[0] = widget
+        subLayout.addWidget(widget,1,0)
         
-        widget = QCustomWavemeterChannel('Under Exposed',False)
-
-            
-        from common.lib.clients.qtui import RGBconverter as RGB
-        RGB = RGB.RGBconverter()
-        color = int(2.998e8/(float(hint)*1e3))
-        color = RGB.wav2RGB(color)
-        color = tuple(color)
-            
-        widget.currentfrequency.setStyleSheet('color: rgb' + str(color))
-
         self.setLayout(layout)
-
-
     
     @inlineCallbacks
-
     def updateFrequency(self , c , signal):
-        chan = signal[0]
-        if chan in self.d :
-            freq = signal[1]
-            self.d[chan].currentfrequency.setText(str(freq)[0:10])
+        freq = signal
+        self.d[0].currentfrequency.setText(str(freq))
+        
+    @inlineCallbacks
+    def updateAmplitude(self , c , signal):
+        amp = signal
+        self.d[0].powermeter.setValue(amp)
 
 
-    def updateAmplitude(self, c, signal):
-        value = signal[1]
-        self.d[wmChannel].powermeter.setValue(value)#('Interferometer Amp\n' + str(value))
-
-
+   
 
 
 

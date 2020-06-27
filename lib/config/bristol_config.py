@@ -8,4 +8,4 @@ class bristol_config(object):
     {channel_name: (port, hint, display_location, stretched, display_pid, dac, dac_rails))}
     '''
     
-    ip = '10.97.111.1'
+    ip = '10.97.111.50'
