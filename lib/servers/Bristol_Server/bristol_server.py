@@ -83,7 +83,7 @@ class BristolServer(LabradServer):
         Gets the current power
         """
 
-        yield self.wm.write(":READ:POW?\r\n")
+        yield self.wm.write(":READ:POWq?\r\n")
         amp = yield self.wm.read_very_eager()
         if amp != '':
             amp = float(freq)

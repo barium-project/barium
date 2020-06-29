@@ -76,21 +76,22 @@ class bristol_client(QtGui.QWidget):
         layout.addWidget(qBox, 0, 0)
         widget = QCustomBristol('Under Exposed',False)
         self.d[0] = widget
-        subLayout.addWidget(widget,1,0)
+        subLayout.addWidget(self.d[0],1,0)
         
         self.setLayout(layout)
     
-    @inlineCallbacks
+    
     def updateFrequency(self , c , signal):
         freq = signal
         self.d[0].currentfrequency.setText(str(freq))
         
-    @inlineCallbacks
+    
     def updateAmplitude(self , c , signal):
         amp = signal
         self.d[0].powermeter.setValue(amp)
 
-
+    def closeEvent(self, x):
+        self.reactor.stop()
    
 
 
