@@ -28,6 +28,7 @@ from labrad.units import WithUnit as U
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
 FREQSIGNAL = 123133
+AMPSIGNAL = 122333
 
 
 class BristolServer(LabradServer):
@@ -35,7 +36,8 @@ class BristolServer(LabradServer):
     name = 'BristolServer'
 
     freq_changed = Signal(FREQSIGNAL, 'signal: frequency changed', 'v')
-
+    amp_changed = Signal(AMPSIGNAL, 'signal: amplitude changed', 'v')
+    
     def initServer(self):
         self.password = os.environ['LABRADPASSWORD']
         self.name = socket.gethostname() + 'Bristol Server'
@@ -44,6 +46,7 @@ class BristolServer(LabradServer):
         self.port = 23
         self.timeout = 3 #s
         self.freq = 0
+        self.amp = 0
         self.connect()
 
     def connect(self):
@@ -63,20 +66,24 @@ class BristolServer(LabradServer):
         """
         Gets the current frequency
         """
-
+        yield self.wm.write(":READ:POW?\r\n")
         yield self.wm.write(":READ:FREQ?\r\n")
         freq = yield self.wm.read_very_eager()
         if freq != '':
-            freq = float(freq)
-            self.freq_changed((freq))
-            self.freq = freq
-            self.freq_changed(freq)
-            returnValue(self.freq)
 
-        else:
-            returnValue(self.freq)
-
-
+            temp = freq.split()
+            temp = map(float,temp)
+            temp.sort()
+            if temp[len(temp)-1] >40.0:
+               freq = temp[len(temp)-1]
+               self.freq_changed((freq))
+               self.freq = freq
+            if temp[0] < 40.0:
+               amp = temp[0]
+               self.amp_changed((amp))
+               self.amp = amp
+        returnValue(self.freq)
+ 
     def measure_chan(self):
         reactor.callLater(0.1, self.measure_chan)
         self.get_frequency(self)
