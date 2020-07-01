@@ -86,7 +86,7 @@ class bristol_client(QtGui.QWidget):
     
     def updateAmplitude(self , c , signal):
         amp = signal
-        self.d[0].powermeter.setValue(100)
+        self.d[0].powermeter.setValue(100*amp)
 
     def closeEvent(self, x):
         self.reactor.stop()
