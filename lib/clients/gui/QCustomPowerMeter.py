@@ -7,7 +7,7 @@ class MQProgressBar(QtGui.QProgressBar):
         super(MQProgressBar, self).__init__()
         self.setTextVisible(False)
         self.__blockStyle  = False
-        self.setMaximum(4000.0)
+        self.setMaximum(400.0)
 
 
     def setValue(self,integer):

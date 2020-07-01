@@ -66,10 +66,9 @@ class bristol_client(QtGui.QWidget):
     @inlineCallbacks
     def initializeGUI(self):
 
+        initstartvalue = yield self.server.get_frequency()
         layout = QtGui.QGridLayout()
-
         self.setWindowTitle('Bristol Wavemeter')
-
         qBox = QtGui.QGroupBox('Wave Length')
         subLayout = QtGui.QGridLayout()
         qBox.setLayout(subLayout)
@@ -77,7 +76,6 @@ class bristol_client(QtGui.QWidget):
         widget = QCustomBristol('Under Exposed',False)
         self.d[0] = widget
         subLayout.addWidget(self.d[0],1,0)
-        
         self.setLayout(layout)
     
     
@@ -88,7 +86,7 @@ class bristol_client(QtGui.QWidget):
     
     def updateAmplitude(self , c , signal):
         amp = signal
-        self.d[0].powermeter.setValue(amp)
+        self.d[0].powermeter.setValue(100)
 
     def closeEvent(self, x):
         self.reactor.stop()
