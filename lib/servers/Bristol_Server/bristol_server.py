@@ -46,6 +46,7 @@ class BristolServer(LabradServer):
         self.port = 23
         self.timeout = 3 #s
         self.freq = 0
+        self.amp = 0
         self.connect()
 
     def connect(self):
@@ -68,8 +69,16 @@ class BristolServer(LabradServer):
 
         yield self.wm.write(":READ:FREQ?\r\n")
         freq = yield self.wm.read_very_eager()
+        temp = freq.split()
         if freq != '':
-            freq = float(freq)
+            if len(temp) > 1:
+               temp = map(float,temp)
+               temp.sort()
+               freq = temp[len(temp)-1]
+            elif float(freq >40.0):
+               freq = float(freq)
+            else:
+                returnValue(self.freq)
             self.freq_changed((freq))
             self.freq = freq
             self.freq_changed(freq)
@@ -77,7 +86,7 @@ class BristolServer(LabradServer):
 
         else:
             returnValue(self.freq)
-
+    @setting(5, "get_amp", returns = 'v')
     def get_amp(self, c):
         """
         Gets the current power
@@ -85,13 +94,20 @@ class BristolServer(LabradServer):
 
         yield self.wm.write(":READ:POW?\r\n")
         amp = yield self.wm.read_very_eager()
+        temp = amp.split()
         if amp != '':
-            amp = float(freq)
+            if len(temp) > 1:
+               temp = map(float,temp)
+               temp.sort()
+               amp = temp[0]
+            elif float(amp < 40.0):
+               amp = float(amp)
+            else:
+               returnValue(self.amp)
             self.amp_changed((amp))
             self.amp = amp
             self.amp_changed(amp)
             returnValue(self.amp)
-
         else:
             returnValue(self.amp)
             
