@@ -66,55 +66,26 @@ class BristolServer(LabradServer):
         """
         Gets the current frequency
         """
-
+        yield self.wm.write(":READ:POW?\r\n")
         yield self.wm.write(":READ:FREQ?\r\n")
         freq = yield self.wm.read_very_eager()
-        temp = freq.split()
         if freq != '':
-            if len(temp) > 1:
-               temp = map(float,temp)
-               temp.sort()
+            temp = freq.split()
+            temp = map(float,temp)
+            temp.sort()
+            if temp[len(temp)-1] >40.0:
                freq = temp[len(temp)-1]
-            elif float(freq >40.0):
-               freq = float(freq)
-            else:
-                returnValue(self.freq)
-            self.freq_changed((freq))
-            self.freq = freq
-            self.freq_changed(freq)
-            returnValue(self.freq)
-
-        else:
-            returnValue(self.freq)
-    @setting(5, "get_amp", returns = 'v')
-    def get_amp(self, c):
-        """
-        Gets the current power
-        """
-
-        yield self.wm.write(":READ:POW?\r\n")
-        amp = yield self.wm.read_very_eager()
-        temp = amp.split()
-        if amp != '':
-            if len(temp) > 1:
-               temp = map(float,temp)
-               temp.sort()
+               self.freq_changed((freq))
+               self.freq = freq
+            if temp[0] < 40.0:
                amp = temp[0]
-            elif float(amp < 40.0):
-               amp = float(amp)
-            else:
-               returnValue(self.amp)
-            self.amp_changed((amp))
-            self.amp = amp
-            self.amp_changed(amp)
-            returnValue(self.amp)
-        else:
-            returnValue(self.amp)
-            
+               self.amp_changed((amp))
+               self.amp = amp
+        returnValue(self.freq)
+        
     def measure_chan(self):
         reactor.callLater(0.1, self.measure_chan)
         self.get_frequency(self)
-        self.get_amp(self)
 
     def stopServer(self):
         self.wm.close()
