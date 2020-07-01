@@ -12,6 +12,8 @@ from barium.lib.clients.gui.software_laser_lock_gui import software_laser_lock_c
 
 SIGNALID1 = 445567
 SIGNALID2 = 445568
+SIGNALID3 = 445569
+SIGNALID4 = 445570
 
 
 class software_laser_lock_client(QtGui.QWidget):
@@ -42,13 +44,13 @@ class software_laser_lock_client(QtGui.QWidget):
         yield self.registry.cd(['Servers','software_laser_lock'])
         lasers_to_lock = yield self.registry.get('lasers')
         for chan in lasers_to_lock:
-            self.lasers[chan] = yield self.registry.get(chan)
-
+           self.lasers[chan] = yield self.registry.get(chan)
         yield self.wm.signal__frequency_changed(SIGNALID1)
         yield self.wm.addListener(listener = self.updateFrequency, source = None, ID = SIGNALID1)
-
+   
         #yield self.bristol.signal__frequency_changed(SIGNALID2)
         #yield self.bristol.addListener(listener = self.updateBristolFrequency, source = None, ID = SIGNALID2)
+        
 
         self.initializeGUI()
 
@@ -58,19 +60,15 @@ class software_laser_lock_client(QtGui.QWidget):
         qBox = QtGui.QGroupBox('Single Channel Software Lock')
         subLayout = QtGui.QGridLayout()
         qBox.setLayout(subLayout)
-        layout.addWidget(qBox, 0, 0), returnValue
-
+        layout.addWidget(qBox, 0, 0)#, returnValue
         for chan in self.lasers:
-
             laser = software_laser_lock_channel(chan)
-
             from common.lib.clients.qtui import RGBconverter as RGB
             RGB = RGB.RGBconverter()
             color = int(2.998e8/(float(self.lasers[chan][0])*1e3))
             color = RGB.wav2RGB(color)
             color = tuple(color)
             laser.wavelength.setStyleSheet('color: rgb' + str(color))
-
             init_freq1 = yield self.lock_server.get_lock_frequency(chan)
             laser.spinFreq1.setValue(init_freq1)
             laser.spinFreq1.valueChanged.connect(lambda freq = laser.spinFreq1.value(), chan = chan \

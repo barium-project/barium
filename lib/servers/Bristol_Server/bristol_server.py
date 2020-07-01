@@ -46,6 +46,7 @@ class BristolServer(LabradServer):
         self.port = 23
         self.timeout = 3 #s
         self.freq = 0
+        self.amp = 0
         self.connect()
 
     def connect(self):
@@ -65,40 +66,27 @@ class BristolServer(LabradServer):
         """
         Gets the current frequency
         """
-
+        yield self.wm.write(":READ:POW?\r\n")
         yield self.wm.write(":READ:FREQ?\r\n")
         freq = yield self.wm.read_very_eager()
         if freq != '':
-            freq = float(freq)
-            self.freq_changed((freq))
-            self.freq = freq
-            self.freq_changed(freq)
-            returnValue(self.freq)
 
-        else:
-            returnValue(self.freq)
-
-    def get_amp(self, c):
-        """
-        Gets the current power
-        """
-
-        yield self.wm.write(":READ:POWq?\r\n")
-        amp = yield self.wm.read_very_eager()
-        if amp != '':
-            amp = float(freq)
-            self.amp_changed((amp))
-            self.amp = amp
-            self.amp_changed(amp)
-            returnValue(self.amp)
-
-        else:
-            returnValue(self.amp)
-            
+            temp = freq.split()
+            temp = map(float,temp)
+            temp.sort()
+            if temp[len(temp)-1] >40.0:
+               freq = temp[len(temp)-1]
+               self.freq_changed((freq))
+               self.freq = freq
+            if temp[0] < 40.0:
+               amp = temp[0]
+               self.amp_changed((amp))
+               self.amp = amp
+        returnValue(self.freq)
+ 
     def measure_chan(self):
         reactor.callLater(0.1, self.measure_chan)
         self.get_frequency(self)
-        self.get_amp(self)
 
     def stopServer(self):
         self.wm.close()

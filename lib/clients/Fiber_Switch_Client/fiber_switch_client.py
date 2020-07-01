@@ -1,20 +1,10 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Jan 28 17:44:21 2020
-
-@author: barium133
-"""
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 from twisted.internet.defer import inlineCallbacks, returnValue
 import socket
 import os
-from config.multiplexerclient_config import multiplexer_config
-from common.lib.clients.qtui.q_custom_text_changing_button import \
-    TextChangingButton
 from barium.lib.clients.gui.fiber_switch_gui import QCustomFiberSwitchGui
 
 SIGNALID1 = 445567
-
 
 class fiber_switch_client(QtGui.QWidget):
     def __init__(self, reactor, parent=None):
@@ -32,20 +22,13 @@ class fiber_switch_client(QtGui.QWidget):
         """
         from labrad.wrappers import connectAsync
         self.password = os.environ['LABRADPASSWORD']
-        self.cxn = yield connectAsync('localhost', name = socket.gethostname() + 'Fiber Switch GUI', password=self.password)
+        self.cxn = yield connectAsync('localhost', name = socket.gethostname()\
+                            + 'Fiber Switch GUI', password=self.password)
         self.reg = self.cxn.registry
         self.server = self.cxn.fiber_switch_server
         #self.set_up_channels()
         self.initializeGUI()
-        
-    '''
-     # something is wrong with the return part  
-    @inlineCallbacks
-    def set_up_channels(self):
-        """
-        Returns the laser wavelength of all 8 channels in a list.
-        """
-    '''
+
 
     @inlineCallbacks
     def initializeGUI(self):
@@ -67,16 +50,29 @@ class fiber_switch_client(QtGui.QWidget):
         self.channel.displayChannel.setNum(int(init_chan))
 
             
-        #channel1 = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]
+        '''
+        for now channels labels are stored in the registry as
+        a list of 2-element arrays, i.e.,
+        [['laser 1', channel num], ['laser 2', chan num], ...]
+        stored in "registry/Clients/Fiber Switch Client"
+        '''
         
-        self.channel.c1.clicked.connect(lambda: self.changeChannel(self.channel_list[0][1]))
-        self.channel.c2.clicked.connect(lambda: self.changeChannel(self.channel_list[1][1]))
-        self.channel.c3.clicked.connect(lambda: self.changeChannel(self.channel_list[2][1]))
-        self.channel.c4.clicked.connect(lambda: self.changeChannel(self.channel_list[3][1]))
-        self.channel.c5.clicked.connect(lambda: self.changeChannel(self.channel_list[4][1]))
-        self.channel.c6.clicked.connect(lambda: self.changeChannel(self.channel_list[5][1]))
-        self.channel.c7.clicked.connect(lambda: self.changeChannel(self.channel_list[6][1]))
-        self.channel.c8.clicked.connect(lambda: self.changeChannel(self.channel_list[7][1]))
+        self.channel.c1.clicked.connect(lambda:\
+                    self.changeChannel(self.channel_list[0][1]))
+        self.channel.c2.clicked.connect(lambda:\
+                    self.changeChannel(self.channel_list[1][1]))
+        self.channel.c3.clicked.connect(lambda:\
+                    self.changeChannel(self.channel_list[2][1]))
+        self.channel.c4.clicked.connect(lambda:\
+                    self.changeChannel(self.channel_list[3][1]))
+        self.channel.c5.clicked.connect(lambda:\
+                    self.changeChannel(self.channel_list[4][1]))
+        self.channel.c6.clicked.connect(lambda:\
+                    self.changeChannel(self.channel_list[5][1]))
+        self.channel.c7.clicked.connect(lambda:\
+                    self.changeChannel(self.channel_list[6][1]))
+        self.channel.c8.clicked.connect(lambda:\
+                    self.changeChannel(self.channel_list[7][1]))
             
         self.channel.checkChannel.clicked.connect(lambda: self.refreshNum())
     
