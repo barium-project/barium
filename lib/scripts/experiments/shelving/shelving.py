@@ -45,7 +45,7 @@ class shelving(experiment):
         #self.bristol = self.cxn.bristolserver
         self.pulser = self.cxn.pulser
         self.dv = self.cxn.data_vault
-        self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.real_simple_grapher
         self.single_lock = self.cxn.software_laser_lock_server
         self.pv = self.cxn.parametervault
         self.shutter = self.cxn.arduinottl

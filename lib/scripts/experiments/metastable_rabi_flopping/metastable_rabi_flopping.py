@@ -45,7 +45,7 @@ class metastable_rabi_flopping(experiment):
 
         self.wm = self.cxnwlm.multiplexerserver
         self.pulser = self.cxn.pulser
-        self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.real_simple_grapher
         self.dv = self.cxn.data_vault
         self.HPA = self.cxn.hp8672a_server
         self.HPB = self.cxn.hp8657b_server

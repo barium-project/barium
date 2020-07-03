@@ -39,7 +39,7 @@ class loading_curve_tof(experiment):
         self.hp = self.cxnHP.hp6033a_server
         self.hp.select_device(0)
         self.dv = self.cxn.data_vault
-        self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.real_simple_grapher
 
         self.set_up_parameters()
         self.set_up_tof_folder()

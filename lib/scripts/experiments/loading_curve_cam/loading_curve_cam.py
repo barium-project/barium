@@ -48,7 +48,7 @@ class loading_curve_cam(experiment):
         self.cam = self.cxn.andor_server
         self.pmt = self.cxn.normalpmtflow
         self.pulser = self.cxn.pulser
-        self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.real_simple_grapher
 
     def run(self, cxn, context):
         self.set_up_parameters()

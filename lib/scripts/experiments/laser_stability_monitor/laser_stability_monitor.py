@@ -14,7 +14,7 @@ class laser_stability_monitor(experiment):
     name = 'Laser Monitor'
 
     exp_parameters = []
-    exp_parameters.append(('LaserMonitor', 'Laser'))
+    exp_parameters.append(('LaserMonitor', 'WM_Channel'))
     exp_parameters.append(('LaserMonitor', 'Measure_Time'))
 
 
@@ -34,13 +34,14 @@ class laser_stability_monitor(experiment):
         self.cxn = labrad.connect(name = 'Laser Monitor')
 
         self.wlm = self.cxnwlm.multiplexerserver
-        self.grapher = self.cxn.grapher
+        #self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.real_simple_grapher
         self.dv = self.cxn.data_vault
         self.p = self.parameters
 
         self.set_up_datavault()
-        self.laser = self.p.LaserMonitor.Laser
-        print self.laser
+        self.laser = int(self.p.LaserMonitor.WM_Channel)
+       
 
     def run(self, cxn, context):
 
@@ -49,13 +50,15 @@ class laser_stability_monitor(experiment):
         '''
 
         self.inittime = time.time()
-        self.initfreq = self.wlm.get_frequency(self.wm_p[self.laser][0])
+        self.initfreq = self.wlm.get_frequency(self.laser)
+        
         self.dv.add_parameter('Initial Frequency',self.initfreq)
         while (time.time() - self.inittime) <= self.p.LaserMonitor.Measure_Time['s']:
             should_stop = self.pause_or_stop()
             if should_stop:
                 break
-            freq = self.wlm.get_frequency(self.wm_p[self.laser][0])
+            freq = self.wlm.get_frequency(self.laser)
+            
             try:
                 self.dv.add(time.time() - self.inittime, 1e6*(self.initfreq - freq))
             except:

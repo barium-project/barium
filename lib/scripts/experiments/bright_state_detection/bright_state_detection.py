@@ -32,7 +32,7 @@ class bright_state_detection(experiment):
         self.cxn = labrad.connect(name = 'Bright State')
 
         self.pulser = self.cxn.pulser
-        self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.real_simple_grapher
         self.dv = self.cxn.data_vault
         self.pv = self.cxn.parametervault
 

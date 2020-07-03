@@ -38,7 +38,7 @@ class optical_pumping(experiment):
         self.cxn = labrad.connect(name = 'Optical Pumping')
 
         self.pulser = self.cxn.pulser
-        self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.real_simple_grapher
         self.dv = self.cxn.data_vault
         self.pb = self.cxn.protectionbeamserver
         self.shutter = self.cxn.arduinottl

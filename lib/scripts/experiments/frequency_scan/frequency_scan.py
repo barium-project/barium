@@ -43,7 +43,7 @@ class frequency_scan(experiment):
         self.HPB = self.cxn.hp8657b_server
         self.wm = self.cxnwlm.multiplexerserver
         self.pmt = self.cxn.normalpmtflow
-        self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.real_simple_grapher
         self.dv = self.cxn.data_vault
         self.cam = self.cxn.andor_server
         self.single_lock = self.cxn.software_laser_lock_server

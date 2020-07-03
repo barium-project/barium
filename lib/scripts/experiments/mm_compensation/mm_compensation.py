@@ -38,7 +38,7 @@ class mm_compensation(experiment):
         self.dv = self.cxn.data_vault
         self.processor = processFFT()
         self.p = self.parameters
-        self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.real_simple_grapher
 
     def run(self, cxn, context):
 

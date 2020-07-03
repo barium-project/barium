@@ -62,7 +62,7 @@ class cpt_free_scan(experiment):
         self.HPB_probe = self.cxn.hp8657b_server
         self.wm = self.cxnwlm.multiplexerserver
         self.pulser = self.cxn.pulser
-        self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.real_simple_grapher
         self.dv = self.cxn.data_vault
 
         # Need to map the gpib address to the labrad conection

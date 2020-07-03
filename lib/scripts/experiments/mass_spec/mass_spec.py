@@ -34,7 +34,7 @@ class mass_spec(experiment):
         self.scalar = self.cxn.sr430_scalar_server
         self.scalar.select_device(0)
         self.dv = self.cxn.data_vault
-        self.grapher = self.cxn.grapher
+        self.grapher = self.cxn.real_simple_grapher
 
         self.p = self.parameters.Mass_Spec
 
