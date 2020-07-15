@@ -19,7 +19,7 @@
 name = TrapServer
 version = 1.0
 description =
-instancename = %LABRADNODE% Trap Server
+instancename = TrapServer
 
 [startup]
 cmdline = %PYTHON% %FILE%

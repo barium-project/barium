@@ -44,7 +44,7 @@ class TOFServer(LabradServer):
 
         self.server = yield self.cxn.trapserver
         self.dv = yield self.cxn.data_vault
-        self.grapher = yield self.cxn.grapher
+        self.grapher = yield self.cxn.real_simple_grapher
 
 
 
