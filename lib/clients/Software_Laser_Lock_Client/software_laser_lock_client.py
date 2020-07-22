@@ -40,13 +40,14 @@ class software_laser_lock_client(QtGui.QWidget):
         self.piezo = yield self.cxn.piezo_controller
         self.registry = self.cxn.registry
 
+        
+
         # Get lasers to lock
         yield self.registry.cd(['Servers','software_laser_lock'])
         lasers_to_lock = yield self.registry.get('lasers')
         for chan in lasers_to_lock:
            self.lasers[chan] = yield self.registry.get(chan)
-        yield self.wm.signal__frequency_changed(SIGNALID1)
-        yield self.wm.addListener(listener = self.updateFrequency, source = None, ID = SIGNALID1)
+
    
         #yield self.bristol.signal__frequency_changed(SIGNALID2)
         #yield self.bristol.addListener(listener = self.updateBristolFrequency, source = None, ID = SIGNALID2)
@@ -110,6 +111,13 @@ class software_laser_lock_client(QtGui.QWidget):
             self.setLayout(layout)
 
 
+        self.set_signal_listeners()
+
+    @inlineCallbacks
+    def set_signal_listeners(self):
+        yield self.wm.signal__frequency_changed(SIGNALID1)
+        yield self.wm.addListener(listener = self.updateFrequency, source = None, ID = SIGNALID1)
+
     @inlineCallbacks
     def freqChanged(self, freq, chan):
         yield self.lock_server.set_lock_frequency(freq, chan)
@@ -155,7 +163,6 @@ class software_laser_lock_client(QtGui.QWidget):
 
     @inlineCallbacks
     def set_lock(self, state, chan):
-        print state, chan
         yield self.lock_server.lock_channel(state, chan)
 
     @inlineCallbacks
