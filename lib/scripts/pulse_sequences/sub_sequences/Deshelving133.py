@@ -6,19 +6,14 @@ class deshelving_133(pulse_sequence):
 
     required_parameters = [
                            ('Deshelving133', 'deshelving_duration'),
-                           ('Deshelving133', 'TTL_493_DDS'),
                            ('Deshelving133', 'channel_493'),
                            ('Deshelving133', 'frequency_493'),
                            ('Deshelving133', 'amplitude_493'),
                            ('Deshelving133', 'channel_650'),
                            ('Deshelving133', 'frequency_650'),
                            ('Deshelving133', 'amplitude_650'),
-                           ('Deshelving133', 'TTL_614'),
-                           ('Deshelving133', 'TTL_614_F12'),    #int channel number
-                           ('Deshelving133', 'TTL_614_F22'),
-                           ('Deshelving133', 'USE_TTL_614'),        #bool on/off
-                           ('Deshelving133', 'USE_TTL_614_F12'),
-                           ('Deshelving133', 'USE_TTL_614_F22'),
+                           ('Deshelving133', 'TTL_614_AOM'),
+
                            ]
 
     def sequence(self):
@@ -31,19 +26,7 @@ class deshelving_133(pulse_sequence):
                      p.deshelving_duration, p.frequency_650, p.amplitude_650)
 
         if p.deshelving_duration != 0:
-
-            self.addTTL('TTL2', self.start, p.deshelving_duration)
-
-            if  p.USE_TTL_614 == 'True':
-                self.addTTL(p.TTL_614, self.start, p.deshelving_duration)
-
-            if  p.USE_TTL_614_F12 == 'True':
-                self.addTTL(p.TTL_614_F12, self.start, p.deshelving_duration)
-
-            if  p.USE_TTL_614_F22 == 'True':
-                self.addTTL(p.TTL_614_F22, self.start, p.deshelving_duration)
-
-
+            self.addTTL(p.TTL_614_AOM, self.start, p.deshelving_duration)
 
         self.end = self.start + p.deshelving_duration + WithUnit(650.0, 'ns')
 

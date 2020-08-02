@@ -34,7 +34,6 @@ class state_prep_133(pulse_sequence):
 
 
         if p.state_prep_duration != 0:
-
             self.addDDS(p.channel_493, self.start - amp_change_delay_2,\
                      p.state_prep_duration - amp_change_delay_2, p.frequency_493, p.amplitude_493)
             self.addDDS(p.channel_650, self.start - amp_change_delay_2, \

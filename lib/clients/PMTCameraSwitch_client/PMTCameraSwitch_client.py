@@ -70,7 +70,6 @@ class PMTCameraSwitchClient(QtGui.QWidget):
         self.led_switch.setCheckable(True)
         self.led_switch.toggled.connect(lambda  state = self.led_switch.isDown() , chan = 'TTL8',\
                                          :self.switchState(state, chan))
-
         self.subLayout.addWidget(self.led_switch, 1,1)
 
         # Add 455 RF Switch
@@ -83,6 +82,20 @@ class PMTCameraSwitchClient(QtGui.QWidget):
                                          :self.switchState(state, chan))
 
         self.subLayout.addWidget(self.shelve_switch, 2,0)
+
+        # Add 614 EOM Switch
+        self.eom_switch = QtGui.QPushButton('1762 EOM TTL')
+        self.eom_switch.setMinimumHeight(100)
+        self.eom_switch.setMinimumWidth(126)
+        self.eom_switch.setMaximumWidth(145)
+        self.eom_switch.setCheckable(True)
+        self.eom_switch.toggled.connect(lambda  state = self.eom_switch.isDown() , chan = 'TTL9',\
+                                         :self.switchState(state, chan))
+
+        self.subLayout.addWidget(self.eom_switch, 2,1)
+
+
+
 
         # Add Protection Beam Control
         prot = protectionBeamClient(self.reactor)
