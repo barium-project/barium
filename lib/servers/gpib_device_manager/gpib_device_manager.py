@@ -116,7 +116,7 @@ class GPIBDeviceManager(LabradServer):
         # forward message if someone cares about this device
         if device in self.deviceServers:
             self.notifyServers(device, gpibBusServer, channel, True)
-    
+
     def gpib_device_disconnect(self, server, channel):
         """Handle messages when devices connect."""
         print 'Device Disconnect:', server, channel
