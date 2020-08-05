@@ -19,6 +19,8 @@
 name = Agilent 33220A Server
 version = 1.3
 description = 
+instancename = Agilent 33220A Server
+
 
 [startup]
 cmdline = %PYTHON% %FILE%
@@ -227,7 +229,7 @@ class AgilentWrapper(GPIBDeviceWrapper):
 
 class AgilentServer(GPIBManagedServer):
     name = 'Agilent 33220A Server' # Server name
-    deviceName = 'AGILENT TECHNOLOGIES 33220A' # Model string returned from *IDN?
+    deviceName = 'Agilent Technologies,33220A,MY44047452,2.07-2.06-22-2' # Model string returned from *IDN?
     deviceWrapper = AgilentWrapper
 
     @setting(10, 'Output', channel = 'i', output = 'b')
