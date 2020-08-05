@@ -59,12 +59,13 @@ class TrapControlClient(QtGui.QWidget):
 
         """
         self.serverIP = TrapControl_config.ip
+
         from labrad.wrappers import connectAsync
         self.cxn = yield connectAsync(self.serverIP,
                                       name=self.name,
                                       password=self.password)
-
-        self.tof = yield self.cxn.tof_server
+        
+        #self.tof = yield self.cxn.tof_server
         self.server = yield self.cxn.trapserver
 
         self.initializeGUI()
@@ -220,12 +221,13 @@ class TrapControlClient(QtGui.QWidget):
         self.subLayout.addWidget(self.ablation, 2, 0, 1, 2)
 
         # HV Gui
+        '''
         self.hvGUI = QCustomHVPulseGui()
         self.hvGUI.hv_pulse.clicked.connect(lambda : self.hv_pulse())
         self.hvGUI.hv_graph.clicked.connect(lambda : self.hv_graph())
 
         self.subLayout.addWidget(self.hvGUI, 2, 5, 1, 1)
-
+        '''
         # Add current controler
         #self.HP = HP6033A_Client(self.reactor)
         #self.HP.self_connect('bender',"HP6033A Client",0)

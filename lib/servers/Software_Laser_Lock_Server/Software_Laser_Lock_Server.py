@@ -45,7 +45,7 @@ class Software_Laser_Lock_Server(LabradServer):
         self.cxn = yield connectAsync(multiplexer_config.ip,
                                       name=self.name,
                                       password=self.password)
-        self.trap_cxn = yield connectAsync('bender',
+        self.trap_cxn = yield connectAsync('localhost',
                                       name=self.name,
                                       password=self.password)
         self.wm = self.cxn.multiplexerserver

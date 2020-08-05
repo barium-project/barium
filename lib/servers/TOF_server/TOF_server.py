@@ -35,7 +35,7 @@ class TOFServer(LabradServer):
     def initServer(self):
         self.name = 'TOF Server'
         self.password = 'lab'
-        self.serverIP = 'bender'
+        self.serverIP = 'flexo'
 
         from labrad.wrappers import connectAsync
         self.cxn = yield connectAsync(self.serverIP,

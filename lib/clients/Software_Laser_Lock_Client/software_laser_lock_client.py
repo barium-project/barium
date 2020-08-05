@@ -34,7 +34,7 @@ class software_laser_lock_client(QtGui.QWidget):
         self.password = os.environ['LABRADPASSWORD']
         self.wm_cxn = yield connectAsync(multiplexer_config.ip, name = socket.gethostname() + ' Single Channel Lock', password=self.password)
         self.wm = yield self.wm_cxn.multiplexerserver
-        self.cxn = yield connectAsync('bender', name = socket.gethostname() + ' Single Channel Lock', password=self.password)
+        self.cxn = yield connectAsync('localhost', name = socket.gethostname() + ' Single Channel Lock', password=self.password)
         self.lock_server = yield self.cxn.software_laser_lock_server
         #self.bristol = yield self.cxn.bristolserver
         self.piezo = yield self.cxn.piezo_controller
