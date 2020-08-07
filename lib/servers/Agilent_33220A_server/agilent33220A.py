@@ -65,7 +65,7 @@ class AgilentWrapper(GPIBDeviceWrapper):
     @inlineCallbacks
     def applyWaveForm(self, function, frequency, amplitude, offset):
         '''
-        Applys waveform from self.lookup dictionary with given parameters
+        Applys given waveform:'sine', 'square', 'ramp', 'pulse', 'noise', 'DC' , 'USER' 
         '''
         output = "APPL:" + self.lookup[function]  + ' ' + str(int(frequency['Hz'])) + ',' + str(amplitude['V']) + ',' + str(offset['V'])
         yield self.write(output)
@@ -232,13 +232,18 @@ class AgilentServer(GPIBManagedServer):
     deviceName = 'Agilent Technologies,33220A,MY44047452,2.07-2.06-22-2' # Model string returned from *IDN?
     deviceWrapper = AgilentWrapper
 
-    @setting(10, 'Output', channel = 'i', output = 'b')
-    def deviceOutput(self, c, channel, output = None): # uses passed context "c" to address specific device 
+
+    @setting(10, 'Output', output = 'b')
+    def deviceOutput(self, c,  output): # uses passed context "c" to address specific device
         dev = self.selectedDevice(c)
         yield dev.Output(output)
     
     @setting(69, 'Apply Waveform', function = 's', frequency = ['v[Hz]'], amplitude = ['v[V]'], offset = ['v[V]']  )
     def applyDeviceWaveform(self, c, function, frequency, amplitude, offset):
+        '''
+        Applys given waveform:'sine', 'square', 'ramp', 'pulse', 'noise', 'DC' , 'USER' \n
+        arguments: waveform, frequency, amplitude, offset
+        '''
         dev = self.selectedDevice(c)
         yield dev.applyWaveForm(function, frequency, amplitude, offset)
         
