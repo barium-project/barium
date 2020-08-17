@@ -59,14 +59,24 @@ class TrapControlClient(QtGui.QWidget):
 
         """
         self.serverIP = TrapControl_config.ip
+        self.dc_IP = TrapControl_config.dc_ip
 
         from labrad.wrappers import connectAsync
+        # connect to manager with motion control board
         self.cxn = yield connectAsync(self.serverIP,
                                       name=self.name,
                                       password=self.password)
         
         #self.tof = yield self.cxn.tof_server
         self.server = yield self.cxn.trapserver
+
+        # connect to pc with piezo box for rod dc
+        self.cxn_dc = yield connectAsync(self.dc_IP,
+                                      name=self.name,
+                                      password=self.password)
+        
+        
+        self.piezo = yield self.cxn_dc.piezo_controller
 
         self.initializeGUI()
 
@@ -151,16 +161,29 @@ class TrapControlClient(QtGui.QWidget):
         self.trap.spinAmp4.setValue(init_amp4)
         self.trap.spinAmp4.valueChanged.connect(lambda amp = self.trap.spinAmp4.value(), channel = self.rods['4'] : self.ampChanged(amp, channel))
 
-        init_dc1 = yield self.server.get_dc_rod(self.rods['1'])
+        # Right now the piezo box hardwarw was modified to be 0-5 V
+        # but the software still thinks it's 0-150 V
+        # map our 0-5 to 0-150
+  
+
+        #init_dc1 = yield self.server.get_dc_rod(self.rods['1'])
+        init_dc1 = yield self.piezo.get_voltage(self.rods['1'])['V']
+        init_dc1 = init_dc1/150.*5
         self.trap.spinDC1.setValue(init_dc1)
         self.trap.spinDC1.valueChanged.connect(lambda dc = self.trap.spinDC1.value(), channel = self.rods['1'] : self.dcChanged(dc, channel))
-        init_dc2 = yield self.server.get_dc_rod(self.rods['2'])
+        #init_dc2 = yield self.server.get_dc_rod(self.rods['2'])
+        init_dc2 = yield self.piezo.get_voltage(self.rods['2'])['V']
+        init_dc2 = init_dc1/150.*5
         self.trap.spinDC2.setValue(init_dc2)
         self.trap.spinDC2.valueChanged.connect(lambda dc = self.trap.spinDC2.value(), channel = self.rods['2'] : self.dcChanged(dc, channel))
-        init_dc3 = yield self.server.get_dc_rod(self.rods['3'])
+        #init_dc3 = yield self.server.get_dc_rod(self.rods['3'])
+        init_dc3 = yield self.piezo.get_voltage(self.rods['3'])['V']
+        init_dc3 = init_dc1/150.*5
         self.trap.spinDC3.setValue(init_dc3)
         self.trap.spinDC3.valueChanged.connect(lambda dc = self.trap.spinDC3.value(), channel = self.rods['3'] : self.dcChanged(dc, channel))
-        init_dc4 = yield self.server.get_dc_rod(self.rods['4'])
+        #init_dc4 = yield self.server.get_dc_rod(self.rods['4'])
+        init_dc4 = yield self.piezo.get_voltage(self.rods['4'])['V']
+        init_dc4 = init_dc1/150.*5        
         self.trap.spinDC4.setValue(init_dc4)
         self.trap.spinDC4.valueChanged.connect(lambda dc = self.trap.spinDC4.value(), channel = self.rods['4'] : self.dcChanged(dc, channel))
 
@@ -314,8 +337,16 @@ class TrapControlClient(QtGui.QWidget):
 
     @inlineCallbacks
     def update_dc(self):
+        from labrad.units import WithUnit as U
         for key in self.dc:
-            yield self.server.set_dc_rod(self.dc[key][0], self.dc[key][1])
+            # use below for motion dc
+            #yield self.server.set_dc_rod(self.dc[key][0], self.dc[key][1])
+            
+            # Right now the piezo box hardwarw was modified to be 0-5 V
+            # but the software still thinks it's 0-150 V
+            # map our 0-5 to 0-150
+            voltage = U(self.dc[key][0]/5*150)
+            yield self.piezo.set_voltage(self.dc[key][1],voltage)
             self.trap.update_dc.setStyleSheet("background-color: green")
         self.dc = {}
         for key in self.endCap:
@@ -389,6 +420,8 @@ class TrapControlClient(QtGui.QWidget):
         self.trap.spinEndCap1.setValue(self.init_params['endCap'][0])
         self.trap.spinEndCap2.setValue(self.init_params['endCap'][1])
 
+        self.trap.E1Spin.setValue(self.init_params['eLens'][0])
+        self.trap.E2Spin.setValue(self.init_params['eLens'][1])
 
         self.trap.useRFMap.setCheckState(False)
 
