@@ -75,7 +75,6 @@ class TrapControlClient(QtGui.QWidget):
                                       name=self.name,
                                       password=self.password)
         
-        
         self.piezo = yield self.cxn_dc.piezo_controller
 
         self.initializeGUI()
@@ -100,6 +99,7 @@ class TrapControlClient(QtGui.QWidget):
 
         # Get channel numbers for each electrode
         self.rods = TrapControl_config.rods
+        self.dc_rods = TrapControl_config.dc_rods
         self.endCaps = TrapControl_config.endCaps
         self.eLens = TrapControl_config.eLens
         self.setWindowTitle('Trap Control')
@@ -165,28 +165,26 @@ class TrapControlClient(QtGui.QWidget):
         # but the software still thinks it's 0-150 V
         # map our 0-5 to 0-150
   
-
         #init_dc1 = yield self.server.get_dc_rod(self.rods['1'])
-        init_dc1 = yield self.piezo.get_voltage(self.rods['1'])['V']
+        init_dc1 = yield self.piezo.get_voltage(self.dc_rods['1'])
         init_dc1 = init_dc1/150.*5
         self.trap.spinDC1.setValue(init_dc1)
-        self.trap.spinDC1.valueChanged.connect(lambda dc = self.trap.spinDC1.value(), channel = self.rods['1'] : self.dcChanged(dc, channel))
+        self.trap.spinDC1.valueChanged.connect(lambda dc = self.trap.spinDC1.value(), channel = self.dc_rods['1'] : self.dcChanged(dc, channel))
         #init_dc2 = yield self.server.get_dc_rod(self.rods['2'])
-        init_dc2 = yield self.piezo.get_voltage(self.rods['2'])['V']
-        init_dc2 = init_dc1/150.*5
+        init_dc2 = yield self.piezo.get_voltage(self.dc_rods['2'])
+        init_dc2 = init_dc2/150.*5
         self.trap.spinDC2.setValue(init_dc2)
-        self.trap.spinDC2.valueChanged.connect(lambda dc = self.trap.spinDC2.value(), channel = self.rods['2'] : self.dcChanged(dc, channel))
+        self.trap.spinDC2.valueChanged.connect(lambda dc = self.trap.spinDC2.value(), channel = self.dc_rods['2'] : self.dcChanged(dc, channel))
         #init_dc3 = yield self.server.get_dc_rod(self.rods['3'])
-        init_dc3 = yield self.piezo.get_voltage(self.rods['3'])['V']
-        init_dc3 = init_dc1/150.*5
+        init_dc3 = yield self.piezo.get_voltage(self.dc_rods['3'])
+        init_dc3 = init_dc3/150.*5
         self.trap.spinDC3.setValue(init_dc3)
-        self.trap.spinDC3.valueChanged.connect(lambda dc = self.trap.spinDC3.value(), channel = self.rods['3'] : self.dcChanged(dc, channel))
+        self.trap.spinDC3.valueChanged.connect(lambda dc = self.trap.spinDC3.value(), channel = self.dc_rods['3'] : self.dcChanged(dc, channel))
         #init_dc4 = yield self.server.get_dc_rod(self.rods['4'])
-        init_dc4 = yield self.piezo.get_voltage(self.rods['4'])['V']
-        init_dc4 = init_dc1/150.*5        
+        init_dc4 = yield self.piezo.get_voltage(self.dc_rods['4'])
+        init_dc4 = init_dc4/150.*5
         self.trap.spinDC4.setValue(init_dc4)
-        self.trap.spinDC4.valueChanged.connect(lambda dc = self.trap.spinDC4.value(), channel = self.rods['4'] : self.dcChanged(dc, channel))
-
+        self.trap.spinDC4.valueChanged.connect(lambda dc = self.trap.spinDC4.value(), channel = self.dc_rods['4'] : self.dcChanged(dc, channel))
         init_hv1 = yield self.server.get_hv(self.rods['1'])
         self.trap.spinHV1.setValue(init_hv1)
         self.trap.spinHV1.valueChanged.connect(lambda hv = self.trap.spinHV1.value(), channel = self.rods['1'] : self.hvChanged(hv, channel))
@@ -345,7 +343,7 @@ class TrapControlClient(QtGui.QWidget):
             # Right now the piezo box hardwarw was modified to be 0-5 V
             # but the software still thinks it's 0-150 V
             # map our 0-5 to 0-150
-            voltage = U(self.dc[key][0]/5*150)
+            voltage = U(self.dc[key][0]/5*150,'V')
             yield self.piezo.set_voltage(self.dc[key][1],voltage)
             self.trap.update_dc.setStyleSheet("background-color: green")
         self.dc = {}
@@ -425,9 +423,15 @@ class TrapControlClient(QtGui.QWidget):
 
         self.trap.useRFMap.setCheckState(False)
 
+        self.piezo.set_output_state(self.dc_rods['1'],True)
+        self.piezo.set_output_state(self.dc_rods['2'],True)
+        self.piezo.set_output_state(self.dc_rods['3'],True)
+        self.piezo.set_output_state(self.dc_rods['4'],True)
+        self.piezo.set_remote_state(True)
+
     @inlineCallbacks
     def a_ramp(self):
-
+        from labrad.units import WithUnit as U
         #Get current settings
         oldRod1 = self.trap.spinDC1.value()
         oldRod2 = self.trap.spinDC2.value()
@@ -444,19 +448,47 @@ class TrapControlClient(QtGui.QWidget):
 
         self.ARampGUI.ARamp.setStyleSheet("background-color: red")
         # Add the a-ramp
+        # using the pizeo box now
+        v1 = U((oldRod1 + a1)/5*150,'V')
+        v2 = U((oldRod2 + a2)/5*150,'V')
+        v3 = U((oldRod3 + a3)/5*150,'V')
+        v4 = U((oldRod4 + a4)/5*150,'V')
+        
+        
+        
+        yield self.piezo.set_voltage(self.dc_rods['1'],v1)
+        yield self.piezo.set_voltage(self.dc_rods['2'],v2)
+        yield self.piezo.set_voltage(self.dc_rods['3'],v3)
+        yield self.piezo.set_voltage(self.dc_rods['4'],v4)
+        
+        '''
         yield self.server.set_dc_rod(oldRod1+a1, self.rods['1'])
         yield self.server.set_dc_rod(oldRod2+a2, self.rods['2'])
         yield self.server.set_dc_rod(oldRod3+a3, self.rods['3'])
         yield self.server.set_dc_rod(oldRod4+a4, self.rods['4'])
-
+        '''
+        
         yield time.sleep(int(self.ARampGUI.waitTime.value()))
 
         # Return to current settings
+        v1 = U((oldRod1)/5*150,'V')
+        v2 = U((oldRod2)/5*150,'V')
+        v3 = U((oldRod3)/5*150,'V')
+        v4 = U((oldRod4)/5*150,'V')
+        
+        
+        yield self.piezo.set_voltage(self.dc_rods['1'],v1)
+        yield self.piezo.set_voltage(self.dc_rods['2'],v2)
+        yield self.piezo.set_voltage(self.dc_rods['3'],v3)
+        yield self.piezo.set_voltage(self.dc_rods['4'],v4)
+        
+        '''
         yield self.server.set_dc_rod(oldRod1, self.rods['1'])
         yield self.server.set_dc_rod(oldRod2, self.rods['2'])
         yield self.server.set_dc_rod(oldRod3, self.rods['3'])
         yield self.server.set_dc_rod(oldRod4, self.rods['4'])
-
+        '''
+        
         self.ARampGUI.ARamp.setStyleSheet("background-color: green")
 
 if __name__ == "__main__":
