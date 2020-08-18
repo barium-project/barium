@@ -159,7 +159,7 @@ class probe_line_scan(experiment):
 
         # First set laser carriers
         #self.set_wm_frequency(self.frequency_493['THz'], self.wm_p['493nm'][5])
-        self.set_wm_frequency(self.frequency_650['THz'], self.wm_p['650nm'][5])
+        #self.set_wm_frequency(self.frequency_650['THz'], self.wm_p['650nm'][5])
         time.sleep(5)
 
         # only one 8673 so select it
