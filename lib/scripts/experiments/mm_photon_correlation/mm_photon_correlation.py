@@ -46,13 +46,16 @@ class mm_photon_correlation(experiment):
             self.pulser.wait_sequence_done()
             self.pulser.stop_sequence()
             time_tags = self.pulser.get_timetags()
+            print time_tags
             # Mod the time tags at the period of the trap freq
-            time_tags = time_tags % 1./self.trap_freq['Hz']
+            print 1./self.trap_freq['Hz']
+            time_tags = time_tags % (1./self.trap_freq['Hz'])
+            print time_tags
             total_tags = np.append(total_tags,time_tags)
         
         # bin up all the tags
-        h = np.hist(total_tags, bins = 100)
-        data = np.column_stack(h[1],h[0])
+        h = np.histogram(total_tags, bins = 100)
+        data = np.column_stack((h[1][:-1],h[0]))
         self.dv.add(data)
 
     def set_scannable_parameters(self):
