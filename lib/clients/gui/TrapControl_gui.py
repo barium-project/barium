@@ -252,14 +252,14 @@ class QCustomTrapGui(QtGui.QFrame):
         self.spinEndCap1.setFont(QtGui.QFont(shell_font, pointSize=16))
         self.spinEndCap1.setDecimals(2)
         self.spinEndCap1.setSingleStep(.01)
-        self.spinEndCap1.setRange(.01, 52.9)
+        self.spinEndCap1.setRange(0.0, 52.9)
         self.spinEndCap1.setKeyboardTracking(False)
 
         self.spinEndCap2 = QtGui.QDoubleSpinBox()
         self.spinEndCap2.setFont(QtGui.QFont(shell_font, pointSize=16))
         self.spinEndCap2.setDecimals(2)
         self.spinEndCap2.setSingleStep(.01)
-        self.spinEndCap2.setRange(0.01, 52.9)
+        self.spinEndCap2.setRange(0.0, 52.9)
         self.spinEndCap2.setKeyboardTracking(False)
 
         # Einzel lens
