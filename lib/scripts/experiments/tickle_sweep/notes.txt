@@ -1,0 +1,15 @@
+from labrad.units import WithUnit as U
+v  = U(10.0,'mV')
+
+
+import labrad
+
+cxn = labrad.connect() 
+
+p = cxn.pulser
+
+ n = cxn.normalpmtflow
+
+n.set_mode (Normal/differential)
+
+n.isrunning()
