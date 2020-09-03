@@ -25,7 +25,7 @@ class e2_laser_sweep(experiment):
                       ('E2LaserSweep', 'dc_threshold'),
                       ('E2LaserSweep', 'HP_Amplitude'),
                       ('E2LaserSweep', 'Mode'),
-#                      ('E2LaserSweep', 'Num_Repeat_Cycles'),
+                      ('E2LaserSweep', 'exps_to_average'),
 
                       ]
 
@@ -60,6 +60,7 @@ class e2_laser_sweep(experiment):
         # Define variables to be used
         self.p = self.parameters
         self.cycles = self.p.E2LaserSweep.Sequences_Per_Point
+        self.averages = int(self.p.E2LaserSweep.exps_to_average)
         self.start_frequency = self.p.E2LaserSweep.Start_Frequency
         self.stop_frequency = self.p.E2LaserSweep.Stop_Frequency
         self.step_frequency = self.p.E2LaserSweep.Frequency_Step
@@ -111,103 +112,109 @@ class e2_laser_sweep(experiment):
         
 #        loop_iter = 0        
         for i in range(len(freq)):
-           
-            if self.pause_or_stop():
-                # Turn on 614 if aborting experiment
-                self.pulser.stop_sequence()
-                self.pulser.switch_manual('TTL8',True)
-                return
-            # for the protection beam we start a while loop and break it if we got the data,
-            # continue if we didn't
-            # Set the microwave frequency
-            self.set_hp_frequency(freq[i])
-            time.sleep(.3) # time to switch amplitude    
-                                
-
-            # for the protection beam we start a while loop and break it if we got the data,
-            # continue if we didn't
-            while True:
+            tot_dc_counts = np.array([])
+            tot_sd_counts = np.array([])
+            tot_counts = np.array([])
+            for j in range(self.averages):
                 if self.pause_or_stop():
                     # Turn on 614 if aborting experiment
                     self.pulser.stop_sequence()
                     self.pulser.switch_manual('TTL8',True)
                     return
-
-                self.pulser.reset_readout_counts()
-                self.pulser.start_number(int(self.cycles))
-                self.pulser.wait_sequence_done()
-                self.pulser.stop_sequence()
-
-                # First check if the protection was enabled, do nothing if not
-                if not self.pb.get_protection_state():
-                        pass
-                # if it was enabled, try to fix, continue if successful
-                # otherwise call return to break out of function
-                else:
-                    # Should turn on deshelving LED while trying
-                    self.pulser.switch_manual('TTL8',True)
-                    if self.remove_protection_beam():
-                        # If successful switch off LED and return to top of loop
-                        self.pulser.switch_auto('TTL8',False)
-                        continue
-                    else:
-                        self.set_hp_rf_state(False)
-                        # Failed, abort experiment
+                # for the protection beam we start a while loop and break it if we got the data,
+                # continue if we didn't
+                # Set the microwave frequency
+                self.set_hp_frequency(freq[i])
+                time.sleep(.3) # time to switch amplitude    
+                                    
+    
+                # for the protection beam we start a while loop and break it if we got the data,
+                # continue if we didn't
+                while True:
+                    if self.pause_or_stop():
+                        # Turn on 614 if aborting experiment
+                        self.pulser.stop_sequence()
                         self.pulser.switch_manual('TTL8',True)
                         return
+    
+                    self.pulser.reset_readout_counts()
+                    self.pulser.start_number(int(self.cycles))
+                    self.pulser.wait_sequence_done()
+                    self.pulser.stop_sequence()
+    
+                    # First check if the protection was enabled, do nothing if not
+                    if not self.pb.get_protection_state():
+                            pass
+                    # if it was enabled, try to fix, continue if successful
+                    # otherwise call return to break out of function
+                    else:
+                        # Should turn on deshelving LED while trying
+                        self.pulser.switch_manual('TTL8',True)
+                        if self.remove_protection_beam():
+                            # If successful switch off LED and return to top of loop
+                            self.pulser.switch_auto('TTL8',False)
+                            continue
+                        else:
+                            self.set_hp_rf_state(False)
+                            # Failed, abort experiment
+                            self.pulser.switch_manual('TTL8',True)
+                            return
+    
+                    # Here we look to see if the doppler cooling counts were low,
+                    # and throw out experiments that were below threshold
+                    pmt_counts = self.pulser.get_readout_counts()
+                    dc_counts = pmt_counts[::2]
+                    sd_counts = pmt_counts[1::2]
+                    ind = np.where(dc_counts < self.dc_thresh)
+                    tot_dc_counts = np.append(tot_dc_counts, dc_counts)
+                    tot_sd_counts = np.append(tot_sd_counts, sd_counts)
+                    counts = np.delete(sd_counts,ind[0])
+                    tot_counts = np.append(tot_counts, counts)
+                    print len(counts)
+                    break
+    
+            self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+            # 1 state is bright for standard state detection
 
-                # Here we look to see if the doppler cooling counts were low,
-                # and throw out experiments that were below threshold
-                pmt_counts = self.pulser.get_readout_counts()
-                dc_counts = pmt_counts[::2]
-                sd_counts = pmt_counts[1::2]
-                ind = np.where(dc_counts < self.dc_thresh)
-                counts = np.delete(sd_counts,ind[0])
-                print len(counts)
+            bright = np.where(tot_counts >= self.disc)
+            fid = float(len(bright[0]))/len(tot_counts)
 
-
-                self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-                # 1 state is bright for standard state detection
-
-                bright = np.where(counts >= self.disc)
-                fid = float(len(bright[0]))/len(counts)
-
-                # If we are in repeat save the data point and rerun the point in the while loop
-                if self.mode == 'Repeat':
-                    self.dv.add(i , fid, context = self.c_prob)
-                    exp_list = np.arange(self.cycles)
-
-                    # Now the hist with the ones we threw away
-                    exp_list = np.delete(exp_list,ind[0])
-                    data = np.column_stack((exp_list,counts))
-                    self.dv.add(data, context = self.c_hist)
-                    # Adding the character c and the number of cycles so plotting the histogram
-                    # only plots the most recent point.
-                    self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
-                                  True, context = self.c_hist)
-                    i = i + 1
-                    continue
-
-
-
-                # Save freq vs prob
-                self.dv.add(freq[i] , fid, context = self.c_prob)
-                # We want to save all the experimental data, include dc as sd counts
+            # If we are in repeat save the data point and rerun the point in the while loop
+            if self.mode == 'Repeat':
+                self.dv.add(i , fid, context = self.c_prob)
                 exp_list = np.arange(self.cycles)
-                data = np.column_stack((exp_list, dc_counts, sd_counts))
-                self.dv.add(data, context = self.c_dc_hist)
 
                 # Now the hist with the ones we threw away
                 exp_list = np.delete(exp_list,ind[0])
-                data = np.column_stack((exp_list,counts))
+                data = np.column_stack((exp_list,tot_counts))
                 self.dv.add(data, context = self.c_hist)
-
-
                 # Adding the character c and the number of cycles so plotting the histogram
                 # only plots the most recent point.
-                self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
-                break
-            
+                self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), \
+                              True, context = self.c_hist)
+                i = i + 1
+                continue
+
+
+
+            # Save freq vs prob
+            self.dv.add(freq[i] , fid, context = self.c_prob)
+            # We want to save all the experimental data, include dc as sd counts
+            exp_list = np.arange(self.cycles*self.averages)
+            data = np.column_stack((exp_list, tot_dc_counts, tot_sd_counts))
+            self.dv.add(data, context = self.c_dc_hist)
+
+            # Now the hist with the ones we threw away
+            exp_list = np.arange(len(tot_counts))
+            data = np.column_stack((exp_list,tot_counts))
+            self.dv.add(data, context = self.c_hist)
+
+
+            # Adding the character c and the number of cycles so plotting the histogram
+            # only plots the most recent point.
+            self.dv.add_parameter('hist'+str(i) + 'c' + str(int(self.cycles)), True, context = self.c_hist)
+                
+        
         
         self.set_hp_rf_state(False)            
         # Close shutter and turn LED on after experiment

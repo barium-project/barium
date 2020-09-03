@@ -60,6 +60,7 @@ class rabi_flopping(experiment):
         self.dc_thresh = self.p.RabiFlopping.dc_threshold
         self.m_sequence = self.p.RabiFlopping.microwave_pulse_sequence
         self.mode = self.p.RabiFlopping.Mode
+        self.use_optical = self.p.RabiFlopping.use_1762
         if self.m_sequence == 'single':
             self.LO_freq = self.p.Microwaves133.LO_frequency
         elif self.m_sequence == 'composite_1':
@@ -104,7 +105,7 @@ class rabi_flopping(experiment):
                 return
 
             # if running in normal mode set the time
-            if self.mode == 'Normal':
+            if self.mode == 'Normal' and self.use_optical == 'False':
                 # set the microwave duration
                 if self.m_sequence == 'single':
                     self.p.Microwaves133.microwave_duration = WithUnit(t[i],'us')
@@ -112,6 +113,9 @@ class rabi_flopping(experiment):
                     self.p.Composite1.microwave_duration = WithUnit(t[i],'us')
                 elif self.m_sequence == 'composite_4':
                     self.p.Composite4.delay_duration = WithUnit(t[i],'us')
+
+            if self.use_optical == 'True':
+                 self.p.E2Laser.laser_duration = WithUnit(t[i],'us')
 
             dds = []
             while True:
