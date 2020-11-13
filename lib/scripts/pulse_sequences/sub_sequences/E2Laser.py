@@ -1,6 +1,6 @@
 from common.lib.servers.Pulser2.pulse_sequences.pulse_sequence import pulse_sequence
 from labrad.units import WithUnit
-from random import *
+
 
 class e2laser(pulse_sequence):
 

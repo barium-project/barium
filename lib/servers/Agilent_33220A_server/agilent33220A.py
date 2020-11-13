@@ -226,6 +226,55 @@ class AgilentWrapper(GPIBDeviceWrapper):
         output = "FM:STAT " + state
         yield self.write(output)
         
+        
+        
+    @inlineCallbacks
+    def FSweepFrequencyCenter(self, frequency):
+        '''
+        Set the center frequency of Frequency Sweep modulation in Hz
+        '''
+        output = "FREQ:CENT " + str(frequency['Hz'])
+        yield self.write(output)
+        
+        
+    @inlineCallbacks
+    def FSweepFrequencySpan(self, frequency):
+        '''
+        Set the frequency span of Frequency Sweep modulation in Hz
+        '''
+        output = "FREQ:SPAN " + str(frequency['Hz'])
+        yield self.write(output)     
+        
+        
+    @inlineCallbacks
+    def FSweepTime(self, sweep_time):
+        '''
+        Set the time for a whole frequency sweep in s
+        '''
+        output = "SWE:TIME " + str(sweep_time['s'])
+        yield self.write(output)        
+                
+        
+    @inlineCallbacks
+    def FSweepON(self):
+        '''
+        Turn on frequency sweep
+        '''
+        output = "SWE:STAT ON"
+        yield self.write(output)        
+        
+        
+    @inlineCallbacks
+    def FSweepOFF(self):
+        '''
+        Turn off frequency sweep
+        '''
+        output = "SWE:STAT OFF"
+        yield self.write(output)        
+        
+        
+        
+
 
 class AgilentServer(GPIBManagedServer):
     name = 'Agilent 33220A Server' # Server name
@@ -270,6 +319,27 @@ class AgilentServer(GPIBManagedServer):
         dev = self.selectedDevice(c)
         volts = yield dev.setDC(value)
         returnValue(volts)
+        
+        
+    @setting(109, 'freq_sweep', freq_center = 'v[Hz]', freq_span = 'v[Hz]', amplitude = 'v[V]', sweep_time = 'v[s]')
+    def FrequencySweep(self, c, freq_center, freq_span, amplitude, sweep_time):
+        dev = self.selectedDevice(c)
+        yield dev.write("SWE:SPAC LIN")
+        yield dev.write("TRIG:SOUR IMM")
+        yield dev.FSweepFrequencyCenter(freq_center)
+        yield dev.FSweepFrequencySpan(freq_span) 
+        yield dev.Amplitude(amplitude)
+        yield dev.FSweepTime(sweep_time)
+        yield dev.FSweepON()
+        
+        
+
+    @setting(123, 'freq_sweep_off')
+    def FrequencySweepOFF(self, c, value = None):
+        dev = self.selectedDevice(c)
+        yield dev.FSweepOFF()
+
+
 
 __server__ = AgilentServer()
 
