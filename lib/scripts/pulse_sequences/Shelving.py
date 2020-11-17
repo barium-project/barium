@@ -31,22 +31,23 @@ class shelving(pulse_sequence):
         #self.addSequence(microwaves_133)
         #self.addSequence(shelving_1762)
 #        self.addSequence(shelving_133_sub)
-
-        if self.p.Scan == 'time':
-            if self.p.Scan_Laser == '585nm':          
-                self.addSequence(shelving_133_585_sub)
-            if self.p.Scan_Laser == '455nm':          
-                self.addSequence(shelving_133_sub)    
-        if self.p.Scan == 'deshelve':
+        if self.p.Scan_Laser == '585nm':          
+            self.addSequence(shelving_133_585_sub)
+        # if self.p.Scan_Laser == '455nm':          
+        #         self.addSequence(shelving_133_sub)    
+        elif self.p.Scan_Laser == '1762nm':          
+            self.addSequence(shelving_1762)    
+        else:
+#            print "adding shelving_133 sub sequence"
+            self.addSequence(shelving_133_sub)    
+            
+            
+        if self.p.Scan == 'deshelve':           
             self.addSequence(deshelving_133)
-            self.addSequence(shelving_state_detection)
-            self.addSequence(deshelve_led)
         elif self.p.Scan == 'frequency' and self.p.Scan_Laser == '614nm':
             self.addSequence(deshelving_133)
-            self.addSequence(shelving_state_detection)
-            self.addSequence(deshelve_led)
-        else:
-            self.addSequence(shelving_state_detection)
-            self.addSequence(deshelving_133)
+
+        self.addSequence(shelving_state_detection)
+        self.addSequence(deshelve_led)
 
 

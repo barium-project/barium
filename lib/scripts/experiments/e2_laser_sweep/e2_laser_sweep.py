@@ -124,8 +124,11 @@ class e2_laser_sweep(experiment):
                 # for the protection beam we start a while loop and break it if we got the data,
                 # continue if we didn't
                 # Set the microwave frequency
-                self.set_hp_frequency(freq[i])
-                time.sleep(.3) # time to switch amplitude    
+                
+                # If we are in repeat mode, don't change frequency
+                if self.mode != 'Repeat':
+                    self.set_hp_frequency(freq[i])
+                    time.sleep(.3) # time to switch amplitude    
                                     
     
                 # for the protection beam we start a while loop and break it if we got the data,
