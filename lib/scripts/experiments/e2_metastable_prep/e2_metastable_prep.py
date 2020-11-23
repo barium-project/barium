@@ -1,7 +1,7 @@
 import labrad
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-from common.lib.servers.abstractservers.script_scanner.scan_methods import experiment
+from common.lib.servers.script_scanner.scan_methods import experiment
 from barium.lib.scripts.pulse_sequences.E2MetastablePrep import e2_metastable_prep as main_sequence
 
 from config.FrequencyControl_config import FrequencyControl_config
@@ -60,6 +60,7 @@ class e2_metastable_prep(experiment):
         self.dc_thresh = self.p.E2MetastablePrep.dc_threshold
         self.hp_amp = self.p.E2MetastablePrep.HP_Amplitude
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+        self.disc_shelve = self.pv.get_parameter('StateReadout','state_readout_threshold_shelve')
         self.m_sequence = self.p.E2MetastablePrep.e2metastableprep_pulse_sequence
         self.mode = self.p.E2MetastablePrep.Mode
             
@@ -135,32 +136,30 @@ class e2_metastable_prep(experiment):
                 pmt_counts = self.pulser.get_readout_counts()
                 # We also want to grab the time tags in case we're correcting for D5/2 decay
                 time_tags = self.pulser.get_timetags()
-                dc1_counts = pmt_counts[::3]
-                dc2_counts = pmt_counts[1::3]
-                sd2_counts = pmt_counts[2::3]
+                dc_counts = pmt_counts[::3]
+                shelve_sd_counts = pmt_counts[1::3]
+                sd_counts = pmt_counts[2::3]
                 
-                ind1 = np.where(dc_counts1 < self.dc_thresh)
-                ind2 = np.where(dc_counts2 < self.dc_thresh)
-                counts = np.delete(sd_counts,ind1[0])
-                counts = np.delete(counts,ind2[0])
+                ind = np.where(dc_counts < self.dc_thresh)
+                counts = np.delete(sd_counts,ind[0])
+                shelve_counts = np.delete(shelve_sd_counts,ind[0])
                 self.total_exps = self.total_exps + len(counts)
-                print len(dc1_counts),len(dc2counts), len(counts), self.total_exps
+                print len(dc_counts), len(counts), self.total_exps
 
                 self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+                self.disc_shelve = self.pv.get_parameter('StateReadout','shelving_state_readout_threshold')
                 # 1 state is bright for standard state detection
-                if self.state_detection == 'spin-1/2':
-                    bright = np.where(counts >= self.disc)
-                    fid = float(len(bright[0]))/len(counts)
+                bright = np.where(counts >= self.disc)
+                fid = float(len(bright[0]))/len(counts)
                 # 1 state is dark for shelving state detection
-                elif self.state_detection == 'shelving':
-                    dark = np.where(counts <= self.disc)
-                    fid = float(len(dark[0]))/len(counts)
+                dark = np.where(shelve_counts <= self.disc_shelve)
+                fid = float(len(dark[0]))/len(shelve_counts)
 
 
 
                 # We want to save all the experimental data, include dc as sd counts
                 exp_list = np.arange(self.cycles)
-                data = np.column_stack((exp_list, dc_counts, sd_counts))
+                data = np.column_stack((exp_list, dc_counts, shelve_sd_counts, sd_counts))
                 self.dv.add(data, context = self.c_hist)
 
                 # Now the time tags
