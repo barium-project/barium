@@ -143,6 +143,7 @@ class GPIBDeviceManager(LabradServer):
         try:
             resp = (yield p.send()).read
             name = resp #parseIDNResponse(resp)
+            print name
         except Exception, e:
             print 'Error sending *IDN? to', server, channel + ':', e
             name = UNKNOWN

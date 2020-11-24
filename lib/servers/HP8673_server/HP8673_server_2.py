@@ -16,7 +16,7 @@
 """
 ### BEGIN NODE INFO
 [info]
-name = HP8673Server
+name = HP8673Server2
 version = 1.3
 description =
 
@@ -44,19 +44,19 @@ class HP8673Wrapper(GPIBDeviceWrapper):
 
 
 
-class HP8673_Server(GPIBManagedServer):
+class HP8673_Server2(GPIBManagedServer):
     """
     This server talks to the HP8673 Microwave Signal Generator.
 
     """
-    name = 'HP8673Server'
-    deviceName = 'FR03000000000HZ'
+    name = 'HP8673Server2'
+    deviceName = 'FR09000000000HZ'
     deviceIdentFunc = 'identify_device'
     #deviceManager = 'GPIB Device Manager'
     deviceWrapper = HP8673Wrapper
 
     def __init__(self):
-        super(HP8673_Server, self).__init__()
+        super(HP8673_Server2, self).__init__()
 
     @setting(100, server='s', address='s', response = 's')
     def identify_device(self, c, server, address, response):
@@ -121,7 +121,7 @@ class HP8673_Server(GPIBManagedServer):
 
 
 
-__server__ = HP8673_Server()
+__server__ = HP8673_Server2()
 
 if __name__ == '__main__':
     from labrad import util

@@ -72,28 +72,28 @@ class QCustomARampGui(QtGui.QFrame):
         self.spinDC1.setFont(QtGui.QFont(shell_font, pointSize=16))
         self.spinDC1.setDecimals(4)
         self.spinDC1.setSingleStep(.01)
-        self.spinDC1.setRange(0, 5)
+        self.spinDC1.setRange(0, 10)
         self.spinDC1.setKeyboardTracking(False)
 
         self.spinDC2 = QtGui.QDoubleSpinBox()
         self.spinDC2.setFont(QtGui.QFont(shell_font, pointSize=16))
         self.spinDC2.setDecimals(4)
         self.spinDC2.setSingleStep(.01)
-        self.spinDC2.setRange(0, 5)
+        self.spinDC2.setRange(0, 10)
         self.spinDC2.setKeyboardTracking(False)
 
         self.spinDC3 = QtGui.QDoubleSpinBox()
         self.spinDC3.setFont(QtGui.QFont(shell_font, pointSize=16))
         self.spinDC3.setDecimals(4)
         self.spinDC3.setSingleStep(.01)
-        self.spinDC3.setRange(0, 5)
+        self.spinDC3.setRange(0, 10)
         self.spinDC3.setKeyboardTracking(False)
 
         self.spinDC4 = QtGui.QDoubleSpinBox()
         self.spinDC4.setFont(QtGui.QFont(shell_font, pointSize=16))
         self.spinDC4.setDecimals(4)
         self.spinDC4.setSingleStep(.01)
-        self.spinDC4.setRange(0, 5)
+        self.spinDC4.setRange(0, 10)
         self.spinDC4.setKeyboardTracking(False)
 
 

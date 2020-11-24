@@ -41,6 +41,8 @@ class shelving_133_sub(pulse_sequence):
 
         #self.addDDS(p.channel_493, self.start + switch_on_delay - amp_change_delay, \
                     #p.shelving_duration, p.frequency_493, p.amplitude_493)
+
+
         self.addDDS(p.channel_650, self.start + switch_on_delay - amp_change_delay, \
                      p.shelving_duration, p.frequency_650, p.amplitude_650)
 
@@ -52,7 +54,17 @@ class shelving_133_sub(pulse_sequence):
         self.addTTL(p.TTL_650, self.start, p.shelving_duration  + 2*switch_on_delay)
         #self.addTTL(p.TTL_493, self.start, p.shelving_duration + 2*switch_on_delay)
         #self.addTTL(p.TTL_prep, self.start, p.shelving_duration + 2*switch_on_delay)
+
         # If we want the 493 on turn on during shelving comment out TTL_493_DDS line below
         self.addTTL(p.TTL_493_DDS, self.start, p.shelving_duration + 2*switch_on_delay)
+
+        # If we want the 493 on turn on the 493 DDS rf switch
+#b #       self.addTTL(p.TTL_493_DDS, self.start, p.shelving_duration + 2*switch_on_delay)
+
+  
         self.end = self.start + switch_on_delay + p.shelving_duration + switch_on_delay
+
+
+
+
 

@@ -27,7 +27,6 @@ class FrequencyControlClient(Frequency_Ui):
         self.name = socket.gethostname() + ' Frequency Control Client'
         self.device_mapA = {}
         self.device_mapB = {}
-        self.device_mapC = {}
         self.context_b = {}
         self.setupUi()
         self.connect()
@@ -105,17 +104,11 @@ class FrequencyControlClient(Frequency_Ui):
 
         self.hp8673_1 = self.cxn1.hp8673server
 
-
-
-
         self.cxn9 = yield connectAsync(self.serverIP,
                                       name=self.name,
                                       password=self.password)
 
-        self.hp8673_9 = self.cxn9.hp8673server2
-
-
-
+        self.hp8673_9 = self.cxn9.hp8673server
 
 
         self.pulser = self.cxn1.pulser
@@ -134,7 +127,7 @@ class FrequencyControlClient(Frequency_Ui):
 
         gpib_listA = FrequencyControl_config.gpibA
         gpib_listB = FrequencyControl_config.gpibB
-        gpib_listC = FrequencyControl_config.gpibC
+        gpib_list = FrequencyControl_config.gpibC
 
         devices = yield self.clients_hpa[0].list_devices()
         for i in range(len(gpib_listA)):
@@ -151,23 +144,15 @@ class FrequencyControlClient(Frequency_Ui):
                     self.device_mapB[gpib_listB[i]] = devices[j][0]
                     self.clients_hpb[i].select_device(devices[j][1])
                     break
-
                 
-        devices = yield self.clients_hpc[0].list_devices()   
-        for j in range(len(devices)):
-            if devices[j][1].find(gpib_listC[0]) > 0:
-                self.device_mapC[gpib_listC[0]] = devices[j][0]
-                self.clients_hpc[0].select_device(devices[j][1])
-                break
-        devices2 = yield self.clients_hpc[1].list_devices()        
-        for j in range(len(devices2)):
-            if devices2[j][1].find(gpib_listC[1]) > 0:
-                self.device_mapC[gpib_listC[1]] = devices2[j][0]
-                self.clients_hpc[1].select_device(devices2[j][1])
-                break
-              
-        
-  
+        devices = yield self.clients_hpc[0].list_devices()
+        for i in range(len(gpib_listC)):
+            for j in range(len(devices)):
+                if devices[j][1].find(gpib_listC[i]) > 0:
+                    self.device_mapC[gpib_listC[i]] = devices[j][0]
+                    self.clients_hpb[i].select_device(devices[j][1])
+                    break
+
         # l = yield self.hp8673.list_devices()
         # if len(l) != 0:
         #     self.hp8673.select_device()
@@ -186,27 +171,14 @@ class FrequencyControlClient(Frequency_Ui):
                 client = self.clients_hpa[0] : self.setRFHPA(client, state))
 
 
-
         self.GPIB1spinFreq.valueChanged.connect(lambda freq = \
-                self.GPIB1spinFreq.value(), client = self.clients_hpc[0]  : self.freqChangedHP8673(freq, client))
+                self.GPIB1spinFreq.value() : self.freqChangedHP8673(freq))
 
-        self.GPIB1spinAmp.valueChanged.connect(lambda amp = self.GPIB1spinAmp.value(), \
-                client = self.clients_hpc[0] : self.ampChangedHP8673(amp, client))
+        self.GPIB1spinAmp.valueChanged.connect(lambda amp = self.GPIB1spinAmp.value() \
+                                               : self.ampChangedHP8673(amp))
 
         self.GPIB1switch.clicked.connect(lambda state = self.GPIB1switch.isChecked(), \
-                client = self.clients_hpc[0] : self.setRFHP8673(client, state))
-
-
-        self.GPIB9spinFreq.valueChanged.connect(lambda freq = \
-                self.GPIB9spinFreq.value(), client = self.clients_hpc[1]  : self.freqChangedHP8673(freq, client))
-
-        self.GPIB9spinAmp.valueChanged.connect(lambda amp = self.GPIB9spinAmp.value(), \
-                client = self.clients_hpc[1] : self.ampChangedHP8673(amp, client))
-
-        self.GPIB9switch.clicked.connect(lambda state = self.GPIB9switch.isChecked(), \
-                client = self.clients_hpc[1] : self.setRFHP8673(client, state))
-
-
+                                         : self.setRFHP8673(state))
 
 
         # set up hp8672b oscillators
@@ -268,12 +240,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinFreq.setValue(self.default['GPIB0::1'][0])
         self.GPIB1spinAmp.setValue(self.default['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
-        self.setRFHP8673(self.clients_hpc[0],False)
-        
-        self.GPIB9spinFreq.setValue(self.default['GPIB0::9'][0])
-        self.GPIB9spinAmp.setValue(self.default['GPIB0::9'][1])
-        self.GPIB9switch.setChecked(False)
-        self.setRFHP8673(self.clients_hpc[1],False)
+        self.setRFHP8673(False)
         '''
         self.GPIB6spinFreq.setValue(self.default['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.default['GPIB0::6'][1])
@@ -310,7 +277,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinFreq.setValue(self.cool_130['GPIB0::1'][0])
         self.GPIB1spinAmp.setValue(self.cool_130['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
-        self.setRFHP8673(self.clients_hpc[0],False)
+        self.setRFHP8673(False)
         '''
         self.GPIB6spinFreq.setValue(self.cool_130['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_130['GPIB0::6'][1])
@@ -351,7 +318,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinFreq.setValue(self.cool_132['GPIB0::1'][0])
         self.GPIB1spinAmp.setValue(self.cool_132['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
-        self.setRFHP8673(self.clients_hpc[0],False)
+        self.setRFHP8673(False)
         '''
         self.GPIB6spinFreq.setValue(self.cool_132['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_132['GPIB0::6'][1])
@@ -391,7 +358,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinFreq.setValue(self.cool_133['GPIB0::1'][0])
         self.GPIB1spinAmp.setValue(self.cool_133['GPIB0::1'][1])
         self.GPIB1switch.setChecked(True)
-        self.setRFHP8673(self.clients_hpc[0],True)
+        self.setRFHP8673(True)
 
         self.GPIB6spinFreq.setValue(self.cool_133['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_133['GPIB0::6'][1])
@@ -435,7 +402,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinFreq.setValue(self.cool_134['GPIB0::1'][0])
         self.GPIB1spinAmp.setValue(self.cool_134['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
-        self.setRFHP8673(self.clients_hpc[0],False)
+        self.setRFHP8673(False)
         '''
         self.GPIB6spinFreq.setValue(self.cool_134['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_134['GPIB0::6'][1])
@@ -476,7 +443,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinFreq.setValue(self.cool_135['GPIB0::1'][0])
         self.GPIB1spinAmp.setValue(self.cool_135['GPIB0::1'][1])
         self.GPIB1switch.setChecked(True)
-        self.setRFHP8673(self.clients_hpc[0],True)
+        self.setRFHP8673(True)
         '''
         self.GPIB6spinFreq.setValue(self.cool_135['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_135['GPIB0::6'][1])
@@ -551,7 +518,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinFreq.setValue(self.cool_136['GPIB0::1'][0])
         self.GPIB1spinAmp.setValue(self.cool_136['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
-        self.setRFHP8673(self.clients_hpc[0],False)
+        self.setRFHP8673(False)
         '''
         self.GPIB6spinFreq.setValue(self.cool_136['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_136['GPIB0::6'][1])
@@ -592,7 +559,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinFreq.setValue(self.cool_137['GPIB0::1'][0])
         self.GPIB1spinAmp.setValue(self.cool_137['GPIB0::1'][1])
         self.GPIB1switch.setChecked(True)
-        self.setRFHP8673(self.clients_hpc[0],True)
+        self.setRFHP8673(True)
         '''
         self.GPIB6spinFreq.setValue(self.cool_137['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_137['GPIB0::6'][1])
@@ -625,8 +592,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB1spinFreq.setValue(self.cool_138['GPIB0::1'][0])
         self.GPIB1spinAmp.setValue(self.cool_138['GPIB0::1'][1])
         self.GPIB1switch.setChecked(False)
-        self.setRFHP8673(self.clients_hpc[0],False)
-        
+        self.setRFHP8673(False)
 
         self.GPIB6spinFreq.setValue(self.cool_138['GPIB0::6'][0])
         self.GPIB6spinAmp.setValue(self.cool_138['GPIB0::6'][1])
@@ -652,9 +618,7 @@ class FrequencyControlClient(Frequency_Ui):
         self.GPIB19switch.setChecked(False)
         self.setRFHPA(self.clients_hpa[0],False)
         self.GPIB1switch.setChecked(False)
-        self.setRFHP8673(self.clients_hpc[0],False)
-        self.GPIB9switch.setChecked(False)
-        self.setRFHP8673(self.clients_hpc[1],False)
+        self.setRFHP8673(False)
         self.GPIB6switch.setChecked(False)
         self.setRFHPB(self.clients_hpb[0],False)
         self.GPIB7switch.setChecked(False)
@@ -678,10 +642,10 @@ class FrequencyControlClient(Frequency_Ui):
 
 
     @inlineCallbacks
-    def freqChangedHP8673(self, freq, client):
+    def freqChangedHP8673(self, freq):
         from labrad.units import WithUnit as U
         frequency = U(freq,'MHz')
-        yield client.set_frequency(frequency)
+        yield self.hp8673.set_frequency(frequency)
 
     @inlineCallbacks
     def ampChangedHPA19(self, client):
@@ -693,18 +657,18 @@ class FrequencyControlClient(Frequency_Ui):
         yield client.set_amplitude(out,ver)
 
     @inlineCallbacks
-    def ampChangedHP8673(self, amp, client):
+    def ampChangedHP8673(self, amp):
         from labrad.units import WithUnit as U
-        amp = U(amp,'dBm')
-        yield client.set_amplitude(amp)
+        out = U(amp,'dBm')
+        yield self.hp8673.set_amplitude(out)
 
     @inlineCallbacks
     def setRFHPA(self, client, state):
         yield client.rf_state(state)
 
     @inlineCallbacks
-    def setRFHP8673(self, client, state):
-        yield client.rf_state(state)
+    def setRFHP8673(self, state):
+        yield self.hp8673.rf_state(state)
 
     #hp8657b
     @inlineCallbacks
