@@ -7,7 +7,6 @@ class microwaves_133(pulse_sequence):
     required_parameters = [
                            ('Microwaves133', 'microwave_duration'),
                            ('Microwaves133', 'TTL1_microwaves'),
-                           ('Microwaves133', 'TTL2_microwaves'),
                            ('Microwaves133', 'channel_microwaves'),
                            ('Microwaves133', 'frequency_microwaves'),
                            ('Microwaves133', 'amplitude_microwaves'),
@@ -43,8 +42,7 @@ class microwaves_133(pulse_sequence):
 
         if p.microwave_duration != 0:
             #We want to leave the DDS on, so we'll use two fast microwave switches to turn things on and off
-            self.addTTL(p.TTL1_microwaves, self.start + switch_on_delay - amp_change_delay, p.microwave_duration)
-            self.addTTL(p.TTL2_microwaves, self.start + switch_on_delay - amp_change_delay, p.microwave_duration)
+            self.addTTL(p.TTL1_microwaves, self.start + switch_on_delay - amp_change_delay, p.microwave_duration)      
             self.addTTL(p.TTL_493_DDS, self.start, p.microwave_duration + 2*switch_on_delay)
             self.addTTL(p.TTL_493, self.start, p.microwave_duration + 2*switch_on_delay)
 

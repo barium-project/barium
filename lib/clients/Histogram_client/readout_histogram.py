@@ -18,7 +18,9 @@ class config_hist(object):
     ID_A = 99999
     ID_B = 99998
     #data vault comment
-    dv_data_set = ['OpticalPumping','BrightState','D32_hist', 'MicrowaveSweep_hist', 'RabiFlopping_hist', 'Ramsey_hist']
+    dv_data_set = ['OpticalPumping','BrightState','D32_hist',\
+                   'MicrowaveSweep_hist', 'Rabi_hist',\
+                    'Ramsey_hist','metastable_prep_hist']
     #semaphore locations
     readout_threshold_dir =  ('StateReadout','state_readout_threshold')
 
