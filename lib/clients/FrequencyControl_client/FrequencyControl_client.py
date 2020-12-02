@@ -298,7 +298,8 @@ class FrequencyControlClient(Frequency_Ui):
         freq_130_493 = float(self.lasers['493nm'][1]) + self.cool_130['493nm']
         freq_130_650 = float(self.lasers['650nm'][1]) + self.cool_130['650nm']
 
-        yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),freq_130_493)
+        #yield self.wm.set_pid_course(int(self.lasers['493nm'][5]),freq_130_493)
+        yield self.software_lock.set_lock_frequency(freq_130_493,'493nm')
         yield self.wm.set_pid_course(int(self.lasers['650nm'][5]),freq_130_650)
 
         self.GPIB19spinFreq.setValue(self.cool_130['GPIB0::19'][0])
