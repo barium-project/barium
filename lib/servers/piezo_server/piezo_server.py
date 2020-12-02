@@ -120,7 +120,7 @@ class piezo_server(DeviceServer):
         dev = self.selectDevice(c)
         yield dev.write('vout.w ' + str(channel) + ' ' + str((value['V']))+ '\r\n')
         self.current_state[str(channel)][0] = value['V']
-        self.update_registry(channel)
+        #self.update_registry(channel)
 
     @setting(101, channel = 'i', value='b')
     def set_output_state(self, c, channel, value):
