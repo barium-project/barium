@@ -73,6 +73,8 @@ class rabi_flopping(experiment):
             self.LO_freq = self.p.Composite4.LO_frequency
         elif self.m_sequence == 'spin_echo':
             self.LO_freq = self.p.SpinEcho.LO_frequency
+        elif self.m_sequence == 'su_1':
+            self.LO_freq = self.p.Su1.LO_frequency            
         self.total_exps = 0
 
         # Define contexts for saving data sets
@@ -111,8 +113,13 @@ class rabi_flopping(experiment):
                     self.p.Microwaves133.microwave_duration = WithUnit(t[i],'us')
                 elif self.m_sequence == 'composite_1':
                     self.p.Composite1.microwave_duration = WithUnit(t[i],'us')
+                elif self.m_sequence == 'composite_2':
+                    self.p.Composite2.microwave_duration = WithUnit(t[i],'us')                    
+                if self.m_sequence == 'su_1':
+                    self.p.Su1.microwave_duration = WithUnit(t[i],'us')                    
                 elif self.m_sequence == 'composite_4':
                     self.p.Composite4.delay_duration = WithUnit(t[i],'us')
+                    
 
             if self.use_optical == 'True':
                  self.p.E2Laser.laser_duration = WithUnit(t[i],'us')

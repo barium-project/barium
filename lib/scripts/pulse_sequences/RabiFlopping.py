@@ -7,6 +7,7 @@ from sub_sequences.Composite_2 import composite_2
 from sub_sequences.Composite_3 import composite_3
 from sub_sequences.Composite_4 import composite_4
 from sub_sequences.Spin_Echo import spin_echo
+from sub_sequences.Su_1 import su_1
 from sub_sequences.E2Laser import e2laser
 from sub_sequences.Shelving133_Sub import shelving_133_sub
 from sub_sequences.ShelvingStateDetection import shelving_state_detection
@@ -24,7 +25,8 @@ class rabi_flopping(pulse_sequence):
                            ]
 
     required_subsequences = [doppler_cooling_133, state_prep_133, microwaves_133, composite_1, composite_2, spin_echo, e2laser, \
-                             composite_3, composite_4, shelving_133_sub, standard_state_detection, shelving_state_detection, deshelving_133]
+                             composite_3, composite_4, su_1, shelving_133_sub,\
+                            standard_state_detection, shelving_state_detection, deshelving_133]
 
     def sequence(self):
 
@@ -49,6 +51,8 @@ class rabi_flopping(pulse_sequence):
                 self.addSequence(composite_4)
             elif p.microwave_pulse_sequence == 'spin_echo':
                 self.addSequence(spin_echo)
+            elif p.microwave_pulse_sequence == 'su_1':
+                self.addSequence(su_1)
 
         if p.use_1762 == "True":
             self.addSequence(e2laser)
