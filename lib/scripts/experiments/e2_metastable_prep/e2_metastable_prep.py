@@ -143,12 +143,15 @@ class e2_metastable_prep(experiment):
                 sd_counts_1 = np.delete(sd_counts,ind[0])
                 ds_counts_1 = np.delete(ds_counts,ind[0])
                 
+                
+                
                 # now only keep counts where heralding measured dark
                 self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
-                ind_1 = np.where(hearld_counts_1 < self.disc)
-                sd_counts_2 = np.delete(sd_counts_1,ind[0])
-                ds_counts_2 = np.delete(ds_counts_1,ind[0])       
+                ind_1 = np.where(hearld_counts_1 > self.disc)
+                sd_counts_2 = np.delete(sd_counts_1,ind_1[0])
+                ds_counts_2 = np.delete(ds_counts_1,ind_1[0])       
                 
+                print "Herladed exps", len(sd_counts_2)
                 
                 # 1 state is dark for shelving state detection
                 dark_sd = np.where(sd_counts_2 <= self.disc)
