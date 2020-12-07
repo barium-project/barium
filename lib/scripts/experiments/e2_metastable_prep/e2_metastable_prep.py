@@ -59,8 +59,10 @@ class e2_metastable_prep(experiment):
         self.hp_amp = self.p.E2MetastablePrep.HP_Amplitude
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
         self.mode = self.p.E2MetastablePrep.Mode
+        self.prep = self.p.E2MetastablePrep.prep_state
             
         self.total_exps = 0
+        self.total_sd_counts = np.array([])
 
     # Define contexts for saving data sets
         self.c_prob= self.cxn.context()
@@ -150,6 +152,8 @@ class e2_metastable_prep(experiment):
                 ind_1 = np.where(hearld_counts_1 > self.disc)
                 sd_counts_2 = np.delete(sd_counts_1,ind_1[0])
                 ds_counts_2 = np.delete(ds_counts_1,ind_1[0])       
+                self.total_sd_counts = np.append(self.total_sd_counts,\
+                                                 sd_counts_2)
                 
                 print "Herladed exps", len(sd_counts_2)
                 
@@ -159,6 +163,21 @@ class e2_metastable_prep(experiment):
                 dark_ds = np.where(ds_counts_2 <= self.disc)
                 fid_ds = float(len(dark_ds[0]))/len(ds_counts_2)
 
+                if self.prep == '1':
+                    tot_dark = np.where(self.total_sd_counts <= self.disc)
+                    tot_bright = np.where(self.total_sd_counts > self.disc)
+                    tot_fid = float(len(total_dark[0]))/len(self.total_sd_counts)
+                    tot_err =  np.sqrt(float(len(total_bright[0])))/len(self.total_sd_counts)
+                    print "Fidelity: ", '{:.4e}'.formate(tot_fid), '+/-',\
+                            '{:.4e}'.formate(tot_err)
+                else:
+                    tot_dark = np.where(self.total_sd_counts <= self.disc)
+                    tot_bright = np.where(self.total_sd_counts > self.disc)
+                    tot_fid = float(len(total_bright[0]))/len(self.total_sd_counts)
+                    tot_err =  np.sqrt(float(len(total_dark[0])))/len(self.total_sd_counts)
+                    print "Fidelity: ", '{:.4e}'.formate(tot_fid), '+/-',\
+                            '{:.4e}'.formate(tot_err)
+                    
 
                 # We want to save all the experimental data, include dc as sd counts
                 # SD histogram needs to be the last column for the 
