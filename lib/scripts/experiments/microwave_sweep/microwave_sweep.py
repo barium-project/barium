@@ -202,7 +202,7 @@ class microwave_sweep(experiment):
                                [('Counts', 'DC_Hist', 'num'), ('Counts', 'SD_Hist', 'num')], context = self.c_dc_hist)
 
         # Set live plotting
-        self.grapher.plot(dataset, 'microwave_sweep', False)
+        self.grapher.plot(dataset, 'qubit_freq_sweep', False)
 
 
     def set_wm_frequency(self, freq, chan):

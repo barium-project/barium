@@ -6,12 +6,14 @@ class metastable_raman(pulse_sequence):
 
     required_parameters = [
                            ('MetaStableRaman', 'raman_duration'),
-                           ('MetaStableRaman', 'channel_780_1'),
-                           ('MetaStableRaman', 'frequency_780_1'),
-                           ('MetaStableRaman', 'amplitude_780_1'),
-                           ('MetaStableRaman', 'channel_780_2'),
-                           ('MetaStableRaman', 'frequency_780_2'),
-                           ('MetaStableRaman', 'amplitude_780_2'),
+                           ('MetaStableRaman', 'channel_614_1'),
+                           ('MetaStableRaman', 'frequency_614_1'),
+                           ('MetaStableRaman', 'amplitude_614_1'),
+                           ('MetaStableRaman', 'channel_614_2'),
+                           ('MetaStableRaman', 'frequency_614_2'),
+                           ('MetaStableRaman', 'amplitude_614_2'),
+                           ('MetaStableRaman', 'AOM_TTL_614_1'),
+                           ('MetaStableRaman', 'AOM_TTL_614_2'),
                            ]
 
     def sequence(self):
@@ -24,15 +26,20 @@ class metastable_raman(pulse_sequence):
         # add a small delay for the switching on
         amp_change_delay = WithUnit(350.0,'ns')
 
-        self.addDDS(p.channel_780_1, self.start - amp_change_delay,\
-                     switch_on_delay, p.frequency_780_1, amp_off)
-        self.addDDS(p.channel_780_2, self.start - amp_change_delay,\
-                    switch_on_delay, p.frequency_780_2, amp_off)
+        self.addDDS(p.channel_614_1, self.start - amp_change_delay,\
+                     switch_on_delay, p.frequency_614_1, amp_off)
+        self.addDDS(p.channel_614_2, self.start - amp_change_delay,\
+                    switch_on_delay, p.frequency_614_2, amp_off)
 
-        self.addDDS(p.channel_780_1, self.start - amp_change_delay + switch_on_delay, \
-                     p.raman_duration, p.frequency_780_1, p.amplitude_780_1)
-        self.addDDS(p.channel_780_2, self.start - amp_change_delay+ switch_on_delay, \
-                     p.raman_duration, p.frequency_780_2, p.amplitude_780_2)
+        self.addDDS(p.channel_614_1, self.start - amp_change_delay + switch_on_delay, \
+                     p.raman_duration, p.frequency_614_1, p.amplitude_614_1)
+        self.addDDS(p.channel_614_2, self.start - amp_change_delay+ switch_on_delay, \
+                     p.raman_duration, p.frequency_614_2, p.amplitude_614_2)
 
-        self.end = self.start + p.raman_duration + amp_change_delay + switch_on_delay
+
+        self.addTTL(p.AOM_TTL_614_1, self.start + switch_on_delay, p.raman_duration)
+        self.addTTL(p.AOM_TTL_614_2, self.start + switch_on_delay, p.raman_duration)
+
+        self.end = self.start +  amp_change_delay + switch_on_delay\
+                    + p.raman_duration + switch_on_delay
 
