@@ -12,10 +12,10 @@ from labrad.units import WithUnit
 
 
 
-class metastable_rabi_flopping(pulse_sequence):
+class metastable_freq_sweep(pulse_sequence):
 
     required_parameters = [
-                            ('PSMetastableRabi','prep_state'),
+                            ('PSMetastableFreqSweep','prep_state'),
                            ]
 
     required_subsequences = [doppler_cooling_133, state_prep_133,\
@@ -25,7 +25,7 @@ class metastable_rabi_flopping(pulse_sequence):
 
     def sequence(self):
 
-        p = self.parameters.PSMetastableRabi
+        p = self.parameters.PSMetastableFreqSweep
 
         self.end = WithUnit(10.0,'us')
         self.addSequence(doppler_cooling_133)

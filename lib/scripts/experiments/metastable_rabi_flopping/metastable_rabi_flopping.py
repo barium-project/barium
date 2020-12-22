@@ -96,6 +96,8 @@ class metastable_rabi_flopping(experiment):
                 self.pulser.switch_manual('TTL8',True)
                 return
 
+            if self.mode == 'Normal':
+                self.p.MetaStableRaman.raman_duration = WithUnit(t[i],'us')
 
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't
@@ -165,14 +167,14 @@ class metastable_rabi_flopping(experiment):
                     tot_bright = np.where(self.total_sd_counts > self.disc)
                     tot_fid = float(len(tot_dark[0]))/len(self.total_sd_counts)
                     tot_err =  np.sqrt(float(len(tot_bright[0])))/len(self.total_sd_counts)
-                    print "Fidelity 1 state: ", '{:.4e}'.format(tot_fid), '+/-',\
+                    print "Fidelity 1 state: ", '{:.4f}'.format(tot_fid), '+/-',\
                             '{:.4e}'.format(tot_err)
                 else:
                     tot_dark = np.where(self.total_sd_counts <= self.disc)
                     tot_bright = np.where(self.total_sd_counts > self.disc)
                     tot_fid = float(len(tot_bright[0]))/len(self.total_sd_counts)
                     tot_err =  np.sqrt(float(len(tot_dark[0])))/len(self.total_sd_counts)
-                    print "Fidelity 0 state: ", '{:.4e}'.format(tot_fid), '+/-',\
+                    print "Fidelity 0 state: ", '{:.4f}'.format(tot_fid), '+/-',\
                             '{:.4e}'.format(tot_err)
                     
 
