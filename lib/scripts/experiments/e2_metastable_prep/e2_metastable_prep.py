@@ -163,20 +163,22 @@ class e2_metastable_prep(experiment):
                 dark_ds = np.where(ds_counts_2 <= self.disc)
                 fid_ds = float(len(dark_ds[0]))/len(ds_counts_2)
 
+                    
+                    
                 if self.prep == '1':
                     tot_dark = np.where(self.total_sd_counts <= self.disc)
                     tot_bright = np.where(self.total_sd_counts > self.disc)
-                    tot_fid = float(len(total_dark[0]))/len(self.total_sd_counts)
-                    tot_err =  np.sqrt(float(len(total_bright[0])))/len(self.total_sd_counts)
-                    print "Fidelity: ", '{:.4e}'.formate(tot_fid), '+/-',\
-                            '{:.4e}'.formate(tot_err)
+                    tot_fid = float(len(tot_dark[0]))/len(self.total_sd_counts)
+                    tot_err =  np.sqrt(float(len(tot_bright[0])))/len(self.total_sd_counts)
+                    print "Fidelity: ", '{:.4e}'.format(tot_fid), '+/-',\
+                            '{:.4e}'.format(tot_err)
                 else:
                     tot_dark = np.where(self.total_sd_counts <= self.disc)
                     tot_bright = np.where(self.total_sd_counts > self.disc)
-                    tot_fid = float(len(total_bright[0]))/len(self.total_sd_counts)
-                    tot_err =  np.sqrt(float(len(total_dark[0])))/len(self.total_sd_counts)
-                    print "Fidelity: ", '{:.4e}'.formate(tot_fid), '+/-',\
-                            '{:.4e}'.formate(tot_err)
+                    tot_fid = float(len(tot_bright[0]))/len(self.total_sd_counts)
+                    tot_err =  np.sqrt(float(len(tot_dark[0])))/len(self.total_sd_counts)
+                    print "Fidelity: ", '{:.4e}'.format(tot_fid), '+/-',\
+                            '{:.4e}'.format(tot_err)
                     
 
                 # We want to save all the experimental data, include dc as sd counts
