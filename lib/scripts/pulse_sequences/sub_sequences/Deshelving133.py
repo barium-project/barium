@@ -13,6 +13,7 @@ class deshelving_133(pulse_sequence):
                            ('Deshelving133', 'frequency_650'),
                            ('Deshelving133', 'amplitude_650'),
                            ('Deshelving133', 'TTL_614_AOM'),
+                           ('Deshelving133', 'TTL_614_EOM'),
 
                            ]
 
@@ -27,6 +28,7 @@ class deshelving_133(pulse_sequence):
 
         if p.deshelving_duration != 0:
             self.addTTL(p.TTL_614_AOM, self.start, p.deshelving_duration)
+            self.addTTL(p.TTL_614_EOM, self.start, p.deshelving_duration)
 
         self.end = self.start + p.deshelving_duration + WithUnit(650.0, 'ns')
 

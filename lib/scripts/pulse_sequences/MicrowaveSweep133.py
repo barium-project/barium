@@ -7,6 +7,7 @@ from sub_sequences.Shelving133_Sub import shelving_133_sub
 from sub_sequences.ShelvingStateDetection import shelving_state_detection
 from sub_sequences.StandardStateDetection import standard_state_detection
 from sub_sequences.Deshelving133 import deshelving_133
+from sub_sequences.DeshelveLED import deshelve_led
 from labrad.units import WithUnit
 
 class microwave_sweep(pulse_sequence):
@@ -17,7 +18,9 @@ class microwave_sweep(pulse_sequence):
                            ]
 
     required_subsequences = [doppler_cooling_133, state_prep_133, microwaves_133, composite_1, \
-                            shelving_133_sub, standard_state_detection, shelving_state_detection, deshelving_133]
+                            shelving_133_sub, standard_state_detection,\
+                            shelving_state_detection, deshelving_133,\
+                            deshelve_led]
 
     def sequence(self):
         p = self.parameters.MicrowaveSweep133
@@ -38,6 +41,6 @@ class microwave_sweep(pulse_sequence):
         elif p.State_Detection == 'shelving':
             self.addSequence(shelving_133_sub)
             self.addSequence(shelving_state_detection)
-            self.addSequence(deshelving_133)
+            self.addSequence(deshelve_led)
 
 

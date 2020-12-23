@@ -82,7 +82,7 @@ class Software_Laser_Lock_Server(LabradServer):
         for laser in self.lasers:
             if self.lasers[laser][6]:# == True and self.lasers[laser][4] != 4:
                 # Get the frequency
-                freq = yield self.wm.get_frequency(self.lasers[laser][1])
+                freq = yield self.wm.get_frequency(self.lasers[laser][1]) #yield
                 # Make sure we didn't get some erroneous reading and throw the lock
                 if (freq < self.lasers[laser][0]) + .1 and freq > (self.lasers[laser][0] -.1):
                     error = (self.lasers[laser][0] - freq)*1e6 # gives me diff in MHz
@@ -98,7 +98,7 @@ class Software_Laser_Lock_Server(LabradServer):
                     # Store the output
                     self.lasers[laser][7] = output
                     #yield self.trap.set_dc(output,int(self.lasers[laser][4]))
-                    yield self.piezo.set_voltage(int(self.lasers[laser][4]),U(output, 'V'))
+                    yield self.piezo.set_voltage(int(self.lasers[laser][4]),U(output, 'V')) # yield
             
             elif self.lasers[laser][6] == True and self.lasers[laser][4] == 4:
                 freq = yield self.bristol.get_frequency()

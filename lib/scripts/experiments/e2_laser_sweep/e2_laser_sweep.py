@@ -254,7 +254,7 @@ class e2_laser_sweep(experiment):
 
         # Set live plotting
         #self.grapher.plot(dataset, 'e2_laser_sweep', False)
-        self.grapher.plot(dataset, 'microwave_sweep', False)
+        self.grapher.plot(dataset, 'qubit_freq_sweep', False)
 
 
     def set_wm_frequency(self, freq, chan):
