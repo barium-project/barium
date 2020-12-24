@@ -1,5 +1,4 @@
 import labrad
-from twisted.internet.defer import inlineCallbacks, returnValue
 from common.lib.servers.script_scanner.scan_methods import experiment
 from barium.lib.scripts.pulse_sequences.E2MetastablePrep import e2_metastable_prep as main_sequence
 from config.FrequencyControl_config import FrequencyControl_config
@@ -58,8 +57,10 @@ class e2_metastable_prep(experiment):
         self.hp_freq = self.p.E2MetastablePrep.HP_Frequency
         self.hp_amp = self.p.E2MetastablePrep.HP_Amplitude
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+
         self.mode = self.p.E2MetastablePrep.Mode
         self.prep = self.p.E2MetastablePrep.prep_state
+
             
         self.total_exps = 0
         self.total_sd_counts = np.array([])
