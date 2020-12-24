@@ -31,7 +31,7 @@ class e2_metastable_prep(pulse_sequence):
             self.addSequence(microwaves_133)
         self.addSequence(e2laser)
         self.addSequence(shelving_state_detection)
-        if p.detection_method == "614":
+        if p.detection_method == "614 nm":
             self.addSequence(deshelving_133)
         else:
             self.addSequence(deshelving_1762)            
