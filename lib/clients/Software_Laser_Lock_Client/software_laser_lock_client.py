@@ -36,9 +36,10 @@ class software_laser_lock_client(QtGui.QWidget):
         self.wm = yield self.wm_cxn.multiplexerserver
         #self.cxn = yield connectAsync('localhost', name = socket.gethostname() + ' Single Channel Lock', password=self.password)
         self.cxn = yield connectAsync('flexo', name = socket.gethostname() + ' Single Channel Lock', password=self.password)
-        self.lock_server = yield self.cxn.software_laser_lock_server
+        self.cxn2 = yield connectAsync('10.97.111.240', name = socket.gethostname() + ' Single Channel Lock', password=self.password)
+        self.lock_server = yield self.cxn2.software_laser_lock_server
         #self.bristol = yield self.cxn.bristolserver
-        self.piezo = yield self.cxn.piezo_controller
+        self.piezo = yield self.cxn2.piezo_controller
         self.registry = self.cxn.registry
 
         
@@ -173,8 +174,10 @@ class software_laser_lock_client(QtGui.QWidget):
 
 if __name__ == "__main__":
     a = QtGui.QApplication( [] )
+    print("A")
     import qt4reactor
     qt4reactor.install()
+    print("b")
     from twisted.internet import reactor
     software_lock = software_laser_lock_client(reactor)
     software_lock.show()

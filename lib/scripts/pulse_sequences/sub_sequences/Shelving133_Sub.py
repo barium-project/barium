@@ -19,6 +19,12 @@ class shelving_133_sub(pulse_sequence):
                            ('Shelving133_Sub', 'channel_493'),
                            ('Shelving133_Sub', 'frequency_493'),
                            ('Shelving133_Sub', 'amplitude_493'),
+                           ('Shelving133_Sub', 'channel_455'),
+                           ('Shelving133_Sub', 'frequency_455'),
+                           ('Shelving133_Sub', 'amplitude_455'),
+                           ('Shelving133_Sub', 'channel_585'),
+                           ('Shelving133_Sub', 'frequency_585'),
+                           ('Shelving133_Sub', 'amplitude_585')
                            ]
 
 
@@ -49,7 +55,14 @@ class shelving_133_sub(pulse_sequence):
         if p.shelving_duration != 0:
             self.addTTL(p.TTL_455, self.start + switch_on_delay, p.shelving_duration)
             self.addTTL(p.TTL_585, self.start + switch_on_delay, p.shelving_duration)
+            self.addTTL(p.TTL_493, self.start + switch_on_delay, p.shelving_duration)
+            self.addTTL(p.TTL_prep, self.start + switch_on_delay, p.shelving_duration)
 
+
+            self.addDDS(p.channel_455, self.start + switch_on_delay, \
+                     p.shelving_duration - switch_on_delay, p.frequency_455, p.amplitude_455)
+            self.addDDS(p.channel_585, self.start + switch_on_delay, \
+                     p.shelving_duration - switch_on_delay, p.frequency_585, p.amplitude_585)
 
         self.addTTL(p.TTL_650, self.start, p.shelving_duration  + 2*switch_on_delay)
         #self.addTTL(p.TTL_493, self.start, p.shelving_duration + 2*switch_on_delay)
@@ -62,7 +75,7 @@ class shelving_133_sub(pulse_sequence):
 #b #       self.addTTL(p.TTL_493_DDS, self.start, p.shelving_duration + 2*switch_on_delay)
 
   
-        self.end = self.start + switch_on_delay + p.shelving_duration + switch_on_delay
+        self.end = self.start + p.shelving_duration + 2*switch_on_delay
 
 
 

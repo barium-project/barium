@@ -117,9 +117,12 @@ class FrequencyControlClient(Frequency_Ui):
 
 
 
-
+        self.cxn_laser = yield connectAsync('10.97.111.240',
+                                      name=self.name,
+                                      password=self.password)
+        print('hi')
         self.pulser = self.cxn1.pulser
-        self.software_lock = self.cxn1.software_laser_lock_server
+        self.software_lock = self.cxn_laser.software_laser_lock_server
 
         self.clients_hpa = [self.hp8672a_19]
         self.clients_hpb = [self.hp8657b_6, self.hp8657b_7, self.hp8657b_8]

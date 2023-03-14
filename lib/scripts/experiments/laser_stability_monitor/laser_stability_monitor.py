@@ -13,10 +13,10 @@ class laser_stability_monitor(experiment):
 
     name = 'Laser Monitor'
 
-    exp_parameters = []
-    exp_parameters.append(('LaserMonitor', 'WM_Channel'))
-    exp_parameters.append(('LaserMonitor', 'Measure_Time'))
-
+    exp_parameters = [
+                    ('LaserMonitor', 'WM_Channel'),
+                    ('LaserMonitor', 'Measure_Time'),
+                ]
 
     @classmethod
     def all_required_parameters(cls):
@@ -26,17 +26,14 @@ class laser_stability_monitor(experiment):
     def initialize(self, cxn, context, ident):
 
         self.ident = ident
-        self.wm_p = multiplexer_config.info
-        self.ip = multiplexer_config.ip
-        self.cxnwlm = labrad.connect(self.ip,
-                                     name=socket.gethostname() + " Laser Monitor",
-                                     password=os.environ['LABRADPASSWORD'])
         self.cxn = labrad.connect(name = 'Laser Monitor')
+        self.cxnwlm = labrad.connect(multiplexer_config.ip, name = 'E2 Laser Sweep', password = 'lab')
+
 
         self.wlm = self.cxnwlm.multiplexerserver
-        #self.grapher = self.cxn.grapher
         self.grapher = self.cxn.real_simple_grapher
         self.dv = self.cxn.data_vault
+        self.pv = self.cxn.parametervault
         self.p = self.parameters
 
         self.set_up_datavault()
@@ -62,6 +59,7 @@ class laser_stability_monitor(experiment):
             
             try:
                 self.dv.add(time.time() - self.inittime, 1e6*(self.initfreq - freq))
+                
             except:
                 pass
             #progress = float(time.time() - self.inittime)/self.p.LaserMonitor.measuretime['s']

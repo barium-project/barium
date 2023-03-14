@@ -113,7 +113,7 @@ class software_laser_lock_channel(QtGui.QFrame):
         self.spinDacVoltage.setFont(QtGui.QFont(shell_font, pointSize=16))
         self.spinDacVoltage.setDecimals(3)
         self.spinDacVoltage.setSingleStep(.001)
-        self.spinDacVoltage.setRange(0 , 100)
+        self.spinDacVoltage.setRange(0 , 150)
         self.spinDacVoltage.setKeyboardTracking(False)
 
        # Too lazy to add signals to the server so

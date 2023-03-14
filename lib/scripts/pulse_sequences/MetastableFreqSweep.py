@@ -30,8 +30,10 @@ class metastable_freq_sweep(pulse_sequence):
         self.end = WithUnit(10.0,'us')
         self.addSequence(doppler_cooling_133)
         self.addSequence(state_prep_133)
-        if p.prep_state == '1':
-            self.addSequence(microwaves_133)
+        #if p.prep_state == '1':
+        #    self.addSequence(microwaves_133)
+
+        self.addSequence(microwaves_133)
         self.addSequence(e2laser)
         self.addSequence(shelving_state_detection)            
         self.addSequence(metastable_raman)

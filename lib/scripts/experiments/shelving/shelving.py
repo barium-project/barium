@@ -41,12 +41,13 @@ class shelving(experiment):
         self.ident = ident
         self.cxn = labrad.connect(name = 'Shelving')
         self.cxnwlm = labrad.connect('wavemeter', name = 'Frequency Scan', password = 'lab')
+        self.cxnaeneas = labrad.connect('10.97.111.240', name = 'Frequency Scan', password = 'lab')
         self.wm = self.cxnwlm.multiplexerserver
         #self.bristol = self.cxn.bristolserver
         self.pulser = self.cxn.pulser
         self.dv = self.cxn.data_vault
         self.grapher = self.cxn.real_simple_grapher
-        self.single_lock = self.cxn.software_laser_lock_server
+        self.single_lock = self.cxnaeneas.software_laser_lock_server
         self.pv = self.cxn.parametervault
         self.shutter = self.cxn.arduinottl
         self.pb = self.cxn.protectionbeamserver

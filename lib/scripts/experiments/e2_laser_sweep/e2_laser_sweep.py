@@ -102,14 +102,13 @@ class e2_laser_sweep(experiment):
         time.sleep(.3) # time to switch amplitude
 
         self.set_hp_rf_state(True)
-
-
-#        if self.state_detection == 'shelving':
-#            self.pulser.switch_auto('TTL8',False)
-
-        self.program_pulse_sequence()
-        self.pulser.switch_auto('TTL8',False)
         
+        
+
+
+        self.pulser.switch_auto('TTL8',False)
+
+              
 #        loop_iter = 0        
         for i in range(len(freq)):
             tot_dc_counts = np.array([])
@@ -127,10 +126,11 @@ class e2_laser_sweep(experiment):
                 
                 # If we are in repeat mode, don't change frequency
                 if self.mode != 'Repeat':
-                    self.set_hp_frequency(freq[i])
-                    time.sleep(.3) # time to switch amplitude    
-                                    
-    
+                   self.set_hp_frequency(freq[i])
+                   time.sleep(.3) # time to switch amplitude        
+                 
+                self.program_pulse_sequence()
+
                 # for the protection beam we start a while loop and break it if we got the data,
                 # continue if we didn't
                 while True:
@@ -238,7 +238,7 @@ class e2_laser_sweep(experiment):
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
 
-        self.dv.add_parameter('1762 Frequency', self.bristol.get_frequency(), context = self.c_prob)
+#        self.dv.add_parameter('1762 Frequency', self.bristol.get_frequency(), context = self.c_prob)
 
         self.dv.cd(['',year,month,trunk],True, context = self.c_hist)
         dataset1 = self.dv.new('E2LaserSweep_hist',[('freq', 'MHz')], [('Counts', 'Counts', 'num')], context = self.c_hist)
@@ -294,9 +294,30 @@ class e2_laser_sweep(experiment):
     def set_hp_amplitude(self, amp):
         self.HP3.set_amplitude(WithUnit(amp,'dBm'))
                 
-    def set_hp_frequency(self, freq):
-        self.HP3.set_frequency(WithUnit(freq,'MHz'))
-        #self.HP3.set_frequency(WithUnit(int(freq),'MHz'))
+##    def set_hp_frequency(self, freq):
+##        self.HP3.set_frequency(WithUnit(freq,'MHz'))
+##         #self.HP3.set_frequency(WithUnit(int(freq),'MHz'))
+        
+    
+    #with dds mod    
+    def set_hp_frequency(self,freq):
+        self.HP3.set_frequency(WithUnit(int(freq),'MHz'))
+    #    self.HPA.set_frequency(WithUnit(int(self.LO_freq['MHz']),'MHz'))
+        
+        if freq <= 6200:
+            dds_freq = WithUnit(30.- freq + 10*int(freq/10),'MHz')
+
+        elif freq <= 12400:
+#            dds_freq = WithUnit(30.- self.LO_freq['MHz']/2 + 10*int(self.LO_freq['MHz']/20),'MHz')
+            dds_freq = WithUnit(30.- freq/2 + 10*int(freq/20),'MHz')
+
+        else: 
+            dds_freq = WithUnit(30.- freq/3 + 10*int(freq/30),'MHz')
+        #print(dds_freq)
+        self.pulser.frequency('Nazgul DDS',dds_freq)
+        
+        
+        
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()

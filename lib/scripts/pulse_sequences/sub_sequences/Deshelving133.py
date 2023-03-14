@@ -12,6 +12,9 @@ class deshelving_133(pulse_sequence):
                            ('Deshelving133', 'channel_650'),
                            ('Deshelving133', 'frequency_650'),
                            ('Deshelving133', 'amplitude_650'),
+                           ('Deshelving133', 'channel_614'),
+                           ('Deshelving133', 'frequency_614'),
+                           ('Deshelving133', 'amplitude_614'),
                            ('Deshelving133', 'TTL_614_AOM'),
                            ('Deshelving133', 'TTL_614_EOM'),
 
@@ -25,7 +28,10 @@ class deshelving_133(pulse_sequence):
                      p.deshelving_duration , p.frequency_493, p.amplitude_493)
         self.addDDS(p.channel_650, self.start, \
                      p.deshelving_duration, p.frequency_650, p.amplitude_650)
-
+        self.addDDS(p.channel_614, self.start, \
+                     p.deshelving_duration, p.frequency_614, p.amplitude_614)
+            
+            
         if p.deshelving_duration != 0:
             self.addTTL(p.TTL_614_AOM, self.start, p.deshelving_duration)
             self.addTTL(p.TTL_614_EOM, self.start, p.deshelving_duration)

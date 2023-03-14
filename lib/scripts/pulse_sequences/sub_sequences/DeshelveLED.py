@@ -15,6 +15,9 @@ class deshelve_led(pulse_sequence):
                            ('DeshelveLED', 'channel_650'),
                            ('DeshelveLED', 'frequency_650'),
                            ('DeshelveLED', 'amplitude_650'),
+                           ('DeshelveLED', 'channel_614'),
+                           ('DeshelveLED', 'frequency_614'),
+                           ('DeshelveLED', 'amplitude_614'),
                            ]
 
     def sequence(self):
@@ -25,10 +28,12 @@ class deshelve_led(pulse_sequence):
                      p.deshelving_duration , p.frequency_493, p.amplitude_493)
         self.addDDS(p.channel_650, self.start, \
                      p.deshelving_duration, p.frequency_650, p.amplitude_650)
-
+        self.addDDS(p.channel_614, self.start, \
+                     p.deshelving_duration, p.frequency_614, p.amplitude_614)
+            
         if p.deshelving_duration != 0:
             self.addTTL(p.TTL_614_AOM, self.start, p.deshelving_duration)
-            self.addTTL(p.TTL_614_EOM, self.start, p.deshelving_duration)
+#            self.addTTL(p.TTL_614_EOM, self.start, p.deshelving_duration)
             self.addTTL(p.TTL_2_614_EOM, self.start, p.deshelving_duration)
 
 

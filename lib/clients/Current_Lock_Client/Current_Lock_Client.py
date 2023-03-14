@@ -1,107 +1,97 @@
-#!/usr/bin/env python
-#-*- coding:utf-8 -*-
+from barium.lib.clients.gui.current_lock_gui import QCustomCurrentGui
 
-from PyQt4 import QtGui, QtCore
 from twisted.internet.defer import inlineCallbacks, returnValue
-import socket
+from PyQt4 import QtGui
+import time
 import os
-from common.lib.clients.qtui.q_custom_text_changing_button import \
-    TextChangingButton
-from barium.lib.clients.gui.current_lock_gui import current_lock
-
-SIGNALID1 = 445567
+import socket
 
 
 
-class current_lock_client(QtGui.QWidget):
+class CurrentLockClient(QtGui.QWidget):
+
     def __init__(self, reactor, parent=None):
-        super(current_lock_client, self).__init__()
-        #self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        """initializels the GUI creates the reactor
+
+        """
+        super(CurrentLockClient, self).__init__()
+        self.password = os.environ['LABRADPASSWORD']
+        self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         self.reactor = reactor
+        self.name = socket.gethostname() + ' Current Lock'
         self.connect()
 
     @inlineCallbacks
     def connect(self):
-        """Creates an Asynchronous connection to the current controller and
-        connects incoming signals to relavent functions
+        """Creates an Asynchronous connection to the trap control computer and
+        connects incoming signals to relevant functions
         """
         from labrad.wrappers import connectAsync
-        self.password = os.environ['LABRADPASSWORD']
-        self.cxn = yield connectAsync('flexo', name = socket.gethostname() + ' Single Channel Lock', password=self.password)
-        self.lock_server = yield self.cxn.current_lock_server
-        self.server = yield cxn.current_controller_server
-        yield self.server.signal_current_changed(SIGNALID1)
-        yield self.server.addListener(listener = self.updateCurrent, source = None, ID = SIGNALID1)
-
-        self.registry = self.cxn.registry
-        self.d = {}
+        self.cxn = yield connectAsync('localhost',
+                                      name=self.name,
+                                      password=self.password)
+        self.cc = yield self.cxn.current_controller
+        self.cl = yield self.cxn.current_lock_server
         
-
-        # Get gain from registry
-        yield self.registry.cd(['Servers','current_lock'])
-        gain = yield self.registry.get('gain')
-
         self.initializeGUI()
 
     @inlineCallbacks
     def initializeGUI(self):
-        layout = QtGui.QGridLayout()
-        qBox = QtGui.QGroupBox('Current Lock')
-        subLayout = QtGui.QGridLayout()
-        qBox.setLayout(subLayout)
-        layout.addWidget(qBox, 0, 0)#, returnValue
-        from common.lib.clients.qtui import RGBconverter as RGB
-        RGB = RGB.RGBconverter()
-        color = int(2.998e8/(float(493*1e3))
-        color = RGB.wav2RGB(color)
-        color = tuple(color)
-        current.setStyleSheet('color: rgb' + str(color))
 
-        widget = current_lock_gui("Injection Lock Laser")
-        self.d[0] = widget       
-        init_current1 = yield self.lock_server.get_current()
-        self.c.
+        self.layout = QtGui.QGridLayout()
+        self.qBox = QtGui.QGroupBox()
+        self.subLayout = QtGui.QGridLayout()
+        self.qBox.setLayout(self.subLayout)
+        self.layout.addWidget(self.qBox, 0, 0)
 
-        state = yield self.lock_server.get_lock_state(chan)
-        laser.lockSwitch.setChecked(state)
-        laser.lockSwitch.toggled.connect(lambda state = laser.lockSwitch.isDown(), chan = chan  \
-                                             : self.set_lock(state, chan))
+        # initialize main Gui
+        self.gui = QCustomCurrentGui()
 
+        init_current = yield self.cc.get_current()
+        self.gui.current_spin.setValue(init_current['mA'])
+        self.gui.current_spin.valueChanged.connect(lambda current = self.gui.current_spin.value() : self.current_changed(current))
 
-        init_gain = yield self.lock_server.get_gain(chan)
-        laser.spinGain.valueChanged.connect(lambda gain = laser.spinGain.value(), \
-                                        chan = chan : self.gainChanged(gain, chan))
+        init_state = yield self.cc.get_output_state()
+        self.gui.output.setChecked(init_state)
 
-        self.channel_GUIs[chan] = laser
-        subLayout.addWidget(spin, self.lasers[chan][2][0], self.lasers[chan][2][1] , 1, 1)
-        self.setLayout(layout)
+        self.gui.output.toggled.connect(self.change_output)
 
+        init_gain = yield self.cl.get_gain()
+        self.gui.spinGain.setValue(init_gain)
+        self.gui.spinGain.valueChanged.connect(lambda gain = self.gui.spinGain.value() : self.gainChanged(gain))
 
-        self.set_signal_listeners()
+        self.gui.lock.toggled.connect(self.change_lock)
+
+        self.subLayout.addWidget(self.gui, 1, 0)
+        self.setLayout(self.layout)
 
 
     @inlineCallbacks
-    def currentChanged(self, current):
-        yield self.lock_server.set_lock_current(current)
+    def current_changed(self, current):
+        from labrad.units import WithUnit
+        yield self.cc.set_current(WithUnit(current,'mA'))
 
     @inlineCallbacks
     def gainChanged(self, gain):
-        yield self.lock_server.set_gain(gain)
+        yield self.cl.set_gain(gain)
+                                               
+    @inlineCallbacks
+    def change_output(self, state):
+        yield self.cc.set_output_state(state)
 
     @inlineCallbacks
-    def updateCurrent(self, c, signal):
-        current = signal
-        self.d[0].current.setText(str(current))
+    def change_lock(self, state):
+        yield self.cl.set_lock_state(state)
 
-    @inlineCallbacks
-    def set_lock(self, state):
-        yield self.lock_server.lock_channel(state)
+
+
+
 
 if __name__ == "__main__":
-    a = QtGui.QApplication( [] )
+    a = QtGui.QApplication([])
     import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
-    current_lock = current_lock_client(reactor)
+    current_lock = CurrentLockClient(reactor)
     current_lock.show()
     reactor.run()

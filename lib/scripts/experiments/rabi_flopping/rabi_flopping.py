@@ -63,6 +63,8 @@ class rabi_flopping(experiment):
         self.use_optical = self.p.RabiFlopping.use_1762
         if self.m_sequence == 'single':
             self.LO_freq = self.p.Microwaves133.LO_frequency
+        elif self.m_sequence == 'raman_beams':
+            self.LO_freq = self.p.Microwaves133.LO_frequency
         elif self.m_sequence == 'composite_1':
             self.LO_freq = self.p.Composite1.LO_frequency
         elif self.m_sequence == 'composite_2':
@@ -119,6 +121,9 @@ class rabi_flopping(experiment):
                     self.p.Su1.microwave_duration = WithUnit(t[i],'us')                    
                 elif self.m_sequence == 'composite_4':
                     self.p.Composite4.delay_duration = WithUnit(t[i],'us')
+                if self.m_sequence == 'raman_beams':
+                    self.p.GreenLaser.laser_duration = WithUnit(t[i],'us')
+                    
                     
 
             if self.use_optical == 'True':

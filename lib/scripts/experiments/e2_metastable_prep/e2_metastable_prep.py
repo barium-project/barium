@@ -21,6 +21,7 @@ class e2_metastable_prep(experiment):
                       ('E2MetastablePrep', 'HP_Amplitude'),
                       ('E2MetastablePrep', 'HP_Frequency'),
                       ('E2MetastablePrep', 'Mode'),
+                      ('E2MetastablePrep', 'prep_state'),
                       ]
 
     # Add the parameters from the required subsequences
@@ -90,11 +91,13 @@ class e2_metastable_prep(experiment):
         self.set_hp_rf_state(True)
         time.sleep(.3) # time to switch
         self.pulser.switch_auto('TTL8',False)
+        self.pulser.switch_auto('TTL6',False)
 
         for i in range(len(t)):
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
                 self.pulser.switch_manual('TTL8',True)
+                self.pulser.switch_auto('TTL6',True)
                 return
 
 
@@ -104,6 +107,7 @@ class e2_metastable_prep(experiment):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL8',True)
+                    self.pulser.switch_auto('TTL6',True)
                     return
 
                 self.program_pulse_sequence()
@@ -120,13 +124,16 @@ class e2_metastable_prep(experiment):
                 else:
                     # Should turn on deshelving LED while trying
                     self.pulser.switch_manual('TTL8',True)
+                    self.pulser.switch_auto('TTL6',True)
                     if self.remove_protection_beam():
                         # If successful switch off LED and return to top of loop
                         self.pulser.switch_auto('TTL8',False)
+                        self.pulser.switch_auto('TTL6',False)
                         continue
                     else:
                         # Failed, abort experiment
                         self.pulser.switch_manual('TTL8',True)
+                        self.pulser.switch_auto('TTL6',True)
                         #self.shutter.ttl_output(10, False)
                         return
 
@@ -164,7 +171,7 @@ class e2_metastable_prep(experiment):
                 dark_ds = np.where(ds_counts_2 <= self.disc)
                 fid_ds = float(len(dark_ds[0]))/len(ds_counts_2)
 
-                    
+                print "Prep state : ",self.prep
                     
                 if self.prep == '1':
                     tot_dark = np.where(self.total_sd_counts <= self.disc)
@@ -173,6 +180,7 @@ class e2_metastable_prep(experiment):
                     tot_err =  np.sqrt(float(len(tot_bright[0])))/len(self.total_sd_counts)
                     print "Fidelity: ", '{:.4f}'.format(tot_fid), '+/-',\
                             '{:.4e}'.format(tot_err)
+                #    print "Total sd counts: " , self.total_sd_counts
                 else:
                     tot_dark = np.where(self.total_sd_counts <= self.disc)
                     tot_bright = np.where(self.total_sd_counts > self.disc)
@@ -180,6 +188,7 @@ class e2_metastable_prep(experiment):
                     tot_err =  np.sqrt(float(len(tot_dark[0])))/len(self.total_sd_counts)
                     print "Fidelity: ", '{:.4f}'.format(tot_fid), '+/-',\
                             '{:.4e}'.format(tot_err)
+                #    print "Total sd countsx: " , self.total_sd_counts
                     
 
                 # We want to save all the experimental data, include dc as sd counts
@@ -196,6 +205,7 @@ class e2_metastable_prep(experiment):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL8',True)
+                    self.pulser.switch_auto('TTL6',True)
                     return
                 # If we are in repeat save the data point and rerun the point in the while loop
                 if self.mode == 'Repeat':
@@ -209,6 +219,7 @@ class e2_metastable_prep(experiment):
 
                 break
         self.pulser.switch_manual('TTL8',True)
+        self.pulser.switch_auto('TTL6',True)
 
     def set_up_datavault(self):
         # set up folder
@@ -234,8 +245,8 @@ class e2_metastable_prep(experiment):
         dataset2 = self.dv.new('metastable_prep_hist',[('run', 'arb u')],\
                                [('Counts', 'DC_Hist', 'num'), \
                                 ('Counts', 'Herald_Hist', 'num'),\
-                                ('Counts', 'DS_Hist', 'num'),\
-                                ('Counts', 'SD_Hist', 'num')], context = self.c_hist)
+                                ('Counts', 'SD_Hist', 'num'),\
+                                ('Counts', 'DS_Hist', 'num')], context = self.c_hist)
 
         self.dv.add_parameter('Readout Threshold', self.disc, context = self.c_hist)
 
@@ -294,9 +305,26 @@ class e2_metastable_prep(experiment):
     def set_hp_amplitude(self, amp):
         self.HP3.set_amplitude(amp)
                 
-    def set_hp_frequency(self, freq):
-        self.HP3.set_frequency(freq)
-        #self.HP3.set_frequency(WithUnit(int(freq),'MHz'))
+    # def set_hp_frequency(self, freq):
+    #     self.HP3.set_frequency(WithUnit(freq,'MHz'))
+    #     #self.HP3.set_frequency(WithUnit(int(freq),'MHz'))
+        
+    
+    #with dds mod    
+    def set_hp_frequency(self,freq):
+        self.HP3.set_frequency(WithUnit(int(freq),'MHz'))
+    #    self.HPA.set_frequency(WithUnit(int(self.LO_freq['MHz']),'MHz'))
+        
+        if freq <= 6200:
+            dds_freq = WithUnit(30.- freq + 10*int(freq/10),'MHz')
+        elif freq <= 12400:
+#            dds_freq = WithUnit(30.- self.LO_freq['MHz']/2 + 10*int(self.LO_freq['MHz']/20),'MHz')
+            dds_freq = WithUnit(30.- freq/2 + 10*int(freq/20),'MHz')
+        else: 
+            dds_freq = WithUnit(30.- freq/3 + 10*int(freq/30),'MHz')
+        self.pulser.frequency('Nazgul DDS',dds_freq)
+        
+        
 
     def finalize(self, cxn, context):
         self.cxn.disconnect()

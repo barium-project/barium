@@ -26,10 +26,10 @@ class shelving_state_detection(pulse_sequence):
         p = self.parameters.ShelvingStateDetection
         switch_on_delay = WithUnit(1.00,'us')
 
-        self.addDDS(p.channel_493, self.start, \
-                     p.state_detection_duration, p.frequency_493, p.amplitude_493)
-        self.addDDS(p.channel_650, self.start, \
-                     p.state_detection_duration, p.frequency_650, p.amplitude_650)
+        self.addDDS(p.channel_493, self.start+5*switch_on_delay, \
+                     p.state_detection_duration-5*switch_on_delay, p.frequency_493, p.amplitude_493)
+        self.addDDS(p.channel_650, self.start+switch_on_delay*5, \
+                     p.state_detection_duration-5*switch_on_delay, p.frequency_650, p.amplitude_650)
 
 
         # Count photons during doppler cooling to monitor for dropouts

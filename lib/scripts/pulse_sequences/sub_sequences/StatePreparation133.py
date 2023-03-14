@@ -15,6 +15,10 @@ class state_prep_133(pulse_sequence):
                            ('StatePreparation133', 'TTL_493_DDS'),
                            ('StatePreparation133', 'TTL_493_SD'),
                            ('StatePreparation133', 'TTL_650'),
+                           ('StatePreparation133', 'TTL_614_AOM'),
+                           ('StatePreparation133', 'channel_614'),
+                           ('StatePreparation133', 'frequency_614'),
+                           ('StatePreparation133', 'amplitude_614'),
                            ('StatePreparation133', 'channel_493'),
                            ('StatePreparation133', 'frequency_493'),
                            ('StatePreparation133', 'amplitude_493'),
@@ -38,11 +42,14 @@ class state_prep_133(pulse_sequence):
                      p.state_prep_duration - amp_change_delay_2, p.frequency_493, p.amplitude_493)
             self.addDDS(p.channel_650, self.start - amp_change_delay_2, \
                      p.state_prep_duration - amp_change_delay_2 + amp_change_delay, p.frequency_650, p.amplitude_650)
+            ##self.addDDS(p.channel_614, self.start - amp_change_delay_2, \
+              ##       p.state_prep_duration - amp_change_delay_2 + amp_change_delay, p.frequency_614, p.amplitude_614)
 
             #Need to make sure the 5.8 is off while turning off
             self.addTTL(p.TTL_493, self.start, p.state_prep_duration + amp_change_delay)
             self.addTTL(p.TTL_prep, self.start, p.state_prep_duration + amp_change_delay/2)
             self.addTTL(p.TTL_493_DDS, self.start+ p.state_prep_duration, amp_change_delay)
+            ##self.addTTL(p.TTL_614_AOM, self.start, p.state_prep_duration + 2*amp_change_delay)
 
 
         self.end = self.start + p.state_prep_duration + amp_change_delay

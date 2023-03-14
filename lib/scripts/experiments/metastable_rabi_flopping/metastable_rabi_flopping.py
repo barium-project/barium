@@ -58,6 +58,7 @@ class metastable_rabi_flopping(experiment):
         self.hp_freq = self.p.MetastableRabiExp.E2_Frequency
         self.hp_amp = self.p.MetastableRabiExp.E2_Amplitude
         self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
+        
         self.mode = self.p.MetastableRabiExp.Mode
         self.prep = self.p.PSMetastableRabi.prep_state
             
@@ -89,15 +90,19 @@ class metastable_rabi_flopping(experiment):
         self.set_hp_rf_state(True)
         time.sleep(.3) # time to switch
         self.pulser.switch_auto('TTL8',False)
+        self.pulser.switch_auto('TTL6',False)
 
         for i in range(len(t)):
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
                 self.pulser.switch_manual('TTL8',True)
+                self.pulser.switch_auto('TTL6',True)
                 return
 
             if self.mode == 'Normal':
                 self.p.MetaStableRaman.raman_duration = WithUnit(t[i],'us')
+                    
+            
 
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't
@@ -105,6 +110,7 @@ class metastable_rabi_flopping(experiment):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL8',True)
+                    self.pulser.switch_auto('TTL6',True)
                     return
 
                 self.program_pulse_sequence()
@@ -121,15 +127,19 @@ class metastable_rabi_flopping(experiment):
                 else:
                     # Should turn on deshelving LED while trying
                     self.pulser.switch_manual('TTL8',True)
+                    self.pulser.switch_auto('TTL6',True)
                     if self.remove_protection_beam():
                         # If successful switch off LED and return to top of loop
                         self.pulser.switch_auto('TTL8',False)
+                        self.pulser.switch_auto('TTL6',False)
                         continue
                     else:
                         # Failed, abort experiment
                         self.pulser.switch_manual('TTL8',True)
+                        self.pulser.switch_auto('TTL6',True)
                         #self.shutter.ttl_output(10, False)
                         return
+
 
                 pmt_counts = self.pulser.get_readout_counts()
                 
@@ -137,12 +147,17 @@ class metastable_rabi_flopping(experiment):
                 dc_counts = pmt_counts[::3]
                 herald_counts = pmt_counts[1::3]
                 sd_counts = pmt_counts[2::3]
+                # dc_counts = pmt_counts[::4]
+                # herald_counts = pmt_counts[1::4]
+                # sd_counts = pmt_counts[2::4]
+                # ds_counts = pmt_counts[3::4]
                 
                 
                 # first throw away bad counts when DC
                 ind = np.where(dc_counts < self.dc_thresh)
                 hearld_counts_1 = np.delete(herald_counts,ind[0])
                 sd_counts_1 = np.delete(sd_counts,ind[0])
+                # ds_counts_1 = np.delete(ds_counts,ind[0])
                 
                 
                 
@@ -151,6 +166,7 @@ class metastable_rabi_flopping(experiment):
                 self.disc = self.pv.get_parameter('StateReadout','state_readout_threshold')
                 ind_1 = np.where(hearld_counts_1 > self.disc)
                 sd_counts_2 = np.delete(sd_counts_1,ind_1[0])
+                # ds_counts_2 = np.delete(ds_counts_1,ind_1[0]) 
                 # keep track of how many successful exps we've done
                 self.total_sd_counts = np.append(self.total_sd_counts,\
                                                  sd_counts_2)
@@ -160,6 +176,8 @@ class metastable_rabi_flopping(experiment):
                 # 1 (F=3) state is dark for shelving state detection
                 dark_sd = np.where(sd_counts_2 <= self.disc)
                 fid_sd = float(len(dark_sd[0]))/len(sd_counts_2)
+                # dark_ds = np.where(ds_counts_2 <= self.disc)
+                # fid_ds = float(len(dark_ds[0]))/len(ds_counts_2)
                     
                     
                 if self.prep == '1':
@@ -183,6 +201,7 @@ class metastable_rabi_flopping(experiment):
                 # histogram client to work correctly
                 exp_list = np.arange(self.cycles)
                 data = np.column_stack((exp_list, dc_counts, herald_counts, sd_counts))
+                # data = np.column_stack((exp_list, dc_counts, herald_counts, ds_counts, sd_counts))
                 self.dv.add(data, context = self.c_hist)
                 # Adding the character c and the number of cycles so plotting the histogram
                 # only plots the most recent point.
@@ -192,6 +211,7 @@ class metastable_rabi_flopping(experiment):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL8',True)
+                    self.pulser.switch_auto('TTL6',True)
                     return
                 # If we are in repeat save the data point and rerun the point in the while loop
                 if self.mode == 'Repeat':
@@ -205,6 +225,7 @@ class metastable_rabi_flopping(experiment):
 
                 break
         self.pulser.switch_manual('TTL8',True)
+        self.pulser.switch_auto('TTL6',True)
 
     def set_up_datavault(self):
         # set up folder
@@ -218,6 +239,10 @@ class metastable_rabi_flopping(experiment):
         self.dv.cd(['',year,month,trunk],True, context = self.c_prob)
         dataset = self.dv.new('metastable_rabi_prob',[('num', 'arb')], \
                               [('Probability', 'prob', 'num')], context = self.c_prob)
+        # dataset = self.dv.new('metastable_prep_prob',[('num', 'arb')], \
+        #                       [('Probability', 'SD_prob', 'num'),('Probability', 'DS_prob', 'num') ], context = self.c_prob)
+ 
+            
         # add dv params
         for parameter in self.p:
             self.dv.add_parameter(parameter, self.p[parameter], context = self.c_prob)
@@ -228,9 +253,14 @@ class metastable_rabi_flopping(experiment):
         #Hist with dc, herald, sd and ds counts
         self.dv.cd(['',year,month,trunk],True, context = self.c_hist)
         dataset2 = self.dv.new('metastable_rabi_hist',[('run', 'arb u')],\
-                               [('Counts', 'DC_Hist', 'num'), \
+                                [('Counts', 'DC_Hist', 'num'), \
                                 ('Counts', 'Herald_Hist', 'num'),\
                                 ('Counts', 'SD_Hist', 'num')], context = self.c_hist)
+        # dataset2 = self.dv.new('metastable_prep_hist',[('run', 'arb u')],\
+        #                         [('Counts', 'DC_Hist', 'num'), \
+        #                         ('Counts', 'Herald_Hist', 'num'),\
+        #                         ('Counts', 'SD_Hist', 'num'),\
+        #                         ('Counts', 'DS_Hist', 'num')], context = self.c_hist)
 
         self.dv.add_parameter('Readout Threshold', self.disc, context = self.c_hist)
 

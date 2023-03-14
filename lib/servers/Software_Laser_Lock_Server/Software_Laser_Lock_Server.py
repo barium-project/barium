@@ -152,8 +152,8 @@ class Software_Laser_Lock_Server(LabradServer):
 
     @setting(50, voltage = 'v', chan = 's')
     def set_dac_voltage(self, c, voltage, chan):
-        self.lasers[chan][7] = voltage
-        yield self.piezo.set_voltage(int(self.lasers[chan][4]),U(voltage, 'V'))
+        #self.lasers[chan][7] = voltage
+        yield self.piezo.set_voltage(chan,U(voltage, 'V'))
 
     @setting(19, chan = 's', returns = 'v')
     def get_lock_frequency(self, c, chan):
@@ -184,6 +184,10 @@ class Software_Laser_Lock_Server(LabradServer):
     @setting(24, chan  = 's', returns = 'b')
     def get_lock_state(self, c, chan):
         return(bool(self.lasers[chan][6]))
+
+    @setting(25, chan  = 's', returns = 'b')
+    def set_voltage_state(self, c, chan,value):
+        yield self.piezo.set_output_state(chan,value)
 
     @inlineCallbacks
     def update_registry(self, chan):

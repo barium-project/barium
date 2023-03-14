@@ -90,16 +90,19 @@ class metastable_freq_sweep(experiment):
         self.set_hp_rf_state(True)
         time.sleep(.3) # time to switch
         self.pulser.switch_auto('TTL8',False)
+        self.pulser.switch_auto('TTL6',False)
 
         for i in range(len(freq)):
             if self.pause_or_stop():
                 # Turn on LED if aborting experiment
                 self.pulser.switch_manual('TTL8',True)
+                self.pulser.switch_auto('TTL6',True)
                 return
 
             if self.mode == 'Normal':
                 aom_freq = (self.p.MetaStableRaman.frequency_614_1['MHz'] - freq[i])/2
                 self.p.MetaStableRaman.frequency_614_2 = WithUnit(aom_freq,'MHz')
+                print("614 aom frequency (MHz) = ", aom_freq)
 
             # for the protection beam we start a while loop and break it if we got the data,
             # continue if we didn't
@@ -107,6 +110,7 @@ class metastable_freq_sweep(experiment):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL8',True)
+                    self.pulser.switch_auto('TTL6',True)
                     return
 
                 self.program_pulse_sequence()
@@ -123,13 +127,16 @@ class metastable_freq_sweep(experiment):
                 else:
                     # Should turn on deshelving LED while trying
                     self.pulser.switch_manual('TTL8',True)
+                    self.pulser.switch_auto('TTL6',True)
                     if self.remove_protection_beam():
                         # If successful switch off LED and return to top of loop
                         self.pulser.switch_auto('TTL8',False)
+                        self.pulser.switch_auto('TTL6',False)
                         continue
                     else:
                         # Failed, abort experiment
                         self.pulser.switch_manual('TTL8',True)
+                        self.pulser.switch_auto('TTL6',True)
                         #self.shutter.ttl_output(10, False)
                         return
 
@@ -194,6 +201,7 @@ class metastable_freq_sweep(experiment):
                 if self.pause_or_stop():
                     # Turn on LED if aborting experiment
                     self.pulser.switch_manual('TTL8',True)
+                    self.pulser.switch_auto('TTL6',True)
                     return
                 # If we are in repeat save the data point and rerun the point in the while loop
                 if self.mode == 'Repeat':
@@ -207,6 +215,7 @@ class metastable_freq_sweep(experiment):
 
                 break
         self.pulser.switch_manual('TTL8',True)
+        self.pulser.switch_auto('TTL6',True)
 
     def set_up_datavault(self):
         # set up folder

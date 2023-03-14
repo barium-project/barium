@@ -38,3 +38,4 @@ class metastable_rabi_flopping(pulse_sequence):
         self.addSequence(deshelving_133)
         self.addSequence(shelving_state_detection)
         self.addSequence(deshelve_led)
+#        self.addSequence(shelving_state_detection)

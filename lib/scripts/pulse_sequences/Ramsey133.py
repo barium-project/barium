@@ -12,23 +12,23 @@ from labrad.units import WithUnit
 class ramsey(pulse_sequence):
 
     required_parameters = [
-                           ('Ramsey133', 'State_Detection'),
+                           ('Ramsey133', 'State_Detection'),('Ramsey133', 'ramsey_format'),
                            ]
 
-    required_subsequences = [doppler_cooling_133, state_prep_133, ramsey_delay, \
+    required_subsequences = [doppler_cooling_133, state_prep_133,  ramsey_delay, \
                             shelving_133_sub, standard_state_detection,\
                             shelving_state_detection, deshelving_133,\
                                 deshelve_led]
 
     def sequence(self):
-
+        print("running")
         p = self.parameters.Ramsey133
 
         self.end = WithUnit(10.0,'us')
         self.addSequence(doppler_cooling_133)
         self.addSequence(state_prep_133)
         self.addSequence(ramsey_delay)
-
+            
         if p.State_Detection == 'spin-1/2':
             self.addSequence(standard_state_detection)
 
@@ -36,4 +36,6 @@ class ramsey(pulse_sequence):
             self.addSequence(shelving_133_sub)
             self.addSequence(shelving_state_detection)
             self.addSequence(deshelve_led)
+
+
 

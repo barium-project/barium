@@ -12,8 +12,8 @@ from labrad.units import WithUnit
 class e2_metastable_prep(pulse_sequence):
 
     required_parameters = [
-                           ('MetastablePrep','prep_state'),
-                           ('MetastablePrep','detection_method'),
+                           ('E2MetastablePrep','prep_state'),
+                           ('E2MetastablePrep','detection_method'),
                            ]
 
     required_subsequences = [doppler_cooling_133, state_prep_133, microwaves_133, e2laser,\
@@ -22,7 +22,7 @@ class e2_metastable_prep(pulse_sequence):
 
     def sequence(self):
 
-        p = self.parameters.MetastablePrep
+        p = self.parameters.E2MetastablePrep
 
         self.end = WithUnit(10.0,'us')
         self.addSequence(doppler_cooling_133)

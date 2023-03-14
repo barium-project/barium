@@ -10,7 +10,11 @@ class shelving_133_585_sub(pulse_sequence):
                            ('Shelving133_585_Sub', 'channel_493'),
                            ('Shelving133_585_Sub', 'frequency_493'),
                            ('Shelving133_585_Sub', 'amplitude_493'),
+                           ('Shelving133_585_Sub', 'channel_585'),
+                           ('Shelving133_585_Sub', 'frequency_585'),
+                           ('Shelving133_585_Sub', 'amplitude_585'),
                            ]
+
 
 
     def sequence(self):
@@ -35,7 +39,9 @@ class shelving_133_585_sub(pulse_sequence):
             self.addDDS(p.channel_493, self.start + switch_on_delay - amp_change_delay, \
                     p.shelving_duration, p.frequency_493, p.amplitude_493)
             # Turn on 585
-            self.addTTL(p.TTL_585, self.start + switch_on_delay, p.shelving_duration)  
+            self.addTTL(p.TTL_585, self.start + switch_on_delay, p.shelving_duration)
+            self.addDDS(p.channel_585, self.start + switch_on_delay - amp_change_delay, \
+                    p.shelving_duration, p.frequency_585, p.amplitude_585)
             # Finish sequence with time buffer
             self.end = self.start + switch_on_delay + p.shelving_duration + switch_on_delay
 

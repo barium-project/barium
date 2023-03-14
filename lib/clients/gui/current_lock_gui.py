@@ -1,54 +1,55 @@
 import sys
 from PyQt4 import QtGui, QtCore
-
 from common.lib.clients.qtui.q_custom_text_changing_button import \
-    TextChangingButton as _TextChangingButton
+    TextChangingButton
 
 
-class TextChangingButton(_TextChangingButton):
-    def __init__(self, button_text=None, parent=None):
-        super(TextChangingButton, self).__init__(button_text, parent)
-        self.setMaximumHeight(30)
+class StretchedLabel(QtGui.QLabel):
+    def __init__(self, *args, **kwargs):
+        QtGui.QLabel.__init__(self, *args, **kwargs)
+        self.setMinimumSize(QtCore.QSize(350, 100))
+
+    def resizeEvent(self, evt):
+
+        font = self.font()
+        font.setPixelSize(self.width() * 0.14 - 14)
+        self.setFont(font)
 
 
-class current_lock_gui(QtGui.QFrame):
-    def __init__(self, chanName,  parent = None):
+class QCustomCurrentGui(QtGui.QFrame):
+    def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.setFrameStyle(0x0001 | 0x0030)
-        self.makeLayout(chanName)
+        self.makeLayout()
 
-    def makeLayout(self, name):
+    def makeLayout(self):
         layout = QtGui.QGridLayout()
 
-
         shell_font = 'MS Shell Dlg 2'
-        chanName = QtGui.QLabel(name)
-        chanName.setFont(QtGui.QFont(shell_font, pointSize=16))
-        chanName.setAlignment(QtCore.Qt.AlignCenter)
+        title = QtGui.QLabel('Current Controller')
+        title.setFont(QtGui.QFont(shell_font, pointSize=16))
+        title.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.current = QtGui.QLabel('current')
-        self.current.setFont(QtGui.QFont(shell_font,pointSize=70))
-        self.current.setAlignment(QtCore.Qt.AlignCenter)
-        self.current.setStyleSheet('color: blue')
-
-        # Create lock button
-        self.lockSwitch = TextChangingButton(('Locked','Unlocked'))
+        loadingName = QtGui.QLabel('Current (mA)')
+        loadingName.setFont(QtGui.QFont(shell_font, pointSize=16))
+        loadingName.setAlignment(QtCore.Qt.AlignCenter)
 
 
-        #frequency switch label
-        lockName = QtGui.QLabel('Lock Current')
-        lockName.setFont(QtGui.QFont(shell_font, pointSize=16))
-        lockName.setAlignment(QtCore.Qt.AlignCenter)
+        self.output = TextChangingButton(('On','Off'))
+        self.output.setMaximumHeight(30)
+        self.output.setMinimumHeight(30)
+        self.output.setFont(QtGui.QFont(shell_font, pointSize=14))
 
-        # frequency
-        self.spinFreq1 = QtGui.QDoubleSpinBox()
-        self.spinFreq1.setFont(QtGui.QFont(shell_font, pointSize=16))
-        self.spinFreq1.setDecimals(6)
-        self.spinFreq1.setSingleStep(1e-6)
-        self.spinFreq1.setRange(0, 1e4)
-        self.spinFreq1.setKeyboardTracking(False)
+        #self.update_dc.setMinimumWidth(180)
 
-    
+        # loading time
+        self.current_spin = QtGui.QDoubleSpinBox()
+        self.current_spin.setFont(QtGui.QFont(shell_font, pointSize=16))
+        self.current_spin.setDecimals(3)
+        self.current_spin.setSingleStep(.05)
+        self.current_spin.setRange(0, 700)
+        self.current_spin.setKeyboardTracking(False)
+
         #gain  label
         gainName = QtGui.QLabel('Gain')
         gainName.setFont(QtGui.QFont(shell_font, pointSize=16))
@@ -62,23 +63,28 @@ class current_lock_gui(QtGui.QFrame):
         self.spinGain.setRange(1e-6, 1)
         self.spinGain.setKeyboardTracking(False)
 
+        # Create lock button
+        self.lock = TextChangingButton(('Locked','Unlocked'))
+        
+        #layout 1 row at a time
 
-
-        layout.addWidget(chanName, 1,1)
-        layout.addWidget(self.current, 2,0, 6, 2)
-        layout.addWidget(self.lockSwitch, 1, 3, 1, 1)
-        layout.addWidget(lockName, 10, 0, 1, 1)
-        layout.addWidget(self.spinFreq1, 11, 0, 1, 1)
+        layout.addWidget(title,                     0, 0, 2, 2)
+        layout.addWidget(loadingName,               2, 0, 1, 2)
+        layout.addWidget(self.current_spin,    3, 0, 1, 2)
+        layout.addWidget(self.output,      5, 0, 1, 2)
         layout.addWidget(gainName, 2, 3, 1, 1)
         layout.addWidget(self.spinGain, 3, 3, 1, 1)
+        layout.addWidget(self.lock, 1, 3, 1, 1)
+
+
+
         layout.minimumSize()
 
         self.setLayout(layout)
 
 
-
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
-    icon = current_lock('493 Injection Locked Laser')
+    icon = QCustomCurrentGui()
     icon.show()
     app.exec_()

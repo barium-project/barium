@@ -18,8 +18,12 @@ timeout = 5
 
 from labrad.types import Value
 from labrad.devices import DeviceServer, DeviceWrapper
+from common.lib.servers.serialdeviceserver import SerialDeviceServer, setting,\
+inlineCallbacks, SerialDeviceError, SerialConnectionError
 from labrad.server import setting
 from twisted.internet.defer import inlineCallbacks, returnValue
+from labrad.units import WithUnit as U
+
 
 
 class piezo_wrapper(DeviceWrapper):
@@ -155,13 +159,21 @@ class piezo_server(DeviceServer):
     def get_voltage(self, c, channel):
         return self.current_state[str(channel)][0]
 
+    @setting(50, voltage = 'v', chan = 'i')
+    def set_dac_voltage(self, c, chan, voltage):
+        #self.lasers[chan][7] = voltage
+        value=U(voltage, 'V')
+        dev = self.selectDevice(c)
+        yield dev.write('vout.w ' + str(chan) + ' ' + str((value['V']))+ '\r\n')
+        #yield self.set_voltage(chan,U(voltage, 'V'))
+
     @inlineCallbacks
     def update_registry(self, chan):
         yield self.reg.set(str(chan), tuple(self.current_state[str(chan)]))
 
 
 TIMEOUT = Value(1, 's')
-
+__server__=piezo_server()
 if __name__ == "__main__":
     from labrad import util
-    util.runServer(piezo_server())
+    util.runServer(__server__)
